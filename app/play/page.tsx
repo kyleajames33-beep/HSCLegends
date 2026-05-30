@@ -24,6 +24,7 @@ export default function QuickGame() {
   const [total, setTotal] = useState(10);
   const [sel, setSel] = useState<Sel | null>(null);
   const [result, setResult] = useState<QuickResult | null>(null);
+  const [saveErr, setSaveErr] = useState('');
   const [err, setErr] = useState('');
 
   async function start(subject: Subject, year: 11 | 12) {
@@ -47,10 +48,11 @@ export default function QuickGame() {
 
   // Save result for a signed-in player (auto on finish, or resumed after login).
   async function save(subject: Subject, year: 11 | 12, correct: number, tot: number) {
+    setSaveErr('');
     try {
       setResult(await recordQuickGame(sb, subject, year, correct, tot));
-    } catch {
-      /* leave result null; UI keeps the manual save CTA */
+    } catch (e) {
+      setSaveErr(e instanceof Error ? e.message : 'Could not save.');
     }
   }
 
@@ -150,6 +152,16 @@ export default function QuickGame() {
             <div className="text-green-300 font-semibold">+{result.xp_awarded} XP</div>
             <div className="text-2xl font-bold mt-1">🔥 {result.streak} day{result.streak === 1 ? '' : 's'}</div>
             <div className="text-xs text-zinc-400 mt-1">{STREAK_MSG[result.streak_event]}</div>
+          </div>
+        ) : saveErr ? (
+          <div className="mt-5 text-center">
+            <p className="text-red-400 text-sm">Couldn’t save: {saveErr}</p>
+            {sel && (
+              <button onClick={() => save(sel.subject, sel.year, score, total)}
+                className="mt-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 font-semibold">
+                Try again
+              </button>
+            )}
           </div>
         ) : user ? (
           <p className="mt-5 text-zinc-500 text-sm text-center">Saving…</p>
