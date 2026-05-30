@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import { getQuizQuestions, SUBJECTS, type Question, type Subject } from '@/lib/questions';
 import { recordQuickGame, STREAK_MSG, type QuickResult } from '@/lib/progress';
+import ShareButton from '@/components/share-button';
 
 type Phase = 'pick' | 'loading' | 'play' | 'done' | 'error';
 type Sel = { subject: Subject; year: 11 | 12 };
@@ -152,6 +153,7 @@ export default function QuickGame() {
             <div className="text-green-300 font-semibold">+{result.xp_awarded} XP</div>
             <div className="text-2xl font-bold mt-1">🔥 {result.streak} day{result.streak === 1 ? '' : 's'}</div>
             <div className="text-xs text-zinc-400 mt-1">{STREAK_MSG[result.streak_event]}</div>
+            <div className="mt-3"><ShareButton streak={result.streak} /></div>
           </div>
         ) : saveErr ? (
           <div className="mt-5 text-center">

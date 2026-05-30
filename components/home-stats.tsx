@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import { getMyWeek, leagueTier, type MyWeek } from '@/lib/progress';
+import ShareButton from '@/components/share-button';
 
 // Signed-in hub: streak + total XP (one-directional) and weekly League + rank
 // (reversible — resets each week).
@@ -51,6 +52,11 @@ export default function HomeStats() {
           {tier.next ? `${week?.weekly_xp ?? 0} / ${tier.next} XP to next league` : `${week?.weekly_xp ?? 0} XP this week · top tier`}
         </div>
       </div>
+      {!!streak && (
+        <div className="text-center">
+          <ShareButton streak={streak} />
+        </div>
+      )}
     </div>
   );
 }
