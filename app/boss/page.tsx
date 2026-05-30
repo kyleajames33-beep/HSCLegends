@@ -74,11 +74,12 @@ export default function BossPage() {
           </div>
 
           <p className="mt-4 text-center text-xs text-zinc-600">
-            Every correct Quick Game answer deals 1 damage · resets Monday
+            The whole class shares this HP bar · resets Monday
           </p>
 
-          <Link href="/play" className="mt-auto block rounded-2xl bg-indigo-600 hover:bg-indigo-500 px-6 py-5 text-center text-lg font-semibold">
-            ⚔ Attack — play Quick Game
+          <Link href="/play" className="mt-auto block rounded-2xl bg-indigo-600 hover:bg-indigo-500 px-6 py-4 text-center transition">
+            <div className="text-lg font-semibold">⚔ Attack the boss</div>
+            <div className="text-xs text-indigo-200 mt-0.5">Play a Quick Game — each correct answer deals 1 damage</div>
           </Link>
         </div>
       )}

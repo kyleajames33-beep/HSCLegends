@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
+import { useCountdown } from '@/lib/use-countdown';
 import {
   joinGame, getLiveQuestion, submitAnswer, fetchPlayers, subscribeGame, claimGameXp,
   type LiveQuestion, type Player,
@@ -30,6 +31,7 @@ export default function JoinPage() {
   const [me, setMe] = useState<{ rank: number; score: number } | null>(null);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const timer = useCountdown(q?.question_started_at ?? null, q?.per_question_seconds ?? 15);
 
   const answeredIdx = useRef<number>(-1);
   const subRef = useRef<(() => void) | null>(null);
@@ -134,16 +136,23 @@ export default function JoinPage() {
   if (phase === 'question' && q) {
     return (
       <Shell>
-        <div className="text-sm text-zinc-500">Question {q.index + 1}/{q.total}</div>
-        <h2 className="mt-2 text-xl font-semibold leading-snug">{q.stem}</h2>
+        <div className="flex items-center justify-between text-sm text-zinc-500">
+          <span>Question {q.index + 1}/{q.total}</span>
+          <span className={`font-bold tabular-nums ${timer.remaining <= 5 ? 'text-red-400' : 'text-zinc-300'}`}>{timer.remaining}s</span>
+        </div>
+        <div className="mt-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+          <div className="h-full bg-indigo-500 transition-[width] duration-200" style={{ width: `${timer.frac * 100}%` }} />
+        </div>
+        <h2 className="mt-3 text-xl font-semibold leading-snug">{q.stem}</h2>
         <div className="mt-5 space-y-3">
           {(q.options ?? []).map((o, i) => (
-            <button key={i} disabled={busy} onClick={() => answer(i)}
+            <button key={i} disabled={busy || timer.expired} onClick={() => answer(i)}
               className="block w-full text-left rounded-xl border border-zinc-700 hover:border-indigo-500 px-4 py-3 disabled:opacity-50">
               {o}
             </button>
           ))}
         </div>
+        {timer.expired && <p className="mt-4 text-center text-zinc-400">⏰ Time’s up — waiting for the next question…</p>}
         {err && <Err>{err}</Err>}
       </Shell>
     );

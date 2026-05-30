@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useCountdown } from '@/lib/use-countdown';
 import { SUBJECTS, type Subject } from '@/lib/questions';
 import {
   createGame, startGame, nextQuestion, getLiveQuestion, fetchPlayers,
@@ -45,6 +46,19 @@ export default function HostPage() {
   // keep a stable ref so the subscription callback always sees current sessionId
   const refreshQuestionRef = useRef(refreshQuestion);
   refreshQuestionRef.current = refreshQuestion;
+
+  // Per-question countdown; host auto-advances ~2s after time runs out.
+  const timer = useCountdown(q?.question_started_at ?? null, q?.per_question_seconds ?? 15);
+  const advancedFor = useRef(-2);
+  useEffect(() => {
+    if (phase !== 'active' || !q) return;
+    if (timer.expired && advancedFor.current !== q.index) {
+      advancedFor.current = q.index;
+      const t = setTimeout(() => advance(), 2000);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timer.expired, q?.index, phase]);
 
   async function begin() {
     setBusy(true);
@@ -103,8 +117,14 @@ export default function HostPage() {
   if (phase === 'active' && q) {
     return (
       <Shell>
-        <div className="text-sm text-zinc-500">Question {q.index + 1}/{q.total}</div>
-        <h2 className="mt-2 text-2xl font-bold leading-snug">{q.stem}</h2>
+        <div className="flex items-center justify-between text-sm text-zinc-500">
+          <span>Question {q.index + 1}/{q.total}</span>
+          <span className={`font-bold tabular-nums ${timer.remaining <= 5 ? 'text-red-400' : 'text-zinc-300'}`}>{timer.remaining}s</span>
+        </div>
+        <div className="mt-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+          <div className="h-full bg-indigo-500 transition-[width] duration-200" style={{ width: `${timer.frac * 100}%` }} />
+        </div>
+        <h2 className="mt-3 text-2xl font-bold leading-snug">{q.stem}</h2>
         <div className="mt-4 grid grid-cols-2 gap-3">
           {(q.options ?? []).map((o, i) => (
             <div key={i} className="rounded-xl border border-zinc-700 px-4 py-3">{o}</div>
