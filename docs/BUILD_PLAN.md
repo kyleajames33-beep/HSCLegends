@@ -148,7 +148,7 @@ Goal: make the solo Quick Game socially meaningful — you're chipping a shared 
 
 **P4-2 — Share-the-streak** — lightweight share card. Acceptance: generates an image/link without exposing PII.
 
-**P4-3 — Onboarding + install prompt** — first-run flow; A2HS nudge after first game. Acceptance: new user reaches first question without reading instructions.
+**P4-3 — Onboarding + install prompt** 🟡 install nudge done (`components/install-prompt.tsx` — native prompt on Android, manual instructions on iOS, dismissal remembered). Home is now a signed-in hub (streak + total XP via `HomeStats`). ⬜ remaining: a guided first-run flow (set year/subjects once).
 
 **P4-4 — Pilot** — run in your own classes + 2–3 teacher friends; collect real bugs + retention data. Acceptance: ≥1 real class session hosted; day-2 return measured.
 

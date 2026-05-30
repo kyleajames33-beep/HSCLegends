@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import AuthLink from '@/components/auth-link';
-import StreakBadge from '@/components/streak-badge';
+import HomeStats from '@/components/home-stats';
+import InstallPrompt from '@/components/install-prompt';
 
 // Phone-first home. One unambiguous primary action (Quick Game), everything else
 // one tap below. Live Class Game + Boss are Phase 1/3 — shown as "soon".
@@ -16,7 +17,7 @@ export default function Home() {
           60-second quizzes across all six HSC subjects. Play on the bus, climb the leaderboard.
         </p>
 
-        <div><StreakBadge /></div>
+        <HomeStats />
 
         <Link
           href="/play"
@@ -51,6 +52,7 @@ export default function Home() {
           hscscience.com.au
         </a>
       </p>
+      <InstallPrompt />
     </main>
   );
 }
