@@ -59,9 +59,10 @@ function LoginInner() {
       ) : (
         <form onSubmit={verify} className="mt-6 space-y-4">
           <input
-            inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-            placeholder="123456" maxLength={6} autoFocus
-            className="w-full rounded-xl bg-zinc-900 border border-zinc-700 px-4 py-3 text-center text-2xl tracking-[0.4em] outline-none focus:border-indigo-500"
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 10))}
+            placeholder="CODE" maxLength={10} autoFocus autoCapitalize="characters" autoComplete="one-time-code"
+            className="w-full rounded-xl bg-zinc-900 border border-zinc-700 px-4 py-3 text-center text-2xl tracking-[0.3em] outline-none focus:border-indigo-500"
           />
           <button disabled={busy || code.length < 6}
             className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-4 font-semibold disabled:opacity-40">
