@@ -30,11 +30,14 @@ export default function Home() {
             <div className="font-semibold text-zinc-100">Join Class Game</div>
             <div className="text-xs mt-1 text-zinc-500">enter a code</div>
           </Link>
-          <Link href="/leaderboard" className="rounded-2xl border border-zinc-800 hover:border-indigo-500 px-4 py-4 transition">
-            <div className="font-semibold text-zinc-100">Leaderboard</div>
-            <div className="text-xs mt-1 text-zinc-500">this week</div>
+          <Link href="/boss" className="rounded-2xl border border-zinc-800 hover:border-indigo-500 px-4 py-4 transition">
+            <div className="font-semibold text-zinc-100">Weekly Boss 👹</div>
+            <div className="text-xs mt-1 text-zinc-500">fight as a class</div>
           </Link>
         </div>
+        <Link href="/leaderboard" className="mt-3 block rounded-2xl border border-zinc-800 hover:border-indigo-500 px-4 py-3 text-center font-semibold text-zinc-100 transition">
+          🏆 Leaderboard
+        </Link>
       </div>
 
       <p className="text-center text-xs text-zinc-600 space-x-2">

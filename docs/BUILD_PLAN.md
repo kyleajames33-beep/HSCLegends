@@ -133,17 +133,12 @@ Goal: the thing students open on the bus. The day-7→day-30 loop.
 
 Goal: make the solo Quick Game socially meaningful — you're chipping a shared boss with classmates.
 
-**P3-1 — Weekly boss state**
-- Per subject/module boss with shared HP; every correct answer (Quick Game or Boss mode) chips it.
-- **Acceptance:** concurrent answers decrement HP atomically (no lost updates); boss resets weekly.
+**Backend (live + verified):** `bosses` catalog (6 themed bosses, personalities borrowed from Teaching-APP), `boss_state` (per subject + ISO week, shared HP), `boss_contributions` (per user). `apply_boss_damage` (atomic `hp = greatest(0, hp - dmg)`, sets `defeated_at`), `get_boss(subject)` (anon-readable, no names exposed). Damage hooked into `record_quick_game` (1 dmg per correct answer). Verified: damage applies, HP decrements, `get_boss` returns all 6 at full HP fresh week.
 
-**P3-2 — Class join via code**
-- Students join a class (teacher-issued code); boss HP/contribution scoped to the class.
-- **Acceptance:** a student's contribution shows only against their class boss.
-
-**P3-3 — Teacher dashboard (boss)**
-- Teacher configures the weekly boss (subject/module) and sees class contribution.
-- **Acceptance:** teacher can set next week's boss in <2 min; live contribution view.
+**P3-1 — Weekly boss state** ✅ DONE — shared HP per subject, chipped by every correct Quick Game answer, resets each ISO week, atomic decrements. `/boss` page: emoji by HP%, class HP bar, your damage, # fighting, defeated state.
+**P3-2 — Class join via code** ⬜ deferred — MVP uses a per-subject **global** boss (everyone fighting Biology shares one boss). Class-scoping reuses the Live Game code concept; add a `class_id` column to boss_state/contributions when needed.
+**P3-3 — Teacher dashboard (boss)** ⬜ deferred — bosses are currently a fixed catalog; teacher configuration + contribution view comes with class-scoping.
+**⬜ Needs in-browser test** (after login works): play a signed-in Quick Game → boss HP drops on `/boss`, your-damage increments.
 
 ---
 
