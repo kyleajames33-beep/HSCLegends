@@ -2,6 +2,7 @@ import Link from 'next/link';
 import AuthLink from '@/components/auth-link';
 import HomeStats from '@/components/home-stats';
 import InstallPrompt from '@/components/install-prompt';
+import OnboardingGate from '@/components/onboarding-gate';
 
 // Phone-first home. One unambiguous primary action (Quick Game), everything else
 // one tap below. Live Class Game + Boss are Phase 1/3 — shown as "soon".
@@ -53,6 +54,7 @@ export default function Home() {
         </a>
       </p>
       <InstallPrompt />
+      <OnboardingGate />
     </main>
   );
 }

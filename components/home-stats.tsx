@@ -3,37 +3,53 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
+import { getMyWeek, leagueTier, type MyWeek } from '@/lib/progress';
 
-// Signed-in hub stats: current streak + total XP. Hidden when logged out.
+// Signed-in hub: streak + total XP (one-directional) and weekly League + rank
+// (reversible — resets each week).
 export default function HomeStats() {
   const sb = useMemo(() => createClient(), []);
   const { user } = useUser();
   const [streak, setStreak] = useState<number | null>(null);
   const [xp, setXp] = useState<number | null>(null);
+  const [week, setWeek] = useState<MyWeek | null>(null);
 
   useEffect(() => {
-    if (!user) {
-      setStreak(null);
-      setXp(null);
-      return;
-    }
+    if (!user) { setStreak(null); setXp(null); setWeek(null); return; }
     sb.from('streaks').select('current').eq('user_id', user.id).maybeSingle()
       .then(({ data }) => setStreak(data?.current ?? 0));
     sb.from('user_stats').select('total_xp').eq('user_id', user.id).maybeSingle()
       .then(({ data }) => setXp(data?.total_xp ?? 0));
+    getMyWeek(sb).then(setWeek).catch(() => {});
   }, [user, sb]);
 
   if (!user) return null;
+  const tier = leagueTier(week?.weekly_xp ?? 0);
+  const progress = tier.next ? Math.min(1, (week?.weekly_xp ?? 0) / tier.next) : 1;
 
   return (
-    <div className="mt-4 grid grid-cols-2 gap-3">
-      <div className="rounded-2xl bg-zinc-900 px-4 py-3 text-center">
-        <div className="text-2xl font-bold">🔥 {streak ?? '–'}</div>
-        <div className="text-xs text-zinc-500">day streak</div>
+    <div className="mt-4 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl bg-zinc-900 px-4 py-3 text-center">
+          <div className="text-2xl font-bold">🔥 {streak ?? '–'}</div>
+          <div className="text-xs text-zinc-500">day streak</div>
+        </div>
+        <div className="rounded-2xl bg-zinc-900 px-4 py-3 text-center">
+          <div className="text-2xl font-bold">{xp ?? '–'}</div>
+          <div className="text-xs text-zinc-500">total XP</div>
+        </div>
       </div>
-      <div className="rounded-2xl bg-zinc-900 px-4 py-3 text-center">
-        <div className="text-2xl font-bold">{xp ?? '–'}</div>
-        <div className="text-xs text-zinc-500">total XP</div>
+      <div className="rounded-2xl bg-zinc-900 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold">{tier.emoji} {tier.name} League</span>
+          {week && week.rank > 0 && <span className="text-sm text-zinc-400">#{week.rank} this week</span>}
+        </div>
+        <div className="mt-2 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+          <div className="h-full bg-indigo-500" style={{ width: `${progress * 100}%` }} />
+        </div>
+        <div className="mt-1 text-xs text-zinc-500">
+          {tier.next ? `${week?.weekly_xp ?? 0} / ${tier.next} XP to next league` : `${week?.weekly_xp ?? 0} XP this week · top tier`}
+        </div>
       </div>
     </div>
   );
