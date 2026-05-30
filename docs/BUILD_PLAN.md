@@ -106,7 +106,7 @@ Goal: a teacher can spin up a live game in <8 minutes; students join with a code
 **P1-2 — Student join (no account)** ✅ playable without an account; ✅ post-game "Save my points" → login → score saved (player_id stashed across the redirect via localStorage).
 **P1-3 — Live game loop** ✅ DONE — synced via Realtime (DB-as-truth → rejoin works), server-authoritative scoring, **per-question countdown timer on both screens + host auto-advance** (~2s after time's up; manual Next still works as a skip; players lock out when time expires). Browser-verified: login, host+join, full game.
 **P1-4 — Podium + write-back** ✅ podium; ✅ XP write-back via `claim_game_xp` → shared `xp_events` + `user_stats` (idempotent per player; rejects anon — verified). Auto-saves when a signed-in player finishes.
-**P1-5 — Catch-up mechanic** ⬜ deferred (one random double-points question; skill ≥80%).
+**P1-5 — Catch-up mechanic** ✅ DONE — one random **Double Points** question per game (2× in `submit_answer`, banner on both screens). Skill still required; keeps the bottom half in contention. Verified: doubled question paid 300 vs 150.
 
 **AUTH ✅ built** — `@supabase/ssr` server client + `middleware.ts` (cookie session), `lib/use-user.ts`, email one-time-code login (`app/login`), shared `HSCScienceSyd` project so accounts = HSC Science accounts (`handle_new_user` trigger auto-creates `user_profiles`; `user_stats` upserted on first XP). Home shows auth state.
 - ⚠️ **Dashboard step required:** add `{{ .Token }}` to Auth → Email Templates → Magic Link, or login emails send a link instead of the 6-digit code.
