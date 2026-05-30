@@ -49,6 +49,10 @@ export default function Home() {
           Host a game
         </Link>
         <span>·</span>
+        <Link href="/classes" className="underline">
+          Classes
+        </Link>
+        <span>·</span>
         <a href="https://hscscience.com.au" className="underline">
           hscscience.com.au
         </a>
