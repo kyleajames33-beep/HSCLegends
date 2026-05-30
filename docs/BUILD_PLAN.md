@@ -119,22 +119,13 @@ Goal: a teacher can spin up a live game in <8 minutes; students join with a code
 
 Goal: the thing students open on the bus. The day-7→day-30 loop.
 
-**P2-1 — Solo Quick Game**
-- "Today's Quick Game" as the single primary home action. 10 questions, 60s, instant feedback, XP write-back.
-- **Acceptance:** from cold app open to first question in <3s; one unambiguous primary button.
+**Backend (live + verified):** `record_quick_game` (XP → `xp_events`+`user_stats`, streak update; rejects anon — verified), `get_weekly_leaderboard` (opt-in, anonymous codename, ISO week; returns real rows via anon), `set_leaderboard_optin`. `streaks` extended additively with `last_freeze_week`. Weekday-gap math unit-checked (Fri→Mon=0, Mon→Wed=1, Mon→Thu=2).
 
-**P2-2 — Streak system (with mercy)**
-- Visible streak counter; increments on a completed day. **Weekends don't break streaks. 1 auto-freeze/week.** Prominent in app header + (later) push.
-- **Extend the existing `streaks` table additively** (it currently only has `current`/`last_date`/`updated_at`): add `freeze_available` (bool), `last_freeze_week` (text), `frozen_on` (date). Do not drop/rebuild.
-- **Acceptance:** missing a Saturday/Sunday never resets; missing one weekday consumes the auto-freeze silently; missing two weekdays in a week resets; logic covered by tests.
-
-**P2-3 — Two-progression display**
-- Reversible Rank/League (win/loss flavour) **alongside** one-directional XP (only ever grows). Reuse existing XP.
-- **Acceptance:** a bad day lowers Rank but never lowers XP; both visible on the home screen.
-
-**P2-4 — Leaderboard read/write**
-- Quick Game results feed the shared leaderboard; app shows weekly leaderboard scoped to subject/year.
-- **Acceptance:** identical numbers on web and app for the same user/week.
+**P2-1 — Solo Quick Game** ✅ `/play` now saves XP for signed-in players (auto on finish; "Sign in to save" → login → resumes via localStorage). ⬜ 60s timer not yet added (currently untimed).
+**P2-2 — Streak system (with mercy)** ✅ DONE — weekend-safe + 1 auto-freeze/week; streak badge on home, streak result on finish. Ethics rules verified in SQL.
+**P2-3 — Two-progression display** 🟡 XP (one-directional) + streak shown; ⬜ reversible Rank/League still to add.
+**P2-4 — Leaderboard** ✅ `/leaderboard` — weekly, subject filter, opt-in toggle, "you" highlight. Reads shared `xp_events` (doesn't touch the web's `weekly_quiz_attempts`). ⬜ verify parity with web leaderboard semantics.
+**⬜ Needs in-browser test** (after email login works): streak increment across a real save, XP appearing, opt-in toggle.
 
 ---
 

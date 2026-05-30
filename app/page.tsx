@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import AuthLink from '@/components/auth-link';
+import StreakBadge from '@/components/streak-badge';
 
 // Phone-first home. One unambiguous primary action (Quick Game), everything else
 // one tap below. Live Class Game + Boss are Phase 1/3 — shown as "soon".
@@ -15,25 +16,24 @@ export default function Home() {
           60-second quizzes across all six HSC subjects. Play on the bus, climb the leaderboard.
         </p>
 
+        <div><StreakBadge /></div>
+
         <Link
           href="/play"
-          className="mt-10 block rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 px-6 py-5 text-center text-lg font-semibold shadow-lg shadow-indigo-900/40 transition"
+          className="mt-8 block rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 px-6 py-5 text-center text-lg font-semibold shadow-lg shadow-indigo-900/40 transition"
         >
           ▶ Quick Game
         </Link>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <Link
-            href="/join"
-            className="rounded-2xl border border-zinc-800 hover:border-indigo-500 px-4 py-4 transition"
-          >
+          <Link href="/join" className="rounded-2xl border border-zinc-800 hover:border-indigo-500 px-4 py-4 transition">
             <div className="font-semibold text-zinc-100">Join Class Game</div>
             <div className="text-xs mt-1 text-zinc-500">enter a code</div>
           </Link>
-          <div className="rounded-2xl border border-zinc-800 px-4 py-4 text-zinc-500">
-            <div className="font-semibold text-zinc-300">Weekly Boss</div>
-            <div className="text-xs mt-1">soon</div>
-          </div>
+          <Link href="/leaderboard" className="rounded-2xl border border-zinc-800 hover:border-indigo-500 px-4 py-4 transition">
+            <div className="font-semibold text-zinc-100">Leaderboard</div>
+            <div className="text-xs mt-1 text-zinc-500">this week</div>
+          </Link>
         </div>
       </div>
 

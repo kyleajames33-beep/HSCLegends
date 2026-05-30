@@ -1,34 +1,84 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useUser } from '@/lib/use-user';
 import { getQuizQuestions, SUBJECTS, type Question, type Subject } from '@/lib/questions';
+import { recordQuickGame, STREAK_MSG, type QuickResult } from '@/lib/progress';
 
 type Phase = 'pick' | 'loading' | 'play' | 'done' | 'error';
+type Sel = { subject: Subject; year: 11 | 12 };
+const PENDING_KEY = 'legends_pending_quick';
 
 export default function QuickGame() {
+  const sb = useMemo(() => createClient(), []);
+  const router = useRouter();
+  const { user } = useUser();
   const [phase, setPhase] = useState<Phase>('pick');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [score, setScore] = useState(0);
+  const [total, setTotal] = useState(10);
+  const [sel, setSel] = useState<Sel | null>(null);
+  const [result, setResult] = useState<QuickResult | null>(null);
   const [err, setErr] = useState('');
 
   async function start(subject: Subject, year: 11 | 12) {
     setPhase('loading');
     try {
-      const qs = await getQuizQuestions(createClient(), { subject, year, count: 10 });
+      const qs = await getQuizQuestions(sb, { subject, year, count: 10 });
       if (!qs.length) throw new Error('No questions found for that selection.');
       setQuestions(qs);
+      setSel({ subject, year });
+      setTotal(qs.length);
       setI(0);
       setScore(0);
+      setResult(null);
       setPicked(null);
       setPhase('play');
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Something went wrong.');
       setPhase('error');
     }
+  }
+
+  // Save result for a signed-in player (auto on finish, or resumed after login).
+  async function save(subject: Subject, year: 11 | 12, correct: number, tot: number) {
+    try {
+      setResult(await recordQuickGame(sb, subject, year, correct, tot));
+    } catch {
+      /* leave result null; UI keeps the manual save CTA */
+    }
+  }
+
+  // Auto-save the moment a signed-in player finishes.
+  useEffect(() => {
+    if (phase === 'done' && user && sel && !result) save(sel.subject, sel.year, score, total);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, user]);
+
+  // Resume a save deferred across the login redirect.
+  useEffect(() => {
+    if (!user) return;
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(PENDING_KEY) : null;
+    if (!raw || result) return;
+    localStorage.removeItem(PENDING_KEY);
+    try {
+      const p = JSON.parse(raw) as Sel & { correct: number; total: number };
+      setScore(p.correct); setTotal(p.total); setSel({ subject: p.subject, year: p.year });
+      setPhase('done');
+      save(p.subject, p.year, p.correct, p.total);
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  function saveAfterLogin() {
+    if (!sel) return;
+    localStorage.setItem(PENDING_KEY, JSON.stringify({ ...sel, correct: score, total }));
+    router.push('/login?next=/play');
   }
 
   function choose(idx: number) {
@@ -89,12 +139,27 @@ export default function QuickGame() {
       <Shell>
         <p className="text-indigo-400 font-semibold text-sm">QUICK GAME COMPLETE</p>
         <h1 className="mt-2 text-5xl font-bold">
-          {score}/{questions.length}
+          {score}/{total}
         </h1>
         <p className="mt-3 text-zinc-400">
-          {score === questions.length ? 'Flawless. Legend.' : 'Nice. Come back tomorrow to keep the streak.'}
+          {score === total ? 'Flawless. Legend.' : 'Nice. Come back tomorrow to keep the streak.'}
         </p>
-        <div className="mt-8 space-y-3">
+
+        {result ? (
+          <div className="mt-5 rounded-xl bg-green-500/10 border border-green-500/40 px-4 py-4 text-center">
+            <div className="text-green-300 font-semibold">+{result.xp_awarded} XP</div>
+            <div className="text-2xl font-bold mt-1">🔥 {result.streak} day{result.streak === 1 ? '' : 's'}</div>
+            <div className="text-xs text-zinc-400 mt-1">{STREAK_MSG[result.streak_event]}</div>
+          </div>
+        ) : user ? (
+          <p className="mt-5 text-zinc-500 text-sm text-center">Saving…</p>
+        ) : (
+          <button onClick={saveAfterLogin} className="mt-5 w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-4 font-semibold">
+            Sign in to save {score * 10} XP + your streak
+          </button>
+        )}
+
+        <div className="mt-6 space-y-3">
           <button onClick={() => setPhase('pick')} className="block w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-4 font-semibold">
             Play again
           </button>
