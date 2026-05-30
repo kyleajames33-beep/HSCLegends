@@ -9,6 +9,7 @@ export type LiveQuestion = {
   options: string[] | null;
   question_started_at: string | null;
   per_question_seconds: number;
+  is_double: boolean;
 };
 
 export type Player = { id: string; alias: string; score: number };

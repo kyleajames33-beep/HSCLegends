@@ -143,6 +143,11 @@ export default function JoinPage() {
         <div className="mt-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
           <div className="h-full bg-indigo-500 transition-[width] duration-200" style={{ width: `${timer.frac * 100}%` }} />
         </div>
+        {q.is_double && (
+          <div className="mt-2 rounded-lg bg-amber-500/20 border border-amber-500/50 px-3 py-1.5 text-center text-amber-300 text-sm font-bold animate-pulse">
+            ⚡ DOUBLE POINTS — get this one!
+          </div>
+        )}
         <h2 className="mt-3 text-xl font-semibold leading-snug">{q.stem}</h2>
         <div className="mt-5 space-y-3">
           {(q.options ?? []).map((o, i) => (
