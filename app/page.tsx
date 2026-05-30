@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import AuthLink from '@/components/auth-link';
 
 // Phone-first home. One unambiguous primary action (Quick Game), everything else
 // one tap below. Live Class Game + Boss are Phase 1/3 — shown as "soon".
@@ -36,11 +37,13 @@ export default function Home() {
         </div>
       </div>
 
-      <p className="text-center text-xs text-zinc-600">
+      <p className="text-center text-xs text-zinc-600 space-x-2">
+        <AuthLink />
+        <span>·</span>
         <Link href="/host" className="underline">
-          Teacher? Host a game
+          Host a game
         </Link>
-        {' · '}
+        <span>·</span>
         <a href="https://hscscience.com.au" className="underline">
           hscscience.com.au
         </a>

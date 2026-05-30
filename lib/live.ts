@@ -69,6 +69,16 @@ export async function submitAnswer(
   return data[0];
 }
 
+// Save a finished player's score to the shared XP/leaderboard (signed-in only).
+export async function claimGameXp(
+  sb: SupabaseClient,
+  playerId: string
+): Promise<{ awarded: number; total_xp: number }> {
+  const { data, error } = await sb.rpc('claim_game_xp', { p_player_id: playerId });
+  if (error) throw new Error(error.message);
+  return data[0];
+}
+
 export async function fetchPlayers(sb: SupabaseClient, sessionId: string): Promise<Player[]> {
   const { data, error } = await sb
     .from('game_players')

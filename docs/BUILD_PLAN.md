@@ -103,12 +103,14 @@ Goal: a teacher can spin up a live game in <8 minutes; students join with a code
 **Frontend (built):** `app/host/page.tsx` (create → code → realtime lobby → drive questions → podium), `app/join/page.tsx` (code+alias → lobby → answer → reveal → final rank), `lib/live.ts` (rpc + realtime wrappers). Home links to both. Build passes.
 
 **P1-1 — Game code + lobby (teacher)** ✅ DONE — `create_game` + realtime lobby; unambiguous 6-char code; 6h expiry.
-**P1-2 — Student join (no account)** ✅ playable without an account. ⬜ post-game *signup to keep XP* (needs auth — see below).
+**P1-2 — Student join (no account)** ✅ playable without an account; ✅ post-game "Save my points" → login → score saved (player_id stashed across the redirect via localStorage).
 **P1-3 — Live game loop** ✅ DONE — synced via Realtime (DB-as-truth → rejoin works), server-authoritative scoring. ⬜ remaining: per-question countdown timer + auto-advance (currently host taps Next).
-**P1-4 — Podium + write-back** 🟡 podium ✅; ⬜ XP write-back to shared `xp_events`/`user_stats` (needs auth).
+**P1-4 — Podium + write-back** ✅ podium; ✅ XP write-back via `claim_game_xp` → shared `xp_events` + `user_stats` (idempotent per player; rejects anon — verified). Auto-saves when a signed-in player finishes.
 **P1-5 — Catch-up mechanic** ⬜ deferred (one random double-points question; skill ≥80%).
 
-**⬜ Blocks the rest of P1 → AUTH.** Build the shared Supabase login next so signed-in players get XP written to the shared leaderboard and the post-game signup works. Anonymous play already works; auth only gates persistence.
+**AUTH ✅ built** — `@supabase/ssr` server client + `middleware.ts` (cookie session), `lib/use-user.ts`, email one-time-code login (`app/login`), shared `HSCScienceSyd` project so accounts = HSC Science accounts (`handle_new_user` trigger auto-creates `user_profiles`; `user_stats` upserted on first XP). Home shows auth state.
+- ⚠️ **Dashboard step required:** add `{{ .Token }}` to Auth → Email Templates → Magic Link, or login emails send a link instead of the 6-digit code.
+- Anonymous sign-in is currently **disabled**; enabling it (one toggle) would let every player earn XP without a code — recommended later for the frictionless funnel.
 **⚠️ Known MVP cheat vector:** `questions` is public-read, so a determined student could text-match a stem to find the answer. Acceptable for classroom; harden by restricting `questions` reads / serving stems via a definer rpc before any stakes.
 
 ---

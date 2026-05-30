@@ -2,17 +2,24 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useUser } from '@/lib/use-user';
 import {
-  joinGame, getLiveQuestion, submitAnswer, fetchPlayers, subscribeGame,
+  joinGame, getLiveQuestion, submitAnswer, fetchPlayers, subscribeGame, claimGameXp,
   type LiveQuestion, type Player,
 } from '@/lib/live';
 
 type Phase = 'form' | 'lobby' | 'question' | 'answered' | 'complete';
 type Result = { is_correct: boolean; correct_index: number; points: number };
 
+const PENDING_KEY = 'legends_pending_claim';
+
 export default function JoinPage() {
   const sb = useMemo(() => createClient(), []);
+  const router = useRouter();
+  const { user } = useUser();
+  const [xp, setXp] = useState<{ awarded: number; total: number } | null>(null);
   const [phase, setPhase] = useState<Phase>('form');
   const [code, setCode] = useState('');
   const [alias, setAlias] = useState('');
@@ -27,6 +34,28 @@ export default function JoinPage() {
   const answeredIdx = useRef<number>(-1);
   const subRef = useRef<(() => void) | null>(null);
   useEffect(() => () => subRef.current?.(), []);
+
+  // Resume a claim deferred across the login redirect (player_id stashed before sign-in).
+  useEffect(() => {
+    if (!user) return;
+    const pending = typeof window !== 'undefined' ? localStorage.getItem(PENDING_KEY) : null;
+    if (pending && !xp) {
+      localStorage.removeItem(PENDING_KEY);
+      claimGameXp(sb, pending).then((r) => { setXp({ awarded: r.awarded, total: r.total_xp }); setPhase('complete'); }).catch(() => {});
+    }
+  }, [user, xp, sb]);
+
+  // Auto-save score the moment a signed-in player finishes.
+  useEffect(() => {
+    if (phase === 'complete' && user && playerId && !xp) {
+      claimGameXp(sb, playerId).then((r) => setXp({ awarded: r.awarded, total: r.total_xp })).catch(() => {});
+    }
+  }, [phase, user, playerId, xp, sb]);
+
+  function saveScore() {
+    localStorage.setItem(PENDING_KEY, playerId);
+    router.push('/login?next=/join');
+  }
 
   async function loadState(sid: string, pid: string) {
     const lq = await getLiveQuestion(sb, sid);
@@ -143,8 +172,21 @@ export default function JoinPage() {
         <p className="text-indigo-400 font-semibold text-sm">GAME OVER</p>
         <div className="text-6xl my-3">{me && me.rank <= 3 ? '🏆' : '🎉'}</div>
         <H>{me ? `#${me.rank}` : 'Done'}</H>
-        <p className="text-zinc-300 mt-2 text-xl font-bold">{me?.score ?? 0} pts</p>
-        <Link href="/join" className="mt-8 rounded-xl bg-indigo-600 px-6 py-3 font-semibold">Play another</Link>
+        <p className="text-zinc-300 mt-2 text-xl font-bold">{me?.score ?? xp?.awarded ?? 0} pts</p>
+
+        {xp ? (
+          <p className="mt-4 rounded-xl bg-green-500/10 border border-green-500/40 px-4 py-3 text-green-300 text-sm">
+            Saved! +{xp.awarded} XP · {xp.total} total
+          </p>
+        ) : user ? (
+          <p className="mt-4 text-zinc-500 text-sm">Saving your score…</p>
+        ) : (
+          <button onClick={saveScore} className="mt-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-6 py-3 font-semibold">
+            Save my {me?.score ?? 0} pts
+          </button>
+        )}
+
+        <Link href="/join" className="mt-8 text-sm text-zinc-500 underline">Play another</Link>
       </div>
     </Shell>
   );
