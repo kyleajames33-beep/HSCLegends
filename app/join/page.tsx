@@ -1,0 +1,158 @@
+'use client';
+
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import {
+  joinGame, getLiveQuestion, submitAnswer, fetchPlayers, subscribeGame,
+  type LiveQuestion, type Player,
+} from '@/lib/live';
+
+type Phase = 'form' | 'lobby' | 'question' | 'answered' | 'complete';
+type Result = { is_correct: boolean; correct_index: number; points: number };
+
+export default function JoinPage() {
+  const sb = useMemo(() => createClient(), []);
+  const [phase, setPhase] = useState<Phase>('form');
+  const [code, setCode] = useState('');
+  const [alias, setAlias] = useState('');
+  const [sessionId, setSessionId] = useState('');
+  const [playerId, setPlayerId] = useState('');
+  const [q, setQ] = useState<LiveQuestion | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
+  const [me, setMe] = useState<{ rank: number; score: number } | null>(null);
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const answeredIdx = useRef<number>(-1);
+  const subRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => subRef.current?.(), []);
+
+  async function loadState(sid: string, pid: string) {
+    const lq = await getLiveQuestion(sb, sid);
+    if (lq.status === 'complete') {
+      const players = await fetchPlayers(sb, sid);
+      const idx = players.findIndex((p) => p.id === pid);
+      setMe({ rank: idx + 1, score: players[idx]?.score ?? 0 });
+      setPhase('complete');
+      return;
+    }
+    if (lq.status === 'lobby') { setPhase('lobby'); return; }
+    setQ(lq);
+    if (answeredIdx.current === lq.index) { setPhase('answered'); }
+    else { setResult(null); setPhase('question'); }
+  }
+  const loadRef = useRef(loadState);
+  loadRef.current = loadState;
+
+  async function join(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true); setErr('');
+    try {
+      const j = await joinGame(sb, code, alias);
+      setSessionId(j.session_id); setPlayerId(j.player_id);
+      subRef.current = subscribeGame(sb, j.session_id, {
+        onSession: () => loadRef.current(j.session_id, j.player_id),
+      });
+      await loadState(j.session_id, j.player_id);
+    } catch (e) { setErr(msg(e)); } finally { setBusy(false); }
+  }
+
+  async function answer(choice: number) {
+    if (!q) return;
+    setBusy(true);
+    try {
+      const r = await submitAnswer(sb, playerId, q.index, choice);
+      answeredIdx.current = q.index;
+      setResult({ ...r });
+      setPhase('answered');
+    } catch (e) { setErr(msg(e)); } finally { setBusy(false); }
+  }
+
+  if (phase === 'form') {
+    return (
+      <Shell>
+        <H>Join a game</H>
+        <form onSubmit={join} className="mt-6 space-y-4">
+          <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="CODE" maxLength={6} autoCapitalize="characters"
+            className="w-full rounded-xl bg-zinc-900 border border-zinc-700 px-4 py-4 text-center text-3xl font-black tracking-[0.3em] outline-none focus:border-indigo-500" />
+          <input value={alias} onChange={(e) => setAlias(e.target.value)}
+            placeholder="Your name" maxLength={20}
+            className="w-full rounded-xl bg-zinc-900 border border-zinc-700 px-4 py-3 outline-none focus:border-indigo-500" />
+          <button disabled={busy || code.length < 6 || !alias.trim()}
+            className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-4 font-semibold disabled:opacity-40">
+            Join
+          </button>
+        </form>
+        {err && <Err>{err}</Err>}
+      </Shell>
+    );
+  }
+
+  if (phase === 'lobby') {
+    return (
+      <Shell>
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <div className="text-5xl mb-4">⏳</div>
+          <H>You’re in, {alias}!</H>
+          <p className="text-zinc-400 mt-2">Waiting for the host to start…</p>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (phase === 'question' && q) {
+    return (
+      <Shell>
+        <div className="text-sm text-zinc-500">Question {q.index + 1}/{q.total}</div>
+        <h2 className="mt-2 text-xl font-semibold leading-snug">{q.stem}</h2>
+        <div className="mt-5 space-y-3">
+          {(q.options ?? []).map((o, i) => (
+            <button key={i} disabled={busy} onClick={() => answer(i)}
+              className="block w-full text-left rounded-xl border border-zinc-700 hover:border-indigo-500 px-4 py-3 disabled:opacity-50">
+              {o}
+            </button>
+          ))}
+        </div>
+        {err && <Err>{err}</Err>}
+      </Shell>
+    );
+  }
+
+  if (phase === 'answered' && q) {
+    return (
+      <Shell>
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          {result?.is_correct ? (
+            <><div className="text-6xl mb-3">✅</div><H>Correct!</H><p className="text-indigo-400 text-2xl font-bold mt-2">+{result.points}</p></>
+          ) : (
+            <><div className="text-6xl mb-3">❌</div><H>Not quite</H>
+              <p className="text-zinc-400 mt-2">Answer: <span className="text-zinc-200 font-semibold">{q.options?.[result?.correct_index ?? -1]}</span></p></>
+          )}
+          <p className="text-zinc-500 mt-6 text-sm">Waiting for the next question…</p>
+        </div>
+      </Shell>
+    );
+  }
+
+  // complete
+  return (
+    <Shell>
+      <div className="flex-1 flex flex-col items-center justify-center text-center">
+        <p className="text-indigo-400 font-semibold text-sm">GAME OVER</p>
+        <div className="text-6xl my-3">{me && me.rank <= 3 ? '🏆' : '🎉'}</div>
+        <H>{me ? `#${me.rank}` : 'Done'}</H>
+        <p className="text-zinc-300 mt-2 text-xl font-bold">{me?.score ?? 0} pts</p>
+        <Link href="/join" className="mt-8 rounded-xl bg-indigo-600 px-6 py-3 font-semibold">Play another</Link>
+      </div>
+    </Shell>
+  );
+}
+
+const msg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
+const Shell = ({ children }: { children: React.ReactNode }) => (
+  <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md w-full mx-auto">{children}</main>
+);
+const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-bold">{children}</h1>;
+const Err = ({ children }: { children: React.ReactNode }) => <p className="mt-4 text-red-400 text-sm">{children}</p>;
