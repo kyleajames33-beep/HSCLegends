@@ -5,17 +5,15 @@ import InstallPrompt from '@/components/install-prompt';
 import OnboardingGate from '@/components/onboarding-gate';
 import NotificationToggle from '@/components/notification-toggle';
 
-// Phone-first home. One unambiguous primary action (Quick Game), everything else
-// one tap below. Live Class Game + Boss are Phase 1/3 — shown as "soon".
 export default function Home() {
   return (
-    <main className="flex flex-1 flex-col px-6 pt-16 pb-10 max-w-md w-full mx-auto">
+    <main className="flex flex-1 flex-col px-6 pt-14 pb-10 max-w-md w-full mx-auto">
       <div className="flex-1 flex flex-col">
-        <p className="text-indigo-400 font-semibold tracking-wide text-sm">HSC LEGENDS</p>
-        <h1 className="mt-2 text-4xl font-bold leading-tight">
+        <p className="text-berrydeep font-display font-bold tracking-[0.15em] text-sm">HSC LEGENDS</p>
+        <h1 className="mt-2 text-[2.6rem] font-extrabold leading-[1.05] text-ink">
           Beat today.<br />Keep the streak.
         </h1>
-        <p className="mt-3 text-zinc-400">
+        <p className="mt-3 text-inksoft">
           60-second quizzes across all six HSC subjects. Play on the bus, climb the leaderboard.
         </p>
 
@@ -23,42 +21,39 @@ export default function Home() {
 
         <Link
           href="/play"
-          className="mt-8 block rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 px-6 py-5 text-center text-lg font-semibold shadow-lg shadow-indigo-900/40 transition"
+          className="lg-btn lg-btn-primary mt-8 block px-6 py-5 text-center text-xl"
         >
           ▶ Quick Game
         </Link>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <Link href="/join" className="rounded-2xl border border-zinc-800 hover:border-indigo-500 px-4 py-4 transition">
-            <div className="font-semibold text-zinc-100">Join Class Game</div>
-            <div className="text-xs mt-1 text-zinc-500">enter a code</div>
+          <Link href="/join" className="lg-card px-4 py-4 transition active:translate-y-0.5">
+            <div className="text-2xl">🎪</div>
+            <div className="font-display font-bold text-ink mt-1">Join Class Game</div>
+            <div className="text-xs mt-0.5 text-muted">enter a code</div>
           </Link>
-          <Link href="/boss" className="rounded-2xl border border-zinc-800 hover:border-indigo-500 px-4 py-4 transition">
-            <div className="font-semibold text-zinc-100">Weekly Boss 👹</div>
-            <div className="text-xs mt-1 text-zinc-500">fight as a class</div>
+          <Link href="/boss" className="lg-card px-4 py-4 transition active:translate-y-0.5">
+            <div className="text-2xl">👹</div>
+            <div className="font-display font-bold text-ink mt-1">Weekly Boss</div>
+            <div className="text-xs mt-0.5 text-muted">fight as a class</div>
           </Link>
         </div>
-        <Link href="/leaderboard" className="mt-3 block rounded-2xl border border-zinc-800 hover:border-indigo-500 px-4 py-3 text-center font-semibold text-zinc-100 transition">
-          🏆 Leaderboard
+        <Link href="/leaderboard" className="lg-card mt-3 flex items-center justify-between px-4 py-3.5 transition active:translate-y-0.5">
+          <span className="font-display font-bold text-ink">🏆 Leaderboard</span>
+          <span className="text-sm text-muted">this week →</span>
         </Link>
 
         <NotificationToggle />
       </div>
 
-      <p className="text-center text-xs text-zinc-600 space-x-2">
+      <p className="mt-6 text-center text-xs text-muted space-x-2">
         <AuthLink />
         <span>·</span>
-        <Link href="/host" className="underline">
-          Host a game
-        </Link>
+        <Link href="/host" className="underline">Host a game</Link>
         <span>·</span>
-        <Link href="/classes" className="underline">
-          Classes
-        </Link>
+        <Link href="/classes" className="underline">Classes</Link>
         <span>·</span>
-        <a href="https://hscscience.com.au" className="underline">
-          hscscience.com.au
-        </a>
+        <a href="https://hscscience.com.au" className="underline">hscscience.com.au</a>
       </p>
       <InstallPrompt />
       <OnboardingGate />

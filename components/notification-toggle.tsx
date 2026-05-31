@@ -45,16 +45,16 @@ export default function NotificationToggle() {
   }
 
   return (
-    <div className="mt-3 rounded-2xl border border-zinc-800 px-4 py-3">
+    <div className="lg-card mt-3 px-4 py-3">
       <label className="flex items-center justify-between text-sm">
-        <span className="text-zinc-300">🔔 Streak &amp; boss reminders</span>
+        <span className="text-ink font-semibold">🔔 Streak &amp; boss reminders</span>
         <button onClick={toggle} disabled={busy}
-          className={`relative h-6 w-11 rounded-full transition ${on ? 'bg-indigo-600' : 'bg-zinc-700'}`}>
-          <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${on ? 'left-[22px]' : 'left-0.5'}`} />
+          className={`relative h-6 w-11 rounded-full transition ${on ? 'bg-plum' : 'bg-rule'}`}>
+          <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${on ? 'left-[22px]' : 'left-0.5'}`} />
         </button>
       </label>
-      {on && <button onClick={test} disabled={busy} className="mt-2 text-xs text-zinc-500 underline">Send a test</button>}
-      {msg && <p className="mt-2 text-xs text-zinc-400">{msg}</p>}
+      {on && <button onClick={test} disabled={busy} className="mt-2 text-xs text-berrydeep underline">Send a test</button>}
+      {msg && <p className="mt-2 text-xs text-inksoft">{msg}</p>}
     </div>
   );
 }

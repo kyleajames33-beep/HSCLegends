@@ -47,25 +47,25 @@ export default function InstallPrompt() {
   }
 
   return (
-    <div className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-2xl border border-zinc-700 bg-zinc-900/95 backdrop-blur px-4 py-3 shadow-xl">
+    <div className="lg-card fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md px-4 py-3">
       <div className="flex items-center gap-3">
         <span className="text-2xl">📲</span>
         <div className="flex-1 text-sm">
           {ios ? (
-            <span className="text-zinc-300">
+            <span className="text-inksoft">
               Add Legends to your home screen: tap <strong>Share</strong> ⬆️ then{' '}
               <strong>Add to Home Screen</strong>.
             </span>
           ) : (
-            <span className="text-zinc-300">Install Legends for one-tap access.</span>
+            <span className="text-inksoft">Install Legends for one-tap access.</span>
           )}
         </div>
         {!ios && (
-          <button onClick={install} className="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 text-sm font-semibold">
+          <button onClick={install} className="lg-btn lg-btn-primary px-3 py-1.5 text-sm">
             Install
           </button>
         )}
-        <button onClick={dismiss} aria-label="Dismiss" className="text-zinc-500 px-1">
+        <button onClick={dismiss} aria-label="Dismiss" className="text-muted px-1">
           ✕
         </button>
       </div>

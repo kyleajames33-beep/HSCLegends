@@ -1,9 +1,66 @@
 @import "tailwindcss";
 
-html {
-  -webkit-tap-highlight-color: transparent;
+/* HSC Legends design system — "adventure" theme (warm parchment + sticker cards).
+   Adapted from the Teaching-APP weekly-challenge / boss mockups. */
+@theme {
+  --color-parchment: #f9efe1;
+  --color-parchment-deep: #f4e2cb;
+  --color-panel: #ffffff;
+  --color-ink: #2d3142;
+  --color-inksoft: #5b5d75;
+  --color-muted: #8a8aa3;
+  --color-rule: #e8d4ba;
+  --color-rule-soft: #f1e0c5;
+
+  --color-berry: #c47b8a;
+  --color-berrydeep: #9c5c6e;
+  --color-coral: #e89b8b;
+  --color-coraldeep: #c47165;
+  --color-plum: #6d5b8a;
+  --color-plumdeep: #4e4068;
+  --color-gold: #d6a85f;
+  --color-golddeep: #a87f3f;
+  --color-leaf: #6b9b7c;
+  --color-brick: #c4646b;
+
+  --font-display: var(--font-outfit), system-ui, sans-serif;
+  --font-body: var(--font-dmsans), system-ui, sans-serif;
 }
 
+html { -webkit-tap-highlight-color: transparent; }
 body {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  background: var(--color-parchment);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+h1, h2, h3 { font-family: var(--font-display); }
+
+/* Signature chunky offset shadow (the "sticker / card-game" feel). */
+@utility chunk { box-shadow: 0 4px 0 var(--color-rule); }
+@utility chunk-plum { box-shadow: 0 4px 0 var(--color-plumdeep); }
+@utility chunk-berry { box-shadow: 0 4px 0 var(--color-berrydeep); }
+
+/* Reusable components. */
+@layer components {
+  .lg-card {
+    border-radius: 18px;
+    background: var(--color-panel);
+    border: 1px solid var(--color-rule);
+    box-shadow: 0 4px 0 var(--color-rule);
+  }
+  .lg-btn {
+    border-radius: 16px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    transition: transform 0.06s ease, box-shadow 0.06s ease;
+  }
+  /* primary "press down" button */
+  .lg-btn-primary {
+    background: var(--color-plum);
+    color: #fff;
+    box-shadow: 0 4px 0 var(--color-plumdeep);
+  }
+  .lg-btn-primary:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--color-plumdeep); }
+  .lg-btn-berry { background: var(--color-berry); color: #fff; box-shadow: 0 4px 0 var(--color-berrydeep); }
+  .lg-btn-berry:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--color-berrydeep); }
 }
