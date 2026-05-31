@@ -123,7 +123,7 @@ Goal: the thing students open on the bus. The day-7→day-30 loop.
 
 **P2-1 — Solo Quick Game** ✅ `/play` now saves XP for signed-in players (auto on finish; "Sign in to save" → login → resumes via localStorage). ⬜ 60s timer not yet added (currently untimed).
 **P2-2 — Streak system (with mercy)** ✅ DONE — weekend-safe + 1 auto-freeze/week; streak badge on home, streak result on finish. Ethics rules verified in SQL.
-**P2-3 — Two-progression display** 🟡 XP (one-directional) + streak shown; ⬜ reversible Rank/League still to add.
+**P2-3 — Two-progression display** ✅ DONE — one-directional streak + total XP, plus a **reversible weekly League** (Bronze→Diamond from weekly XP, via `get_my_week`) + live rank on the home hub.
 **P2-4 — Leaderboard** ✅ `/leaderboard` — weekly, subject filter, opt-in toggle, "you" highlight. Reads shared `xp_events` (doesn't touch the web's `weekly_quiz_attempts`). ⬜ verify parity with web leaderboard semantics.
 **⬜ Needs in-browser test** (after email login works): streak increment across a real save, XP appearing, opt-in toggle.
 
@@ -136,19 +136,19 @@ Goal: make the solo Quick Game socially meaningful — you're chipping a shared 
 **Backend (live + verified):** `bosses` catalog (6 themed bosses, personalities borrowed from Teaching-APP), `boss_state` (per subject + ISO week, shared HP), `boss_contributions` (per user). `apply_boss_damage` (atomic `hp = greatest(0, hp - dmg)`, sets `defeated_at`), `get_boss(subject)` (anon-readable, no names exposed). Damage hooked into `record_quick_game` (1 dmg per correct answer). Verified: damage applies, HP decrements, `get_boss` returns all 6 at full HP fresh week.
 
 **P3-1 — Weekly boss state** ✅ DONE — shared HP per subject, chipped by every correct Quick Game answer, resets each ISO week, atomic decrements. `/boss` page: emoji by HP%, class HP bar, your damage, # fighting, defeated state.
-**P3-2 — Class join via code** ⬜ deferred — MVP uses a per-subject **global** boss (everyone fighting Biology shares one boss). Class-scoping reuses the Live Game code concept; add a `class_id` column to boss_state/contributions when needed.
-**P3-3 — Teacher dashboard (boss)** ⬜ deferred — bosses are currently a fixed catalog; teacher configuration + contribution view comes with class-scoping.
+**P3-2 — Class join via code** ✅ DONE — `classes`/`class_members`, `create_class` (share code) + `join_class`. `/classes` page. (Boss HP stays global; class identity comes via the contribution view below — true per-class HP is a later option.)
+**P3-3 — Teacher dashboard** ✅ DONE — `get_class_dashboard` shows each member's weekly XP, streak, and boss damage + class totals; `/classes` per-class view. Verified end-to-end.
 **⬜ Needs in-browser test** (after login works): play a signed-in Quick Game → boss HP drops on `/boss`, your-damage increments.
 
 ---
 
 ## Phase 4 — Polish + pilot  (~2 weeks)
 
-**P4-1 — Push notifications (opt-in, minimal)** — only "streak ending in 4h" and "your class is fighting a boss". No other pushes. Acceptance: opt-in gated; exactly two notification types exist.
+**P4-1 — Push notifications (opt-in, minimal)** ✅ foundation DONE — `push_subscriptions` + rpcs, SW push/click handlers, `NotificationToggle` (opt-in + "send a test"), deployed `send-push` edge function (VAPID; identifies caller by JWT, prunes dead subs). ⬜ remaining: **automated scheduling** (cron for "streak ending in 4h" / "boss active") + real-device delivery test. ⚠️ deployed function has VAPID keys inline for the pilot — move to secrets for prod.
 
-**P4-2 — Share-the-streak** — lightweight share card. Acceptance: generates an image/link without exposing PII.
+**P4-2 — Share-the-streak** ✅ DONE — `/api/og` dynamic streak card (no PII) + `/share` landing with preview metadata; `ShareButton` (native share / clipboard) on the Quick Game result + home.
 
-**P4-3 — Onboarding + install prompt** 🟡 install nudge done (`components/install-prompt.tsx` — native prompt on Android, manual instructions on iOS, dismissal remembered). Home is now a signed-in hub (streak + total XP via `HomeStats`). ⬜ remaining: a guided first-run flow (set year/subjects once).
+**P4-3 — Onboarding + install prompt** ✅ DONE — first-run `/welcome` (year + subjects) via `OnboardingGate`; install nudge (native Android / iOS instructions); home is a signed-in hub (streak, XP, League).
 
 **P4-4 — Pilot** — run in your own classes + 2–3 teacher friends; collect real bugs + retention data. Acceptance: ≥1 real class session hosted; day-2 return measured.
 
