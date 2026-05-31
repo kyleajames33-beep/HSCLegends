@@ -3,6 +3,7 @@ import AuthLink from '@/components/auth-link';
 import HomeStats from '@/components/home-stats';
 import InstallPrompt from '@/components/install-prompt';
 import OnboardingGate from '@/components/onboarding-gate';
+import NotificationToggle from '@/components/notification-toggle';
 
 // Phone-first home. One unambiguous primary action (Quick Game), everything else
 // one tap below. Live Class Game + Boss are Phase 1/3 — shown as "soon".
@@ -40,6 +41,8 @@ export default function Home() {
         <Link href="/leaderboard" className="mt-3 block rounded-2xl border border-zinc-800 hover:border-indigo-500 px-4 py-3 text-center font-semibold text-zinc-100 transition">
           🏆 Leaderboard
         </Link>
+
+        <NotificationToggle />
       </div>
 
       <p className="text-center text-xs text-zinc-600 space-x-2">
