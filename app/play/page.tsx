@@ -101,18 +101,18 @@ export default function QuickGame() {
   if (phase === 'pick' || phase === 'loading') {
     return (
       <Shell>
-        <h1 className="text-2xl font-bold">Pick a subject</h1>
-        <p className="text-zinc-400 mt-1 text-sm">10 questions. Choose your year.</p>
-        <div className="mt-6 space-y-3">
+        <h1 className="text-3xl font-extrabold text-ink">Pick a subject</h1>
+        <p className="text-inksoft mt-1 text-sm">10 questions. Choose your year.</p>
+        <div className="mt-6 space-y-2.5">
           {SUBJECTS.map((s) => (
-            <div key={s.id} className="flex items-center gap-2">
-              <span className="flex-1 font-medium">{s.label}</span>
+            <div key={s.id} className="lg-card flex items-center gap-2 px-4 py-2.5">
+              <span className="flex-1 font-semibold text-ink">{s.label}</span>
               {[11, 12].map((y) => (
                 <button
                   key={y}
                   disabled={phase === 'loading'}
                   onClick={() => start(s.id, y as 11 | 12)}
-                  className="rounded-lg bg-zinc-800 hover:bg-indigo-600 px-4 py-2 text-sm font-semibold disabled:opacity-40 transition"
+                  className="lg-btn lg-btn-primary px-4 py-1.5 text-sm disabled:opacity-40"
                 >
                   Y{y}
                 </button>
@@ -120,7 +120,7 @@ export default function QuickGame() {
             </div>
           ))}
         </div>
-        {phase === 'loading' && <p className="mt-6 text-indigo-400">Loading…</p>}
+        {phase === 'loading' && <p className="mt-6 text-plum font-semibold">Loading…</p>}
       </Shell>
     );
   }
@@ -128,9 +128,9 @@ export default function QuickGame() {
   if (phase === 'error') {
     return (
       <Shell>
-        <h1 className="text-xl font-bold text-red-400">Couldn’t load</h1>
-        <p className="mt-2 text-zinc-400">{err}</p>
-        <button onClick={() => setPhase('pick')} className="mt-6 rounded-lg bg-indigo-600 px-4 py-2 font-semibold">
+        <h1 className="text-xl font-extrabold text-brick">Couldn’t load</h1>
+        <p className="mt-2 text-inksoft">{err}</p>
+        <button onClick={() => setPhase('pick')} className="lg-btn lg-btn-primary mt-6 px-5 py-2.5">
           Back
         </button>
       </Shell>
@@ -140,44 +140,44 @@ export default function QuickGame() {
   if (phase === 'done') {
     return (
       <Shell>
-        <p className="text-indigo-400 font-semibold text-sm">QUICK GAME COMPLETE</p>
-        <h1 className="mt-2 text-5xl font-bold">
+        <p className="text-berrydeep font-display font-bold tracking-wide text-sm">QUICK GAME COMPLETE</p>
+        <h1 className="mt-2 text-6xl font-extrabold text-ink">
           {score}/{total}
         </h1>
-        <p className="mt-3 text-zinc-400">
+        <p className="mt-3 text-inksoft">
           {score === total ? 'Flawless. Legend.' : 'Nice. Come back tomorrow to keep the streak.'}
         </p>
 
         {result ? (
-          <div className="mt-5 rounded-xl bg-green-500/10 border border-green-500/40 px-4 py-4 text-center">
-            <div className="text-green-300 font-semibold">+{result.xp_awarded} XP</div>
-            <div className="text-2xl font-bold mt-1">🔥 {result.streak} day{result.streak === 1 ? '' : 's'}</div>
-            <div className="text-xs text-zinc-400 mt-1">{STREAK_MSG[result.streak_event]}</div>
-            <div className="mt-3"><ShareButton streak={result.streak} /></div>
+          <div className="lg-card mt-5 px-4 py-4 text-center" style={{ boxShadow: '0 4px 0 #6b9b7c' }}>
+            <div className="text-leaf font-display font-extrabold text-lg">+{result.xp_awarded} XP</div>
+            <div className="text-2xl font-display font-extrabold mt-1 text-ink">🔥 {result.streak} day{result.streak === 1 ? '' : 's'}</div>
+            <div className="text-xs text-inksoft mt-1">{STREAK_MSG[result.streak_event]}</div>
+            <div className="mt-3"><ShareButton streak={result.streak} className="text-sm text-berrydeep font-semibold underline" /></div>
           </div>
         ) : saveErr ? (
           <div className="mt-5 text-center">
-            <p className="text-red-400 text-sm">Couldn’t save: {saveErr}</p>
+            <p className="text-brick text-sm">Couldn’t save: {saveErr}</p>
             {sel && (
               <button onClick={() => save(sel.subject, sel.year, score, total)}
-                className="mt-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 font-semibold">
+                className="lg-btn lg-btn-primary mt-2 px-4 py-2">
                 Try again
               </button>
             )}
           </div>
         ) : user ? (
-          <p className="mt-5 text-zinc-500 text-sm text-center">Saving…</p>
+          <p className="mt-5 text-muted text-sm text-center">Saving…</p>
         ) : (
-          <button onClick={saveAfterLogin} className="mt-5 w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-4 font-semibold">
+          <button onClick={saveAfterLogin} className="lg-btn lg-btn-berry mt-5 w-full px-4 py-4">
             Sign in to save {score * 10} XP + your streak
           </button>
         )}
 
         <div className="mt-6 space-y-3">
-          <button onClick={() => setPhase('pick')} className="block w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-4 font-semibold">
+          <button onClick={() => setPhase('pick')} className="lg-btn lg-btn-primary block w-full px-4 py-4">
             Play again
           </button>
-          <Link href="/" className="block w-full rounded-xl border border-zinc-800 px-4 py-4 text-center font-semibold">
+          <Link href="/" className="lg-card block w-full px-4 py-3.5 text-center font-display font-bold text-ink">
             Home
           </Link>
         </div>
@@ -189,34 +189,34 @@ export default function QuickGame() {
   const q = questions[i];
   return (
     <Shell>
-      <div className="flex items-center justify-between text-sm text-zinc-500">
+      <div className="flex items-center justify-between text-sm text-muted font-semibold">
         <span>
           Question {i + 1}/{questions.length}
         </span>
         <span className="uppercase tracking-wide">{q.subject.replace('-', ' ')}</span>
       </div>
-      <div className="mt-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-        <div className="h-full bg-indigo-500 transition-all" style={{ width: `${(i / questions.length) * 100}%` }} />
+      <div className="mt-1 h-2 rounded-full bg-parchment-deep overflow-hidden">
+        <div className="h-full bg-gold transition-all" style={{ width: `${(i / questions.length) * 100}%` }} />
       </div>
 
-      <h2 className="mt-5 text-lg font-semibold leading-snug">{q.stem}</h2>
+      <h2 className="mt-5 text-xl font-display font-bold leading-snug text-ink">{q.stem}</h2>
 
       <div className="mt-5 space-y-3">
         {q.options.map((opt, idx) => {
           const isCorrect = idx === q.correct_index;
           const revealed = picked !== null;
           const state = !revealed
-            ? 'border-zinc-700 hover:border-indigo-500'
+            ? 'bg-panel border-rule text-ink'
             : isCorrect
-              ? 'border-green-500 bg-green-500/10'
+              ? 'bg-leaf/15 border-leaf text-ink'
               : idx === picked
-                ? 'border-red-500 bg-red-500/10'
-                : 'border-zinc-800 opacity-50';
+                ? 'bg-brick/15 border-brick text-ink'
+                : 'bg-panel border-rule opacity-50 text-ink';
           return (
             <button
               key={idx}
               onClick={() => choose(idx)}
-              className={`block w-full text-left rounded-xl border px-4 py-3 transition ${state}`}
+              className={`block w-full text-left rounded-2xl border-2 px-4 py-3 font-medium transition active:translate-y-0.5 ${state}`}
             >
               {opt}
             </button>
@@ -226,8 +226,8 @@ export default function QuickGame() {
 
       {picked !== null && (
         <div className="mt-5">
-          {q.explanation && <p className="text-sm text-zinc-400">{q.explanation}</p>}
-          <button onClick={next} className="mt-4 w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-4 font-semibold">
+          {q.explanation && <p className="text-sm text-inksoft">{q.explanation}</p>}
+          <button onClick={next} className="lg-btn lg-btn-primary mt-4 w-full px-4 py-4">
             {i + 1 >= questions.length ? 'Finish' : 'Next'}
           </button>
         </div>
