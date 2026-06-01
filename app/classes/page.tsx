@@ -47,8 +47,8 @@ export default function ClassesPage() {
     return (
       <Shell>
         <H>Classes</H>
-        <p className="mt-2 text-zinc-400">Sign in to create or join a class.</p>
-        <Link href="/login?next=/classes" className="mt-6 block rounded-xl bg-indigo-600 px-4 py-3 text-center font-semibold">Sign in</Link>
+        <p className="mt-2 text-inksoft">Sign in to create or join a class.</p>
+        <Link href="/login?next=/classes" className="mt-6 block rounded-xl bg-plum text-white px-4 py-3 text-center font-semibold">Sign in</Link>
       </Shell>
     );
   }
@@ -58,24 +58,24 @@ export default function ClassesPage() {
     const totalDmg = rows.reduce((s, r) => s + Number(r.boss_damage), 0);
     return (
       <Shell>
-        <button onClick={() => setOpen(null)} className="text-sm text-zinc-500 underline">← All classes</button>
+        <button onClick={() => setOpen(null)} className="text-sm text-muted underline">← All classes</button>
         <div className="mt-2 flex items-center justify-between">
           <H>{open.name}</H>
-          {open.is_teacher && <span className="text-xs rounded-full bg-zinc-800 px-2 py-1">code {open.code}</span>}
+          {open.is_teacher && <span className="text-xs rounded-full bg-parchment-deep px-2 py-1">code {open.code}</span>}
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3 text-center">
           <Stat label="class XP this week" value={totalXp} />
           <Stat label="boss damage this week" value={totalDmg} />
         </div>
-        <div className="mt-5 text-sm text-zinc-500">Members ({rows.length})</div>
+        <div className="mt-5 text-sm text-muted">Members ({rows.length})</div>
         <ol className="mt-2 space-y-2">
           {rows.map((r, i) => (
-            <li key={i} className="flex items-center justify-between rounded-xl bg-zinc-900 px-4 py-3">
-              <span className="font-medium"><span className="text-zinc-500 mr-2">{i + 1}.</span>{r.name}</span>
-              <span className="text-sm text-zinc-400">🔥{r.streak} · ⚔{r.boss_damage} · <span className="text-zinc-100 font-bold">{r.weekly_xp} XP</span></span>
+            <li key={i} className="flex items-center justify-between rounded-xl bg-panel px-4 py-3">
+              <span className="font-medium"><span className="text-muted mr-2">{i + 1}.</span>{r.name}</span>
+              <span className="text-sm text-inksoft">🔥{r.streak} · ⚔{r.boss_damage} · <span className="text-ink font-bold">{r.weekly_xp} XP</span></span>
             </li>
           ))}
-          {!rows.length && <p className="text-zinc-600 text-sm">No members yet.</p>}
+          {!rows.length && <p className="text-muted text-sm">No members yet.</p>}
         </ol>
       </Shell>
     );
@@ -85,47 +85,47 @@ export default function ClassesPage() {
     <Shell>
       <div className="flex items-center justify-between">
         <H>Classes</H>
-        <Link href="/" className="text-sm text-zinc-500 underline">Home</Link>
+        <Link href="/" className="text-sm text-muted underline">Home</Link>
       </div>
 
       <div className="mt-5 space-y-2">
         {classes.map((c) => (
           <button key={c.id} onClick={() => openClass(c)}
-            className="block w-full text-left rounded-xl bg-zinc-900 hover:bg-zinc-800 px-4 py-3 transition">
+            className="block w-full text-left rounded-xl bg-panel hover:bg-parchment-deep px-4 py-3 transition">
             <div className="flex items-center justify-between">
               <span className="font-semibold">{c.name}</span>
-              <span className="text-xs text-zinc-500">{c.is_teacher ? 'teacher' : 'student'} · {c.members} 👥</span>
+              <span className="text-xs text-muted">{c.is_teacher ? 'teacher' : 'student'} · {c.members} 👥</span>
             </div>
           </button>
         ))}
-        {!classes.length && <p className="text-zinc-600 text-sm">No classes yet. Create one or join with a code.</p>}
+        {!classes.length && <p className="text-muted text-sm">No classes yet. Create one or join with a code.</p>}
       </div>
 
-      <div className="mt-7 rounded-2xl border border-zinc-800 p-4">
+      <div className="mt-7 rounded-2xl border border-rule p-4">
         <div className="font-semibold">Create a class</div>
-        <p className="text-xs text-zinc-500 mt-0.5">You’ll get a code to share with students.</p>
+        <p className="text-xs text-muted mt-0.5">You’ll get a code to share with students.</p>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. 12 Bio Period 3"
-          className="mt-3 w-full rounded-xl bg-zinc-900 border border-zinc-700 px-4 py-2.5 outline-none focus:border-indigo-500" />
+          className="mt-3 w-full rounded-xl bg-panel border border-rule px-4 py-2.5 outline-none focus:border-plum" />
         <div className="mt-2 flex gap-2">
           {[11, 12].map((y) => (
             <button key={y} onClick={() => setYear(y as 11 | 12)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${year === y ? 'bg-indigo-600' : 'bg-zinc-800'}`}>Y{y}</button>
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${year === y ? 'bg-plum text-white' : 'bg-parchment-deep'}`}>Y{y}</button>
           ))}
           <button onClick={doCreate} disabled={busy || !name.trim()}
-            className="ml-auto rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-1.5 text-sm font-semibold disabled:opacity-40">Create</button>
+            className="ml-auto rounded-lg bg-plum hover:bg-plumdeep text-white px-4 py-1.5 text-sm font-semibold disabled:opacity-40">Create</button>
         </div>
       </div>
 
-      <div className="mt-3 rounded-2xl border border-zinc-800 p-4">
+      <div className="mt-3 rounded-2xl border border-rule p-4">
         <div className="font-semibold">Join a class</div>
         <div className="mt-2 flex gap-2">
           <input value={joinCode} onChange={(e) => setJoinCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6))}
-            placeholder="CODE" className="flex-1 rounded-xl bg-zinc-900 border border-zinc-700 px-4 py-2.5 tracking-[0.2em] outline-none focus:border-indigo-500" />
+            placeholder="CODE" className="flex-1 rounded-xl bg-panel border border-rule px-4 py-2.5 tracking-[0.2em] outline-none focus:border-plum" />
           <button onClick={doJoin} disabled={busy || joinCode.length < 6}
-            className="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 text-sm font-semibold disabled:opacity-40">Join</button>
+            className="rounded-lg bg-plum hover:bg-plumdeep text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40">Join</button>
         </div>
       </div>
-      {err && <p className="mt-3 text-red-400 text-sm">{err}</p>}
+      {err && <p className="mt-3 text-brick text-sm">{err}</p>}
     </Shell>
   );
 }
@@ -136,5 +136,5 @@ const Shell = ({ children }: { children: React.ReactNode }) => (
 );
 const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-bold">{children}</h1>;
 const Stat = ({ label, value }: { label: string; value: number }) => (
-  <div className="rounded-xl bg-zinc-900 px-4 py-3"><div className="text-2xl font-bold">{value}</div><div className="text-xs text-zinc-500">{label}</div></div>
+  <div className="rounded-xl bg-panel px-4 py-3"><div className="text-2xl font-bold">{value}</div><div className="text-xs text-muted">{label}</div></div>
 );

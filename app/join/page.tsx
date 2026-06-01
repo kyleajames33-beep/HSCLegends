@@ -107,12 +107,12 @@ export default function JoinPage() {
         <form onSubmit={join} className="mt-6 space-y-4">
           <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="CODE" maxLength={6} autoCapitalize="characters"
-            className="w-full rounded-xl bg-zinc-900 border border-zinc-700 px-4 py-4 text-center text-3xl font-black tracking-[0.3em] outline-none focus:border-indigo-500" />
+            className="w-full rounded-xl bg-panel border border-rule px-4 py-4 text-center text-3xl font-black tracking-[0.3em] outline-none focus:border-plum" />
           <input value={alias} onChange={(e) => setAlias(e.target.value)}
             placeholder="Your name" maxLength={20}
-            className="w-full rounded-xl bg-zinc-900 border border-zinc-700 px-4 py-3 outline-none focus:border-indigo-500" />
+            className="w-full rounded-xl bg-panel border border-rule px-4 py-3 outline-none focus:border-plum" />
           <button disabled={busy || code.length < 6 || !alias.trim()}
-            className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-4 font-semibold disabled:opacity-40">
+            className="w-full rounded-xl bg-plum hover:bg-plumdeep text-white px-4 py-4 font-semibold disabled:opacity-40">
             Join
           </button>
         </form>
@@ -127,7 +127,7 @@ export default function JoinPage() {
         <div className="flex-1 flex flex-col items-center justify-center text-center">
           <div className="text-5xl mb-4">⏳</div>
           <H>You’re in, {alias}!</H>
-          <p className="text-zinc-400 mt-2">Waiting for the host to start…</p>
+          <p className="text-inksoft mt-2">Waiting for the host to start…</p>
         </div>
       </Shell>
     );
@@ -136,15 +136,15 @@ export default function JoinPage() {
   if (phase === 'question' && q) {
     return (
       <Shell>
-        <div className="flex items-center justify-between text-sm text-zinc-500">
+        <div className="flex items-center justify-between text-sm text-muted">
           <span>Question {q.index + 1}/{q.total}</span>
-          <span className={`font-bold tabular-nums ${timer.remaining <= 5 ? 'text-red-400' : 'text-zinc-300'}`}>{timer.remaining}s</span>
+          <span className={`font-bold tabular-nums ${timer.remaining <= 5 ? 'text-brick' : 'text-ink'}`}>{timer.remaining}s</span>
         </div>
-        <div className="mt-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-          <div className="h-full bg-indigo-500 transition-[width] duration-200" style={{ width: `${timer.frac * 100}%` }} />
+        <div className="mt-1 h-1.5 rounded-full bg-parchment-deep overflow-hidden">
+          <div className="h-full bg-gold transition-[width] duration-200" style={{ width: `${timer.frac * 100}%` }} />
         </div>
         {q.is_double && (
-          <div className="mt-2 rounded-lg bg-amber-500/20 border border-amber-500/50 px-3 py-1.5 text-center text-amber-300 text-sm font-bold animate-pulse">
+          <div className="mt-2 rounded-lg bg-gold/25 border border-gold px-3 py-1.5 text-center text-golddeep text-sm font-bold animate-pulse">
             ⚡ DOUBLE POINTS — get this one!
           </div>
         )}
@@ -152,12 +152,12 @@ export default function JoinPage() {
         <div className="mt-5 space-y-3">
           {(q.options ?? []).map((o, i) => (
             <button key={i} disabled={busy || timer.expired} onClick={() => answer(i)}
-              className="block w-full text-left rounded-xl border border-zinc-700 hover:border-indigo-500 px-4 py-3 disabled:opacity-50">
+              className="block w-full text-left rounded-xl border border-rule hover:border-plum px-4 py-3 disabled:opacity-50">
               {o}
             </button>
           ))}
         </div>
-        {timer.expired && <p className="mt-4 text-center text-zinc-400">⏰ Time’s up — waiting for the next question…</p>}
+        {timer.expired && <p className="mt-4 text-center text-inksoft">⏰ Time’s up — waiting for the next question…</p>}
         {err && <Err>{err}</Err>}
       </Shell>
     );
@@ -168,12 +168,12 @@ export default function JoinPage() {
       <Shell>
         <div className="flex-1 flex flex-col items-center justify-center text-center">
           {result?.is_correct ? (
-            <><div className="text-6xl mb-3">✅</div><H>Correct!</H><p className="text-indigo-400 text-2xl font-bold mt-2">+{result.points}</p></>
+            <><div className="text-6xl mb-3">✅</div><H>Correct!</H><p className="text-berrydeep text-2xl font-bold mt-2">+{result.points}</p></>
           ) : (
             <><div className="text-6xl mb-3">❌</div><H>Not quite</H>
-              <p className="text-zinc-400 mt-2">Answer: <span className="text-zinc-200 font-semibold">{q.options?.[result?.correct_index ?? -1]}</span></p></>
+              <p className="text-inksoft mt-2">Answer: <span className="text-ink font-semibold">{q.options?.[result?.correct_index ?? -1]}</span></p></>
           )}
-          <p className="text-zinc-500 mt-6 text-sm">Waiting for the next question…</p>
+          <p className="text-muted mt-6 text-sm">Waiting for the next question…</p>
         </div>
       </Shell>
     );
@@ -183,24 +183,24 @@ export default function JoinPage() {
   return (
     <Shell>
       <div className="flex-1 flex flex-col items-center justify-center text-center">
-        <p className="text-indigo-400 font-semibold text-sm">GAME OVER</p>
+        <p className="text-berrydeep font-semibold text-sm">GAME OVER</p>
         <div className="text-6xl my-3">{me && me.rank <= 3 ? '🏆' : '🎉'}</div>
         <H>{me ? `#${me.rank}` : 'Done'}</H>
-        <p className="text-zinc-300 mt-2 text-xl font-bold">{me?.score ?? xp?.awarded ?? 0} pts</p>
+        <p className="text-ink mt-2 text-xl font-bold">{me?.score ?? xp?.awarded ?? 0} pts</p>
 
         {xp ? (
-          <p className="mt-4 rounded-xl bg-green-500/10 border border-green-500/40 px-4 py-3 text-green-300 text-sm">
+          <p className="mt-4 rounded-xl bg-leaf/15 border border-leaf/50 px-4 py-3 text-leaf text-sm">
             Saved! +{xp.awarded} XP · {xp.total} total
           </p>
         ) : user ? (
-          <p className="mt-4 text-zinc-500 text-sm">Saving your score…</p>
+          <p className="mt-4 text-muted text-sm">Saving your score…</p>
         ) : (
-          <button onClick={saveScore} className="mt-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-6 py-3 font-semibold">
+          <button onClick={saveScore} className="mt-6 rounded-xl bg-plum hover:bg-plumdeep text-white px-6 py-3 font-semibold">
             Save my {me?.score ?? 0} pts
           </button>
         )}
 
-        <Link href="/join" className="mt-8 text-sm text-zinc-500 underline">Play another</Link>
+        <Link href="/join" className="mt-8 text-sm text-muted underline">Play another</Link>
       </div>
     </Shell>
   );
@@ -211,4 +211,4 @@ const Shell = ({ children }: { children: React.ReactNode }) => (
   <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md w-full mx-auto">{children}</main>
 );
 const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-bold">{children}</h1>;
-const Err = ({ children }: { children: React.ReactNode }) => <p className="mt-4 text-red-400 text-sm">{children}</p>;
+const Err = ({ children }: { children: React.ReactNode }) => <p className="mt-4 text-brick text-sm">{children}</p>;

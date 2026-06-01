@@ -39,7 +39,7 @@ export default function LeaderboardPage() {
     <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md w-full mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">This week 🔥</h1>
-        <Link href="/" className="text-sm text-zinc-500 underline">Home</Link>
+        <Link href="/" className="text-sm text-muted underline">Home</Link>
       </div>
 
       <div className="mt-4 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
@@ -51,15 +51,15 @@ export default function LeaderboardPage() {
 
       <div className="mt-5 flex-1">
         {loading ? (
-          <p className="text-zinc-500">Loading…</p>
+          <p className="text-muted">Loading…</p>
         ) : rows.length === 0 ? (
-          <p className="text-zinc-500 text-sm">No one on the board yet this week. Play a Quick Game to get on it.</p>
+          <p className="text-muted text-sm">No one on the board yet this week. Play a Quick Game to get on it.</p>
         ) : (
           <ol className="space-y-2">
             {rows.map((r) => (
               <li key={r.rank}
-                className={`flex items-center justify-between rounded-xl px-4 py-3 ${r.is_me ? 'bg-indigo-600/20 border border-indigo-500/40' : 'bg-zinc-900'}`}>
-                <span className="font-medium"><span className="text-zinc-500 tabular-nums mr-2">{r.rank}</span>{r.name}{r.is_me ? ' (you)' : ''}</span>
+                className={`flex items-center justify-between rounded-xl px-4 py-3 ${r.is_me ? 'bg-gold/20 border border-gold/60' : 'bg-panel'}`}>
+                <span className="font-medium"><span className="text-muted tabular-nums mr-2">{r.rank}</span>{r.name}{r.is_me ? ' (you)' : ''}</span>
                 <span className="tabular-nums font-bold">{r.xp}</span>
               </li>
             ))}
@@ -67,16 +67,16 @@ export default function LeaderboardPage() {
         )}
       </div>
 
-      <div className="mt-6 border-t border-zinc-800 pt-4">
+      <div className="mt-6 border-t border-rule pt-4">
         {!user ? (
-          <Link href="/login?next=/leaderboard" className="block w-full rounded-xl bg-indigo-600 px-4 py-3 text-center font-semibold">
+          <Link href="/login?next=/leaderboard" className="block w-full rounded-xl bg-plum text-white px-4 py-3 text-center font-semibold">
             Sign in to compete
           </Link>
         ) : (
           <label className="flex items-center justify-between text-sm">
-            <span className="text-zinc-300">Show me on the leaderboard</span>
+            <span className="text-ink">Show me on the leaderboard</span>
             <button onClick={toggle}
-              className={`relative h-6 w-11 rounded-full transition ${optIn ? 'bg-indigo-600' : 'bg-zinc-700'}`}>
+              className={`relative h-6 w-11 rounded-full transition ${optIn ? 'bg-plum text-white' : 'bg-rule'}`}>
               <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${optIn ? 'left-[22px]' : 'left-0.5'}`} />
             </button>
           </label>
@@ -89,7 +89,7 @@ export default function LeaderboardPage() {
 function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick}
-      className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition ${active ? 'bg-indigo-600' : 'bg-zinc-800 text-zinc-300'}`}>
+      className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition ${active ? 'bg-plum text-white' : 'bg-parchment-deep text-ink'}`}>
       {children}
     </button>
   );

@@ -19,11 +19,11 @@ export default async function SharePage({ searchParams }: { searchParams: SP }) 
   const { streak = '0' } = await searchParams;
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-6 py-16 max-w-md w-full mx-auto text-center">
-      <p className="text-indigo-400 font-semibold text-sm">HSC LEGENDS</p>
-      <div className="mt-4 text-7xl font-black">{streak}</div>
-      <div className="text-xl font-bold tracking-wide">DAY STREAK 🔥</div>
-      <p className="mt-4 text-zinc-400">Quick HSC quizzes, streaks, and class boss battles.</p>
-      <Link href="/" className="mt-8 rounded-2xl bg-indigo-600 hover:bg-indigo-500 px-6 py-4 text-lg font-semibold">
+      <p className="text-berrydeep font-display font-bold tracking-[0.15em] text-sm">HSC LEGENDS</p>
+      <div className="mt-4 text-8xl font-display font-extrabold text-ink">{streak}</div>
+      <div className="text-xl font-display font-bold tracking-wide text-coraldeep">DAY STREAK 🔥</div>
+      <p className="mt-4 text-inksoft">Quick HSC quizzes, streaks, and class boss battles.</p>
+      <Link href="/" className="lg-btn lg-btn-primary mt-8 px-6 py-4 text-lg">
         Play HSC Legends ▶
       </Link>
     </main>

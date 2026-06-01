@@ -20,7 +20,7 @@ export default function ShareButton({ streak, className }: { streak: number; cla
     }
   }
   return (
-    <button onClick={share} className={className ?? 'text-sm text-zinc-400 underline'}>
+    <button onClick={share} className={className ?? 'text-sm text-inksoft underline'}>
       {copied ? 'Link copied!' : '📣 Share my streak'}
     </button>
   );

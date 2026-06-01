@@ -40,7 +40,7 @@ function LoginInner() {
   return (
     <main className="flex flex-1 flex-col px-6 pt-16 pb-10 max-w-md w-full mx-auto">
       <h1 className="text-2xl font-bold">{sent ? 'Enter your code' : 'Sign in'}</h1>
-      <p className="text-zinc-400 text-sm mt-1">
+      <p className="text-inksoft text-sm mt-1">
         {sent ? `We emailed a 6-digit code to ${email}.` : 'We’ll email you a one-time code — no password.'}
       </p>
 
@@ -49,10 +49,10 @@ function LoginInner() {
           <input
             type="email" value={email} onChange={(e) => setEmail(e.target.value)}
             placeholder="you@email.com" autoComplete="email" required
-            className="w-full rounded-xl bg-zinc-900 border border-zinc-700 px-4 py-3 outline-none focus:border-indigo-500"
+            className="w-full rounded-xl bg-panel border border-rule px-4 py-3 outline-none focus:border-plum"
           />
           <button disabled={busy || !email.includes('@')}
-            className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-4 font-semibold disabled:opacity-40">
+            className="w-full rounded-xl bg-plum hover:bg-plumdeep text-white px-4 py-4 font-semibold disabled:opacity-40">
             {busy ? 'Sending…' : 'Send code'}
           </button>
         </form>
@@ -62,18 +62,18 @@ function LoginInner() {
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 10))}
             placeholder="CODE" maxLength={10} autoFocus autoCapitalize="characters" autoComplete="one-time-code"
-            className="w-full rounded-xl bg-zinc-900 border border-zinc-700 px-4 py-3 text-center text-2xl tracking-[0.3em] outline-none focus:border-indigo-500"
+            className="w-full rounded-xl bg-panel border border-rule px-4 py-3 text-center text-2xl tracking-[0.3em] outline-none focus:border-plum"
           />
           <button disabled={busy || code.length < 6}
-            className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-4 font-semibold disabled:opacity-40">
+            className="w-full rounded-xl bg-plum hover:bg-plumdeep text-white px-4 py-4 font-semibold disabled:opacity-40">
             {busy ? 'Verifying…' : 'Verify & sign in'}
           </button>
-          <button type="button" onClick={() => { setSent(false); setCode(''); }} className="w-full text-sm text-zinc-500">
+          <button type="button" onClick={() => { setSent(false); setCode(''); }} className="w-full text-sm text-muted">
             Use a different email
           </button>
         </form>
       )}
-      {err && <p className="mt-4 text-red-400 text-sm">{err}</p>}
+      {err && <p className="mt-4 text-brick text-sm">{err}</p>}
     </main>
   );
 }
