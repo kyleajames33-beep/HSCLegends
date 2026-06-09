@@ -8,6 +8,7 @@ import { useUser } from '@/lib/use-user';
 import { getQuizQuestions, SUBJECTS, type Question, type Subject } from '@/lib/questions';
 import { recordQuickGame, STREAK_MSG, type QuickResult } from '@/lib/progress';
 import ShareButton from '@/components/share-button';
+import AnswerTile from '@/components/answer-tile';
 
 type Phase = 'pick' | 'loading' | 'play' | 'done' | 'error';
 type Sel = { subject: Subject; year: 11 | 12 };
@@ -203,23 +204,18 @@ export default function QuickGame() {
 
       <div className="mt-5 space-y-3">
         {q.options.map((opt, idx) => {
-          const isCorrect = idx === q.correct_index;
           const revealed = picked !== null;
-          const state = !revealed
-            ? 'bg-panel border-rule text-ink'
-            : isCorrect
-              ? 'bg-leaf/15 border-leaf text-ink'
+          const reveal = !revealed
+            ? null
+            : idx === q.correct_index
+              ? 'correct'
               : idx === picked
-                ? 'bg-brick/15 border-brick text-ink'
-                : 'bg-panel border-rule opacity-50 text-ink';
+                ? 'wrong'
+                : 'dim';
           return (
-            <button
-              key={idx}
-              onClick={() => choose(idx)}
-              className={`block w-full text-left rounded-2xl border-2 px-4 py-3 font-medium transition active:translate-y-0.5 ${state}`}
-            >
+            <AnswerTile key={idx} index={idx} onClick={() => choose(idx)} disabled={revealed} reveal={reveal}>
               {opt}
-            </button>
+            </AnswerTile>
           );
         })}
       </div>

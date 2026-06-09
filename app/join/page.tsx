@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import { useCountdown } from '@/lib/use-countdown';
+import AnswerTile from '@/components/answer-tile';
 import {
   joinGame, getLiveQuestion, submitAnswer, fetchPlayers, subscribeGame, claimGameXp,
   type LiveQuestion, type Player,
@@ -148,13 +149,12 @@ export default function JoinPage() {
             ⚡ DOUBLE POINTS — get this one!
           </div>
         )}
-        <h2 className="mt-3 text-xl font-semibold leading-snug">{q.stem}</h2>
+        <h2 className="mt-3 text-xl font-display font-bold leading-snug">{q.stem}</h2>
         <div className="mt-5 space-y-3">
           {(q.options ?? []).map((o, i) => (
-            <button key={i} disabled={busy || timer.expired} onClick={() => answer(i)}
-              className="block w-full text-left rounded-xl border border-rule hover:border-plum px-4 py-3 disabled:opacity-50">
+            <AnswerTile key={i} index={i} disabled={busy || timer.expired} onClick={() => answer(i)}>
               {o}
-            </button>
+            </AnswerTile>
           ))}
         </div>
         {timer.expired && <p className="mt-4 text-center text-inksoft">⏰ Time’s up — waiting for the next question…</p>}

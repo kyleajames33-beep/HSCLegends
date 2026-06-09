@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useCountdown } from '@/lib/use-countdown';
+import AnswerTile from '@/components/answer-tile';
 import { SUBJECTS, type Subject } from '@/lib/questions';
 import {
   createGame, startGame, nextQuestion, getLiveQuestion, fetchPlayers,
@@ -129,10 +130,10 @@ export default function HostPage() {
             ⚡ DOUBLE POINTS
           </div>
         )}
-        <h2 className="mt-3 text-2xl font-bold leading-snug">{q.stem}</h2>
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <h2 className="mt-3 text-2xl font-display font-bold leading-snug">{q.stem}</h2>
+        <div className="mt-4 space-y-3">
           {(q.options ?? []).map((o, i) => (
-            <div key={i} className="rounded-xl border border-rule px-4 py-3">{o}</div>
+            <AnswerTile key={i} index={i}>{o}</AnswerTile>
           ))}
         </div>
         <div className="mt-6">
