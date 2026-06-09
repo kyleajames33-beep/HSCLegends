@@ -23,9 +23,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${outfit.variable} ${dmSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
-        {children}
-        <SWRegister />
+      <body className="min-h-full">
+        <div className="app-shell">
+          {children}
+          <SWRegister />
+        </div>
       </body>
     </html>
   );
