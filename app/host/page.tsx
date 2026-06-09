@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useCountdown } from '@/lib/use-countdown';
 import AnswerTile from '@/components/answer-tile';
+import MathText from '@/components/math-text';
 import { SUBJECTS, type Subject } from '@/lib/questions';
 import {
   createGame, startGame, nextQuestion, getLiveQuestion, fetchPlayers,
@@ -130,10 +131,10 @@ export default function HostPage() {
             ⚡ DOUBLE POINTS
           </div>
         )}
-        <h2 className="mt-3 text-2xl font-display font-bold leading-snug">{q.stem}</h2>
+        <h2 className="mt-3 text-2xl font-display font-bold leading-snug"><MathText text={q.stem} /></h2>
         <div className="mt-4 space-y-3">
           {(q.options ?? []).map((o, i) => (
-            <AnswerTile key={i} index={i}>{o}</AnswerTile>
+            <AnswerTile key={i} index={i}><MathText text={o} /></AnswerTile>
           ))}
         </div>
         <div className="mt-6">

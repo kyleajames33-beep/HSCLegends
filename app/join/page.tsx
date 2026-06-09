@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import { useCountdown } from '@/lib/use-countdown';
 import AnswerTile from '@/components/answer-tile';
+import MathText from '@/components/math-text';
 import {
   joinGame, getLiveQuestion, submitAnswer, fetchPlayers, subscribeGame, claimGameXp,
   type LiveQuestion, type Player,
@@ -149,11 +150,11 @@ export default function JoinPage() {
             ⚡ DOUBLE POINTS — get this one!
           </div>
         )}
-        <h2 className="mt-3 text-xl font-display font-bold leading-snug">{q.stem}</h2>
+        <h2 className="mt-3 text-xl font-display font-bold leading-snug"><MathText text={q.stem} /></h2>
         <div className="mt-5 space-y-3">
           {(q.options ?? []).map((o, i) => (
             <AnswerTile key={i} index={i} disabled={busy || timer.expired} onClick={() => answer(i)}>
-              {o}
+              <MathText text={o} />
             </AnswerTile>
           ))}
         </div>
@@ -171,7 +172,7 @@ export default function JoinPage() {
             <><div className="text-6xl mb-3">✅</div><H>Correct!</H><p className="text-berrydeep text-2xl font-bold mt-2">+{result.points}</p></>
           ) : (
             <><div className="text-6xl mb-3">❌</div><H>Not quite</H>
-              <p className="text-inksoft mt-2">Answer: <span className="text-ink font-semibold">{q.options?.[result?.correct_index ?? -1]}</span></p></>
+              <p className="text-inksoft mt-2">Answer: <span className="text-ink font-semibold"><MathText text={q.options?.[result?.correct_index ?? -1] ?? ''} /></span></p></>
           )}
           <p className="text-muted mt-6 text-sm">Waiting for the next question…</p>
         </div>

@@ -9,6 +9,7 @@ import { getQuizQuestions, SUBJECTS, type Question, type Subject } from '@/lib/q
 import { recordQuickGame, STREAK_MSG, type QuickResult } from '@/lib/progress';
 import ShareButton from '@/components/share-button';
 import AnswerTile from '@/components/answer-tile';
+import MathText from '@/components/math-text';
 
 type Phase = 'pick' | 'loading' | 'play' | 'done' | 'error';
 type Sel = { subject: Subject; year: 11 | 12 };
@@ -200,7 +201,9 @@ export default function QuickGame() {
         <div className="h-full bg-gold transition-all" style={{ width: `${(i / questions.length) * 100}%` }} />
       </div>
 
-      <h2 className="mt-5 text-xl font-display font-bold leading-snug text-ink">{q.stem}</h2>
+      <h2 className="mt-5 text-xl font-display font-bold leading-snug text-ink">
+        <MathText text={q.stem} />
+      </h2>
 
       <div className="mt-5 space-y-3">
         {q.options.map((opt, idx) => {
@@ -214,7 +217,7 @@ export default function QuickGame() {
                 : 'dim';
           return (
             <AnswerTile key={idx} index={idx} onClick={() => choose(idx)} disabled={revealed} reveal={reveal}>
-              {opt}
+              <MathText text={opt} />
             </AnswerTile>
           );
         })}
@@ -225,7 +228,7 @@ export default function QuickGame() {
           <p className={`font-display font-extrabold text-xl ${picked === q.correct_index ? 'text-leaf' : 'text-brick'}`}>
             {picked === q.correct_index ? '✅ Correct!' : '❌ Not quite'}
           </p>
-          {q.explanation && <p className="mt-1 text-sm text-inksoft">{q.explanation}</p>}
+          {q.explanation && <p className="mt-1 text-sm text-inksoft"><MathText text={q.explanation} /></p>}
           <button onClick={next} className="lg-btn lg-btn-primary mt-4 w-full px-4 py-4">
             {i + 1 >= questions.length ? 'Finish' : 'Next'}
           </button>
