@@ -24,8 +24,16 @@ export default function AnswerTile({
   reveal?: Reveal;
 }) {
   const s = SHAPES[index % 4];
-  const dim = reveal === 'dim';
-  const badge = reveal === 'correct' ? '✓' : reveal === 'wrong' ? '✗' : s.icon;
+  // On reveal, recolor to the universal green/red so "right" is unmistakable.
+  let bg = s.bg, deep = s.deep, fg = s.fg, badge: string = s.icon, opacity = 1, glow = '';
+  if (reveal === 'correct') {
+    bg = '#4fa56f'; deep = '#3a7d54'; fg = '#fff'; badge = '✓';
+    glow = '0 0 0 4px rgba(79,165,111,0.35), ';
+  } else if (reveal === 'wrong') {
+    bg = '#c4646b'; deep = '#9c4a50'; fg = '#fff'; badge = '✗';
+  } else if (reveal === 'dim') {
+    opacity = 0.4;
+  }
 
   return (
     <button
@@ -33,17 +41,16 @@ export default function AnswerTile({
       disabled={disabled || !onClick}
       className="group flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-left font-display font-bold transition active:translate-y-[3px] disabled:cursor-default"
       style={{
-        background: s.bg,
-        color: s.fg,
-        boxShadow: `0 4px 0 ${s.deep}`,
-        opacity: dim ? 0.4 : 1,
-        outline: reveal === 'correct' ? '3px solid #2d3142' : 'none',
-        outlineOffset: 2,
+        background: bg,
+        color: fg,
+        boxShadow: `${glow}0 4px 0 ${deep}`,
+        opacity,
+        transform: reveal === 'correct' ? 'scale(1.02)' : 'none',
       }}
     >
       <span
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm"
-        style={{ background: 'rgba(255,255,255,0.25)', color: s.fg }}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg font-extrabold"
+        style={{ background: 'rgba(255,255,255,0.28)', color: fg }}
       >
         {badge}
       </span>

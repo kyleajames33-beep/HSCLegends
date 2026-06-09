@@ -222,7 +222,10 @@ export default function QuickGame() {
 
       {picked !== null && (
         <div className="mt-5">
-          {q.explanation && <p className="text-sm text-inksoft">{q.explanation}</p>}
+          <p className={`font-display font-extrabold text-xl ${picked === q.correct_index ? 'text-leaf' : 'text-brick'}`}>
+            {picked === q.correct_index ? '✅ Correct!' : '❌ Not quite'}
+          </p>
+          {q.explanation && <p className="mt-1 text-sm text-inksoft">{q.explanation}</p>}
           <button onClick={next} className="lg-btn lg-btn-primary mt-4 w-full px-4 py-4">
             {i + 1 >= questions.length ? 'Finish' : 'Next'}
           </button>
