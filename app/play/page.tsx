@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import { getQuizQuestions, SUBJECTS, type Question, type Subject } from '@/lib/questions';
 import { recordQuickGame, STREAK_MSG, type QuickResult } from '@/lib/progress';
+import { recordDailyQuiz } from '@/lib/daily';
 import ShareButton from '@/components/share-button';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
@@ -27,8 +28,23 @@ export default function QuickGame() {
   const [total, setTotal] = useState(10);
   const [sel, setSel] = useState<Sel | null>(null);
   const [result, setResult] = useState<QuickResult | null>(null);
+  const [daily, setDaily] = useState<Sel | null>(null);
+  const [dailyCounted, setDailyCounted] = useState(true);
   const [saveErr, setSaveErr] = useState('');
   const [err, setErr] = useState('');
+
+  // Daily mode: ?daily=1&subject=…&year=… auto-starts the prescribed quiz.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('daily') !== '1') return;
+    const subject = p.get('subject') as Subject;
+    const year = Number(p.get('year')) as 11 | 12;
+    if (subject && (year === 11 || year === 12)) {
+      setDaily({ subject, year });
+      start(subject, year);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function start(subject: Subject, year: 11 | 12) {
     setPhase('loading');
@@ -53,7 +69,13 @@ export default function QuickGame() {
   async function save(subject: Subject, year: 11 | 12, correct: number, tot: number) {
     setSaveErr('');
     try {
-      setResult(await recordQuickGame(sb, subject, year, correct, tot));
+      if (daily) {
+        const r = await recordDailyQuiz(sb, subject, year, correct, tot);
+        setDailyCounted(r.counted);
+        setResult({ xp_awarded: r.xp_awarded, total_xp: r.total_xp, streak: r.streak, streak_event: r.streak_event });
+      } else {
+        setResult(await recordQuickGame(sb, subject, year, correct, tot));
+      }
     } catch (e) {
       setSaveErr(e instanceof Error ? e.message : 'Could not save.');
     }
@@ -173,6 +195,15 @@ export default function QuickGame() {
           <button onClick={saveAfterLogin} className="lg-btn lg-btn-berry mt-5 w-full px-4 py-4">
             Sign in to save {score * 10} XP + your streak
           </button>
+        )}
+
+        {daily && result && (
+          <div className="mt-3 text-center">
+            {!dailyCounted && <p className="text-xs text-muted mb-1">Already done today — practice runs don’t re-count.</p>}
+            <Link href={`/leaderboard?subject=${daily.subject}&year=${daily.year}`} className="text-sm text-berrydeep font-semibold underline">
+              {SUBJECTS.find((s) => s.id === daily.subject)?.label} Y{daily.year} leaderboard →
+            </Link>
+          </div>
         )}
 
         <div className="mt-6 space-y-3">

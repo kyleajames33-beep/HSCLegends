@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import AuthLink from '@/components/auth-link';
 import HomeStats from '@/components/home-stats';
+import TodayQuizzes from '@/components/today-quizzes';
 import InstallPrompt from '@/components/install-prompt';
 import OnboardingGate from '@/components/onboarding-gate';
 import NotificationToggle from '@/components/notification-toggle';
@@ -19,11 +20,14 @@ export default function Home() {
 
         <HomeStats />
 
+        <TodayQuizzes />
+
         <Link
           href="/play"
-          className="lg-btn lg-btn-primary mt-8 block px-6 py-5 text-center text-xl"
+          className="lg-card mt-4 flex items-center justify-between px-4 py-3.5 active:translate-y-0.5 transition"
         >
-          ▶ Quick Game
+          <span className="font-display font-bold text-ink">🎲 Free practice</span>
+          <span className="text-sm text-muted">any subject →</span>
         </Link>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
