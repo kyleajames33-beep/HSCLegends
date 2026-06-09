@@ -14,7 +14,7 @@ function render(tex: string, display: boolean): string {
 
 const RE = /\$\$([^$]+)\$\$|\$([^$]+)\$/g;
 
-export default function MathText({ text, className }: { text: string; className?: string }) {
+export default function MathText({ text, className }: { text?: string | null; className?: string }) {
   if (!text || !text.includes('$')) return <span className={className}>{text}</span>;
 
   const parts: { kind: 'text' | 'math'; value: string; display?: boolean }[] = [];
