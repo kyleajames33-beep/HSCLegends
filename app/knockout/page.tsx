@@ -32,8 +32,10 @@ export default function KnockoutPage() {
   const [answered, setAnswered] = useState<{ correct: boolean; correct_index: number; points: number } | null>(null);
   const [results, setResults] = useState<KoResult[]>([]);
   const [now, setNow] = useState(() => Date.now());
+  const [koFlash, setKoFlash] = useState(0);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const roundRef = useRef({ round: -2, alive: 0 });
 
   const subRef = useRef<(() => void) | null>(null);
   const drive = useRef({ st: null as KoState | null, room: '', startFired: false, advanceRound: -2 });
@@ -50,6 +52,12 @@ export default function KnockoutPage() {
     if (!rm) return;
     const s = await koState(sb, rm);
     setSt(s);
+    const pr = roundRef.current;
+    if (s.status === 'active' && s.round > pr.round && pr.round >= 0 && pr.alive > s.alive) {
+      setKoFlash(pr.alive - s.alive);
+      setTimeout(() => setKoFlash(0), 1800);
+    }
+    roundRef.current = { round: s.round, alive: s.alive };
     if (pl) setMe(await koMyState(sb, pl));
     if (s.round !== answeredRound.current) setAnswered(null);
     if (s.status === 'finished' && results.length === 0) setResults(await koResults(sb, rm));
@@ -188,12 +196,17 @@ export default function KnockoutPage() {
   // ---------- FINISHED ----------
   if (st?.status === 'finished') {
     const mine = results.find((r) => r.is_me);
+    const rounds = mine ? (mine.alive ? st.total : (mine.eliminated_round ?? 0) + 1) : 0;
+    const xp = mine ? 15 + rounds * 8 + (mine.alive ? 70 : 0) : 0;
     return (
       <Arena>
         <p className="text-gold font-display font-bold text-sm">KNOCKOUT OVER</p>
         <div className="text-center my-3">
           <div className="text-7xl">{mine?.rank === 1 ? '👑' : mine && mine.rank <= 3 ? '🏆' : '💀'}</div>
           <h1 className="mt-2 text-3xl font-display font-extrabold">{mine ? `#${mine.rank}` : 'Done'}</h1>
+          {mine && (user
+            ? <p className="mt-1 text-gold font-display font-bold">+{xp} XP · saved to your League</p>
+            : <p className="mt-1 text-white/60 text-sm">Sign in before a game to earn XP.</p>)}
         </div>
         <ol className="space-y-2">
           {results.slice(0, 8).map((r) => (
@@ -228,6 +241,11 @@ export default function KnockoutPage() {
           style={{ width: `${st?.per_q_seconds ? (tLeft / st.per_q_seconds) * 100 : 0}%` }} />
       </div>
 
+      {koFlash > 0 && (
+        <div className="mt-2 rounded-xl bg-rose-500/30 border border-rose-400/50 px-4 py-2 text-center font-display font-extrabold animate-pulse">
+          💀 {koFlash} knocked out!
+        </div>
+      )}
       {eliminated && (
         <div className="mt-4 rounded-xl bg-black/30 border border-white/10 px-4 py-2 text-center text-sm">
           💀 You’re out{me?.eliminated_round != null ? ` — survived ${me.eliminated_round + 1} rounds` : ''}. Watching…
