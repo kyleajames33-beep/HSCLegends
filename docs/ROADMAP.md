@@ -24,6 +24,24 @@ Across the entire market, **one cell is empty**: a genuinely **fun, free, phone-
 
 ---
 
+## ✅ SHIPPED 2026-06-13 (this session)
+
+All on `main`, prod DB migrated, build-green, RPCs verified end-to-end (rolled-back SQL), routes render-smoke-tested. **Not yet UI-tested by a real signed-in user** — see memory `pending-tests`.
+
+- **Economy foundation** — earn-only Sparks (`coins`), `coin_ledger`, `credit_coins`/`spend_coins`/`get_wallet`
+- **Legend Cards** ([/collection](../app/collection/page.tsx)) — 36 cards, rarity tiers, packs w/ published odds, dupe sell-back, pack-opening animation
+- **Learning engine** ([/review](../app/review/page.tsx), [/progress](../app/progress/page.tsx)) — SM-2 SRS, per-topic mastery, predicted band; `record_attempt` wired into `/play`
+- **HSC modes** ([/exam](../app/exam/page.tsx), [/topics](../app/topics/page.tsx)) — timed Section I → band; syllabus map by module + drill
+- **Retention** ([/rewards](../app/rewards/page.tsx)) — Daily Spin + login ladder, Streak Freeze, daily/weekly Quests; `increment_quest` wired into `/play` + all Arena modes
+- **Power-ups** — 50-50/Hint/Double Sparks/Skip/Time Freeze; shop on `/rewards`, wired into `/play`
+- **Achievements** ([/achievements](../app/achievements/page.tsx)) — 14 badges from live activity
+- **Welcome bonus** — 200 Sparks on first sign-in (idempotent)
+- **Boss art** — Biology real (OpenArt), optimised to 512px (~90% lighter); other 5 = placeholders
+
+**Blocked / deferred:** AI "Quiz My Notes" (needs ANTHROPIC_API_KEY — not in env). Smart notifications (needs pg_cron + device test). Leagues, Friends, Solo Boss Campaign (bigger, not started).
+
+---
+
 ## Four build pillars
 
 1. **Retention Engine** — the daily habit loop (streaks+mercy, quests, gems, daily spin, smart notifications, leagues, onboarding).
