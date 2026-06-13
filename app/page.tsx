@@ -31,16 +31,20 @@ export default function Home() {
           <span className="text-sm text-muted inline-flex items-center gap-1">any subject <ChevronRight className="h-4 w-4" /></span>
         </Link>
 
-        <Link href="/knockout" className="mt-3 block rounded-2xl px-5 py-4 active:translate-y-0.5 transition text-white"
-          style={{ background: 'linear-gradient(135deg,#2d3142,#4e4068)', boxShadow: '0 4px 0 #1a1d2e' }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-display font-extrabold text-lg">☠️ Knockout</div>
-              <div className="text-xs text-white/60">battle royale · last one standing</div>
-            </div>
-            <span className="text-2xl">⚡</span>
-          </div>
-        </Link>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <Link href="/knockout" className="rounded-2xl px-4 py-4 active:translate-y-0.5 transition text-white"
+            style={{ background: 'linear-gradient(135deg,#2d3142,#4e4068)', boxShadow: '0 4px 0 #1a1d2e' }}>
+            <div className="text-2xl">☠️</div>
+            <div className="font-display font-extrabold mt-1">Knockout</div>
+            <div className="text-xs text-white/60">battle royale</div>
+          </Link>
+          <Link href="/duel" className="rounded-2xl px-4 py-4 active:translate-y-0.5 transition text-white"
+            style={{ background: 'linear-gradient(135deg,#9c5c6e,#6d5b8a)', boxShadow: '0 4px 0 #4e4068' }}>
+            <div className="text-2xl">⚔️</div>
+            <div className="font-display font-extrabold mt-1">Duel</div>
+            <div className="text-xs text-white/70">1v1 · ranked ELO</div>
+          </Link>
+        </div>
 
         <div className="mt-3 grid grid-cols-2 gap-3">
           <Link href="/join" className="lg-card px-4 py-4 transition active:translate-y-0.5">
