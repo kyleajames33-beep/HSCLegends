@@ -1,126 +1,157 @@
 import type { Subject } from '@/lib/questions';
 
-// Hand-built SVG boss creatures — one cohesive monster family, themed per subject,
-// with expressions that react to HP (ok → hurt → critical → knocked out).
-type Kind = 'cilia' | 'bubbles' | 'orbit' | 'angular' | 'curve' | 'spiral';
-const CONFIG: Record<Subject, { body: [string, string]; accent: string; kind: Kind }> = {
-  biology: { body: ['#8fd3a6', '#3f8f63'], accent: '#2c6e49', kind: 'cilia' },
-  chemistry: { body: ['#8ea2d6', '#4257a0'], accent: '#2c3e80', kind: 'bubbles' },
-  physics: { body: ['#9a86c4', '#4e4068'], accent: '#d6a85f', kind: 'orbit' },
-  'maths-standard': { body: ['#7fc6c2', '#2f8f88'], accent: '#1f6b66', kind: 'angular' },
-  'maths-advanced': { body: ['#86a8d6', '#3a5e9c', ], accent: '#d6a85f', kind: 'curve' },
-  'maths-ext1': { body: ['#c79ad6', '#7d4e9c'], accent: '#5a3578', kind: 'spiral' },
+// Hand-built SVG boss monsters — distinct menacing silhouette per subject, with
+// expressions that react to HP (ok → hurt → critical → knocked out).
+const THEME: Record<Subject, { a: string; b: string; dark: string; accent: string }> = {
+  biology: { a: '#7fd39b', b: '#2c6e49', dark: '#1f4e34', accent: '#1f5236' },
+  chemistry: { a: '#9a8fe0', b: '#463f8c', dark: '#2e2960', accent: '#6be0a0' },
+  physics: { a: '#6f5ca0', b: '#241d3e', dark: '#120f22', accent: '#d6a85f' },
+  'maths-standard': { a: '#67d6cd', b: '#1f6b66', dark: '#134a46', accent: '#0e4a45' },
+  'maths-advanced': { a: '#6f97cf', b: '#243d5e', dark: '#162840', accent: '#d6a85f' },
+  'maths-ext1': { a: '#bd8fdc', b: '#5a3578', dark: '#3c2152', accent: '#e0b3ff' },
 };
 
 type Mood = 'ok' | 'hurt' | 'crit' | 'ko';
-function moodFrom(frac: number, defeated: boolean): Mood {
-  if (defeated) return 'ko';
-  if (frac > 0.6) return 'ok';
-  if (frac > 0.25) return 'hurt';
-  return 'crit';
-}
+const moodFrom = (frac: number, defeated: boolean): Mood =>
+  defeated ? 'ko' : frac > 0.6 ? 'ok' : frac > 0.25 ? 'hurt' : 'crit';
 
 export default function BossArt({
   subject, frac, defeated, className,
 }: { subject: Subject; frac: number; defeated?: boolean; className?: string }) {
-  const c = CONFIG[subject];
+  const t = THEME[subject];
   const mood = moodFrom(frac, defeated ?? false);
-  const gid = `bg-${subject}`;
-
+  const gid = `bb-${subject}`;
   return (
-    <svg viewBox="0 0 140 150" className={className} role="img" aria-label={`${subject} boss`}>
+    <svg viewBox="0 0 150 160" className={className} role="img" aria-label={`${subject} boss`}>
       <defs>
-        <radialGradient id={gid} cx="40%" cy="32%" r="75%">
-          <stop offset="0%" stopColor={c.body[0]} />
-          <stop offset="100%" stopColor={c.body[1]} />
+        <radialGradient id={gid} cx="42%" cy="34%" r="75%">
+          <stop offset="0%" stopColor={t.a} />
+          <stop offset="100%" stopColor={t.b} />
+        </radialGradient>
+        <radialGradient id={`${gid}-eye`} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fff" />
+          <stop offset="100%" stopColor="#ffe9b0" />
         </radialGradient>
       </defs>
-
-      {/* behind-body accents */}
-      {c.kind === 'orbit' && (
-        <g stroke={c.accent} strokeWidth="3" fill="none" opacity="0.9">
-          <ellipse cx="70" cy="78" rx="62" ry="22" transform="rotate(-18 70 78)" />
-          <circle cx="14" cy="64" r="2.5" fill="#fff" stroke="none" />
-          <circle cx="126" cy="92" r="2" fill="#fff" stroke="none" />
-        </g>
-      )}
-      {c.kind === 'cilia' &&
-        Array.from({ length: 12 }).map((_, i) => {
-          const a = (i / 12) * Math.PI * 2;
-          return (
-            <line key={i} x1={70 + Math.cos(a) * 52} y1={78 + Math.sin(a) * 56}
-              x2={70 + Math.cos(a) * 64} y2={78 + Math.sin(a) * 70}
-              stroke={c.accent} strokeWidth="4" strokeLinecap="round" />
-          );
-        })}
-      {c.kind === 'angular' && (
-        <g fill={c.accent}>
-          <path d="M70 6 L84 26 L56 26 Z" />
-          <path d="M30 20 L42 36 L18 36 Z" opacity="0.8" />
-          <path d="M110 20 L122 36 L98 36 Z" opacity="0.8" />
-        </g>
-      )}
-
-      {/* body */}
-      <path
-        d="M70 16 C104 16 126 40 126 76 C126 112 102 134 70 134 C38 134 14 112 14 76 C14 40 36 16 70 16 Z"
-        fill={`url(#${gid})`} stroke={c.body[1]} strokeWidth="2" />
-
-      {/* on-body accents */}
-      {c.kind === 'bubbles' && (
-        <g fill="#fff" opacity="0.55">
-          <circle cx="48" cy="104" r="6" /><circle cx="64" cy="116" r="4" /><circle cx="58" cy="94" r="3" />
-        </g>
-      )}
-      {c.kind === 'curve' && (
-        <path d="M30 112 C 52 70, 92 118, 112 60" fill="none" stroke={c.accent} strokeWidth="5" strokeLinecap="round" />
-      )}
-      {c.kind === 'spiral' && (
-        <path d="M52 104 a10 10 0 1 1 18 0 a14 14 0 1 0 -18 8" fill="none" stroke={c.accent} strokeWidth="5" strokeLinecap="round" opacity="0.85" />
-      )}
-
-      <Face mood={mood} />
+      <Body subject={subject} t={t} gid={gid} />
+      <Face mood={mood} eyeGid={`${gid}-eye`} accent={t.accent} dark={t.dark} />
     </svg>
   );
 }
 
-function Face({ mood }: { mood: Mood }) {
-  const koOrCrit = mood === 'ko' || mood === 'crit';
+function Body({ subject, t, gid }: { subject: Subject; t: { a: string; b: string; dark: string; accent: string }; gid: string }) {
+  const fill = `url(#${gid})`;
+  const stroke = t.dark;
+  switch (subject) {
+    case 'biology': // spiky pathogen
+      return (
+        <g>
+          {Array.from({ length: 12 }).map((_, i) => {
+            const ang = (i / 12) * Math.PI * 2;
+            const x = 75 + Math.cos(ang) * 54, y = 82 + Math.sin(ang) * 54;
+            const tx = 75 + Math.cos(ang) * 72, ty = 82 + Math.sin(ang) * 72;
+            return (
+              <g key={i}>
+                <line x1={x} y1={y} x2={tx} y2={ty} stroke={t.accent} strokeWidth="5" strokeLinecap="round" />
+                <circle cx={tx} cy={ty} r="5.5" fill={t.accent} />
+              </g>
+            );
+          })}
+          <circle cx="75" cy="82" r="55" fill={fill} stroke={stroke} strokeWidth="3" />
+          {[[52, 60], [98, 64], [60, 104], [96, 100]].map(([x, y], i) => (
+            <circle key={i} cx={x} cy={y} r="6" fill={t.accent} opacity="0.55" />
+          ))}
+        </g>
+      );
+    case 'chemistry': // melting ooze
+      return (
+        <g>
+          <path d="M30 70 C30 36 120 36 120 70 C120 96 124 108 116 124 C112 132 104 120 98 130 C92 140 86 126 78 132 C70 138 64 124 56 130 C48 136 42 124 36 122 C28 110 30 96 30 70 Z"
+            fill={fill} stroke={stroke} strokeWidth="3" />
+          <circle cx="58" cy="116" r="6" fill="#fff" opacity="0.5" />
+          <circle cx="92" cy="120" r="4" fill="#fff" opacity="0.5" />
+          <ellipse cx="60" cy="58" rx="13" ry="9" fill="#fff" opacity="0.25" />
+        </g>
+      );
+    case 'physics': // singularity orb + ring
+      return (
+        <g>
+          <ellipse cx="75" cy="84" rx="66" ry="24" transform="rotate(-20 75 84)" fill="none" stroke={t.accent} strokeWidth="4" opacity="0.9" />
+          <circle cx="75" cy="82" r="50" fill={fill} stroke={stroke} strokeWidth="3" />
+          <circle cx="75" cy="82" r="50" fill="#000" opacity="0.25" />
+          <g fill="#fff"><circle cx="40" cy="50" r="2" /><circle cx="116" cy="70" r="1.6" /><circle cx="60" cy="124" r="1.6" /></g>
+        </g>
+      );
+    case 'maths-standard': // crystal
+      return (
+        <g>
+          <path d="M75 24 L122 64 L104 132 L46 132 L28 64 Z" fill={fill} stroke={stroke} strokeWidth="3" strokeLinejoin="round" />
+          <path d="M75 24 L75 132 M28 64 L75 78 L122 64 M46 132 L75 78 L104 132" stroke="#fff" strokeWidth="2" opacity="0.3" fill="none" />
+        </g>
+      );
+    case 'maths-advanced': // horned beast
+      return (
+        <g>
+          <path d="M40 40 Q30 18 50 22 Q46 34 58 40 Z" fill={t.b} />
+          <path d="M110 40 Q120 18 100 22 Q104 34 92 40 Z" fill={t.b} />
+          <path d="M28 84 C28 44 122 44 122 84 C122 120 100 138 75 138 C50 138 28 120 28 84 Z" fill={fill} stroke={stroke} strokeWidth="3" />
+          <path d="M44 116 C58 96 92 134 106 104" fill="none" stroke={t.accent} strokeWidth="5" strokeLinecap="round" />
+        </g>
+      );
+    case 'maths-ext1': // spiral horns
+      return (
+        <g>
+          <path d="M46 44 a12 12 0 1 0 -16 -4 a16 16 0 1 1 22 -2" fill="none" stroke={t.accent} strokeWidth="5" strokeLinecap="round" />
+          <path d="M104 44 a12 12 0 1 1 16 -4 a16 16 0 1 0 -22 -2" fill="none" stroke={t.accent} strokeWidth="5" strokeLinecap="round" />
+          <circle cx="75" cy="86" r="52" fill={fill} stroke={stroke} strokeWidth="3" />
+          <path d="M58 92 a9 9 0 1 1 16 0 a13 13 0 1 0 -16 7" fill="none" stroke="#fff" strokeWidth="4" opacity="0.4" strokeLinecap="round" />
+        </g>
+      );
+  }
+}
+
+function Face({ mood, eyeGid, accent, dark }: { mood: Mood; eyeGid: string; accent: string; dark: string }) {
+  const out = mood === 'ko' || mood === 'crit';
   return (
     <g>
-      {/* brows — menacing when healthy, raised when hurt */}
-      {mood === 'ok' && (
-        <g stroke="#1f2233" strokeWidth="5" strokeLinecap="round">
-          <line x1="40" y1="58" x2="60" y2="64" />
-          <line x1="100" y1="58" x2="80" y2="64" />
+      {/* angry brows */}
+      {mood !== 'ko' && mood !== 'crit' && (
+        <g stroke={dark} strokeWidth="6" strokeLinecap="round">
+          {mood === 'ok' ? (
+            <><line x1="42" y1="60" x2="64" y2="70" /><line x1="108" y1="60" x2="86" y2="70" /></>
+          ) : (
+            <><line x1="44" y1="66" x2="64" y2="62" /><line x1="106" y1="66" x2="86" y2="62" /></>
+          )}
         </g>
       )}
-      {mood === 'hurt' && (
-        <g stroke="#1f2233" strokeWidth="5" strokeLinecap="round">
-          <line x1="40" y1="62" x2="60" y2="58" />
-          <line x1="100" y1="62" x2="80" y2="58" />
-        </g>
-      )}
-
       {/* eyes */}
-      {koOrCrit ? (
-        <g stroke="#1f2233" strokeWidth="5" strokeLinecap="round">
-          <line x1="44" y1="68" x2="56" y2="80" /><line x1="56" y1="68" x2="44" y2="80" />
-          <line x1="84" y1="68" x2="96" y2="80" /><line x1="96" y1="68" x2="84" y2="80" />
+      {out ? (
+        <g stroke={dark} strokeWidth="6" strokeLinecap="round">
+          <line x1="46" y1="74" x2="60" y2="88" /><line x1="60" y1="74" x2="46" y2="88" />
+          <line x1="90" y1="74" x2="104" y2="88" /><line x1="104" y1="74" x2="90" y2="88" />
         </g>
       ) : (
         <g>
-          <circle cx="50" cy="74" r="11" fill="#fff" />
-          <circle cx="90" cy="74" r="11" fill="#fff" />
-          <circle cx={mood === 'hurt' ? 49 : 52} cy="76" r="5" fill="#1f2233" />
-          <circle cx={mood === 'hurt' ? 89 : 92} cy="76" r="5" fill="#1f2233" />
+          <ellipse cx="55" cy="80" rx="13" ry={mood === 'ok' ? 11 : 9} fill={`url(#${eyeGid})`} stroke={dark} strokeWidth="2" />
+          <ellipse cx="95" cy="80" rx="13" ry={mood === 'ok' ? 11 : 9} fill={`url(#${eyeGid})`} stroke={dark} strokeWidth="2" />
+          <circle cx={mood === 'hurt' ? 53 : 57} cy="82" r="5.5" fill={dark} />
+          <circle cx={mood === 'hurt' ? 93 : 97} cy="82" r="5.5" fill={dark} />
         </g>
       )}
-
       {/* mouth */}
-      {mood === 'ok' && <path d="M52 100 Q70 114 88 100" fill="none" stroke="#1f2233" strokeWidth="5" strokeLinecap="round" />}
-      {mood === 'hurt' && <path d="M52 106 Q70 98 88 106" fill="none" stroke="#1f2233" strokeWidth="5" strokeLinecap="round" />}
-      {koOrCrit && <ellipse cx="70" cy="104" rx="9" ry="11" fill="#1f2233" />}
+      {mood === 'ok' && (
+        <g>
+          <path d="M52 104 Q75 124 98 104 Z" fill={dark} />
+          <path d="M58 108 l5 8 l5 -8 M70 110 l5 9 l5 -9 M82 108 l5 8 l5 -8" fill="#fff" />
+        </g>
+      )}
+      {mood === 'hurt' && (
+        <g>
+          <path d="M54 112 H96" stroke={dark} strokeWidth="6" strokeLinecap="round" />
+          <path d="M62 112 l4 -7 l4 7 M78 112 l4 -7 l4 7" fill="#fff" stroke={dark} strokeWidth="1" />
+        </g>
+      )}
+      {out && <ellipse cx="75" cy="110" rx="10" ry="12" fill={dark} />}
     </g>
   );
 }

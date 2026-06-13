@@ -1,12 +1,20 @@
 import { createAvatar } from '@dicebear/core';
-import { adventurer, bigSmile, funEmoji, bottts, miniavs, notionists, openPeeps, pixelArt } from '@dicebear/collection';
+import {
+  adventurer, bigSmile, funEmoji, bottts, miniavs, notionists, openPeeps, pixelArt,
+  lorelei, croodles, micah, personas, bigEars, thumbs, avataaars, dylan,
+} from '@dicebear/collection';
 
-const STYLES = { adventurer, bigSmile, funEmoji, bottts, miniavs, notionists, openPeeps, pixelArt };
+const STYLES = {
+  adventurer, openPeeps, bottts, miniavs, bigSmile, funEmoji, notionists, pixelArt,
+  lorelei, croodles, micah, personas, bigEars, thumbs, avataaars, dylan,
+};
 export type AvatarStyle = keyof typeof STYLES;
 export const AVATAR_STYLES = Object.keys(STYLES) as AvatarStyle[];
 export const STYLE_LABEL: Record<AvatarStyle, string> = {
-  adventurer: 'Hero', bigSmile: 'Smiley', funEmoji: 'Emoji', bottts: 'Robot',
-  miniavs: 'Mini', notionists: 'Doodle', openPeeps: 'Peeps', pixelArt: 'Pixel',
+  adventurer: 'Hero', openPeeps: 'Peeps', bottts: 'Robot', miniavs: 'Mini',
+  bigSmile: 'Smiley', funEmoji: 'Emoji', notionists: 'Doodle', pixelArt: 'Pixel',
+  lorelei: 'Lorelei', croodles: 'Croodle', micah: 'Micah', personas: 'Persona',
+  bigEars: 'Big Ears', thumbs: 'Thumbs', avataaars: 'Avatar', dylan: 'Dylan',
 };
 
 // Deterministic character avatar. Same (style, seed) = same face everywhere.

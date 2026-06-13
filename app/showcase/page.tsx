@@ -4,7 +4,7 @@ import BossArt from '@/components/boss-art';
 import Avatar, { AVATAR_STYLES, STYLE_LABEL } from '@/components/avatar';
 import LeagueBadge from '@/components/league-badge';
 import { PodiumSpot, ClassSpot } from '@/components/spot';
-import CelebrateLottie from '@/components/celebrate-lottie';
+import LottieBox from '@/components/lottie-box';
 
 const TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
 const STATES: { label: string; frac: number; defeated?: boolean }[] = [
@@ -68,10 +68,18 @@ export default function Showcase() {
         </div>
       </Section>
 
-      <Section title="Lottie animation">
-        <div className="lg-card flex items-center justify-center p-4">
-          <CelebrateLottie className="h-28 w-28" />
+      <Section title="Lottie animations">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="lg-card flex flex-col items-center p-4">
+            <LottieBox name="celebrate" className="h-24 w-24" />
+            <div className="text-[10px] text-muted">celebrate</div>
+          </div>
+          <div className="lg-card flex flex-col items-center p-4">
+            <LottieBox name="sparkle" className="h-24 w-24" />
+            <div className="text-[10px] text-muted">sparkle / level-up</div>
+          </div>
         </div>
+        <p className="text-xs text-muted mt-2">+ unlimited more: pick any from lottiefiles.com and they drop straight in.</p>
       </Section>
     </main>
   );
