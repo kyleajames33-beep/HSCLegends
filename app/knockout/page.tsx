@@ -7,6 +7,7 @@ import { useUser } from '@/lib/use-user';
 import { SUBJECTS, type Subject } from '@/lib/questions';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
+import { celebrate } from '@/lib/confetti';
 import {
   koQuickJoin, koJoin, koState, koMyState, koSubmit, koStart, koAdvance, koResults,
   subscribeRoom, type KoState, type KoMe, type KoResult,
@@ -77,6 +78,14 @@ export default function KnockoutPage() {
     }, 500);
     return () => clearInterval(t);
   }, [sb]);
+
+  const celebrated = useRef(false);
+  useEffect(() => {
+    if (st?.status === 'finished' && results.length && !celebrated.current) {
+      const mine = results.find((r) => r.is_me);
+      if (mine?.rank === 1) { celebrated.current = true; celebrate(true); }
+    }
+  }, [st?.status, results]);
 
   async function enter(rm: string, pl: string) {
     setRoom(rm); setPlayer(pl);

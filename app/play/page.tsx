@@ -8,6 +8,7 @@ import { useUser } from '@/lib/use-user';
 import { getQuizQuestions, SUBJECTS, type Question, type Subject } from '@/lib/questions';
 import { recordQuickGame, STREAK_MSG, type QuickResult } from '@/lib/progress';
 import { recordDailyQuiz } from '@/lib/daily';
+import { celebrate } from '@/lib/confetti';
 import ShareButton from '@/components/share-button';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
@@ -107,6 +108,12 @@ export default function QuickGame() {
     localStorage.setItem(PENDING_KEY, JSON.stringify({ ...sel, correct: score, total }));
     router.push('/login?next=/play');
   }
+
+  // Celebrate a strong round.
+  useEffect(() => {
+    if (result && total > 0 && score / total >= 0.6) celebrate(score === total);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   function choose(idx: number) {
     if (picked !== null) return;

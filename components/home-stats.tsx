@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import { getMyWeek, leagueTier, type MyWeek } from '@/lib/progress';
 import ShareButton from '@/components/share-button';
+import LeagueBadge from '@/components/league-badge';
 
 // Signed-in hub: streak + total XP (one-directional) and weekly League + rank
 // (reversible — resets each week).
@@ -42,7 +43,9 @@ export default function HomeStats() {
       </div>
       <div className="lg-card px-4 py-3">
         <div className="flex items-center justify-between">
-          <span className="font-display font-bold text-ink">{tier.emoji} {tier.name} League</span>
+          <span className="font-display font-bold text-ink inline-flex items-center gap-2">
+            <LeagueBadge tier={tier.name} className="h-6 w-6" /> {tier.name} League
+          </span>
           {week && week.rank > 0 && <span className="text-sm text-inksoft">#{week.rank} this week</span>}
         </div>
         <div className="mt-2 h-2 rounded-full bg-parchment-deep overflow-hidden">

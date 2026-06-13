@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 import AuthLink from '@/components/auth-link';
 import HomeStats from '@/components/home-stats';
 import TodayQuizzes from '@/components/today-quizzes';
@@ -27,7 +28,7 @@ export default function Home() {
           className="lg-card mt-4 flex items-center justify-between px-4 py-3.5 active:translate-y-0.5 transition"
         >
           <span className="font-display font-bold text-ink">🎲 Free practice</span>
-          <span className="text-sm text-muted">any subject →</span>
+          <span className="text-sm text-muted inline-flex items-center gap-1">any subject <ChevronRight className="h-4 w-4" /></span>
         </Link>
 
         <Link href="/knockout" className="mt-3 block rounded-2xl px-5 py-4 active:translate-y-0.5 transition text-white"
@@ -55,7 +56,7 @@ export default function Home() {
         </div>
         <Link href="/leaderboard" className="lg-card mt-3 flex items-center justify-between px-4 py-3.5 transition active:translate-y-0.5">
           <span className="font-display font-bold text-ink">🏆 Leaderboard</span>
-          <span className="text-sm text-muted">this week →</span>
+          <span className="text-sm text-muted inline-flex items-center gap-1">this week <ChevronRight className="h-4 w-4" /></span>
         </Link>
 
         <NotificationToggle />

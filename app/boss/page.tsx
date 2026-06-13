@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { SUBJECTS, type Subject } from '@/lib/questions';
-import { getBoss, bossFace, type Boss } from '@/lib/boss';
+import { getBoss, type Boss } from '@/lib/boss';
+import BossArt from '@/components/boss-art';
 
 const ARENA = 'linear-gradient(160deg,#1a1d2e 0%,#2d3142 38%,#4e4068 74%,#9c5c6e 100%)';
 const STARS =
@@ -52,10 +53,10 @@ export default function BossPage() {
         <div className="mt-6 flex-1 flex flex-col">
           <div className="text-center">
             <div
-              className={`mx-auto flex h-40 w-40 items-center justify-center rounded-full text-8xl ${frac <= 0.25 && !boss.defeated ? 'animate-pulse' : ''}`}
+              className={`mx-auto flex h-44 w-44 items-center justify-center rounded-full ${frac <= 0.25 && !boss.defeated ? 'animate-pulse' : ''}`}
               style={{ background: 'radial-gradient(ellipse at center,#2d3142 0%,#16182a 70%)', boxShadow: '0 0 60px rgba(156,92,110,0.6)' }}
             >
-              {bossFace(boss)}
+              <BossArt subject={subject} frac={frac} defeated={boss.defeated} className="h-36 w-36" />
             </div>
             <h2 className="mt-4 text-3xl font-display font-extrabold">{boss.name}</h2>
             <p className="text-white/50 text-sm">Signature move: {boss.attack_name}</p>
