@@ -13,6 +13,7 @@ import CelebrateLottie from '@/components/celebrate-lottie';
 import ShareButton from '@/components/share-button';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
+import { getPowerups, usePowerup, QUICKGAME_POWERUPS, type Powerup } from '@/lib/powerups';
 
 type Phase = 'pick' | 'loading' | 'play' | 'done' | 'error';
 type Sel = { subject: Subject; year: 11 | 12 };
@@ -34,6 +35,12 @@ export default function QuickGame() {
   const [dailyCounted, setDailyCounted] = useState(true);
   const [saveErr, setSaveErr] = useState('');
   const [err, setErr] = useState('');
+  // Power-ups (signed-in only): consumable boosts during a question.
+  const [powerups, setPowerups] = useState<Powerup[]>([]);
+  const [eliminated, setEliminated] = useState<number[]>([]);
+  const [hintShown, setHintShown] = useState(false);
+  const [doubleActive, setDoubleActive] = useState(false);
+  const [bonusSparks, setBonusSparks] = useState(0);
 
   // Daily mode: ?daily=1&subject=…&year=… auto-starts the prescribed quiz.
   useEffect(() => {
@@ -60,6 +67,8 @@ export default function QuickGame() {
       setScore(0);
       setResult(null);
       setPicked(null);
+      setEliminated([]); setHintShown(false); setDoubleActive(false); setBonusSparks(0);
+      if (user) getPowerups(sb).then(setPowerups, () => {});
       setPhase('play');
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Something went wrong.');
@@ -78,8 +87,8 @@ export default function QuickGame() {
       } else {
         setResult(await recordQuickGame(sb, subject, year, correct, tot));
       }
-      // Earn Sparks for the round + advance the daily-quiz quest (non-blocking).
-      sb.rpc('credit_coins', { p_amount: correct * 2 + 5, p_reason: 'quick_game', p_meta: null }).then(undefined, () => {});
+      // Earn Sparks for the round (+ any Double Sparks bonus) + advance the daily-quiz quest.
+      sb.rpc('credit_coins', { p_amount: correct * 2 + 5 + bonusSparks, p_reason: 'quick_game', p_meta: null }).then(undefined, () => {});
       if (daily) sb.rpc('increment_quest', { p_metric: 'daily_quiz', p_amount: 1 }).then(undefined, () => {});
     } catch (e) {
       setSaveErr(e instanceof Error ? e.message : 'Could not save.');
@@ -124,7 +133,10 @@ export default function QuickGame() {
     setPicked(idx);
     const q = questions[i];
     const correct = idx === q.correct_index;
-    if (correct) setScore((s) => s + 1);
+    if (correct) {
+      setScore((s) => s + 1);
+      if (doubleActive) setBonusSparks((b) => b + 2); // doubled question's extra Sparks
+    }
     // Learning + quest hooks (signed-in only, fire-and-forget — never block gameplay).
     if (user) {
       sb.rpc('record_attempt', { p_question_id: q.id, p_subject: q.subject, p_topic: q.topic, p_correct: correct }).then(undefined, () => {});
@@ -138,7 +150,25 @@ export default function QuickGame() {
     else {
       setI((n) => n + 1);
       setPicked(null);
+      setEliminated([]); setHintShown(false); setDoubleActive(false);
     }
+  }
+
+  // Consume a power-up and apply its effect to the current question.
+  function applyPowerup(id: string) {
+    const have = powerups.find((p) => p.id === id);
+    if (!have || have.count <= 0 || picked !== null) return;
+    setPowerups((ps) => ps.map((p) => (p.id === id ? { ...p, count: p.count - 1 } : p)));
+    usePowerup(sb, id).then(undefined, () =>
+      setPowerups((ps) => ps.map((p) => (p.id === id ? { ...p, count: p.count + 1 } : p))),
+    );
+    const q = questions[i];
+    if (id === 'fifty_fifty') {
+      const wrong = q.options.map((_, idx) => idx).filter((idx) => idx !== q.correct_index && !eliminated.includes(idx));
+      setEliminated((e) => [...e, ...wrong.sort(() => Math.random() - 0.5).slice(0, 2)]);
+    } else if (id === 'hint') setHintShown(true);
+    else if (id === 'double_sparks') setDoubleActive(true);
+    else if (id === 'skip') next();
   }
 
   if (phase === 'pick' || phase === 'loading') {
@@ -256,8 +286,38 @@ export default function QuickGame() {
         <MathText text={q.stem} />
       </h2>
 
+      {user && picked === null && powerups.some((p) => QUICKGAME_POWERUPS.includes(p.id) && p.count > 0) && (
+        <div className="mt-4 flex flex-wrap gap-2 md:justify-center">
+          {powerups.filter((p) => QUICKGAME_POWERUPS.includes(p.id) && p.count > 0).map((p) => {
+            const used =
+              (p.id === 'fifty_fifty' && eliminated.length > 0) ||
+              (p.id === 'hint' && hintShown) ||
+              (p.id === 'double_sparks' && doubleActive);
+            return (
+              <button key={p.id} onClick={() => applyPowerup(p.id)} disabled={used}
+                className="rounded-full border border-rule bg-panel px-3 py-1.5 text-sm font-display font-bold text-ink disabled:opacity-40 active:translate-y-0.5 transition">
+                {p.emoji} {p.name} <span className="text-muted font-normal">×{p.count}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {doubleActive && picked === null && (
+        <p className="mt-2 text-sm font-display font-bold text-golddeep md:text-center">✨ Double Sparks active on this question</p>
+      )}
+      {hintShown && picked === null && q.explanation && (
+        <p className="mt-2 text-sm text-plum md:text-center"><span className="font-bold">Hint:</span> <MathText text={q.explanation.split('. ')[0]} /></p>
+      )}
+
       <div className="mt-5 grid gap-3 md:grid-cols-2">
         {q.options.map((opt, idx) => {
+          if (eliminated.includes(idx)) {
+            return (
+              <div key={idx} className="rounded-2xl border-2 border-dashed border-rule grid place-items-center py-4 text-muted text-sm opacity-50">
+                removed ✂️
+              </div>
+            );
+          }
           const revealed = picked !== null;
           const reveal = !revealed
             ? null

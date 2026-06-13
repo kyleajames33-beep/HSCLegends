@@ -7,6 +7,7 @@ import { useUser } from '@/lib/use-user';
 import { celebrate } from '@/lib/confetti';
 import SpinWheel from '@/components/spin-wheel';
 import QuestList from '@/components/quest-list';
+import PowerupShop from '@/components/powerup-shop';
 import {
   getSpinStatus, spinDaily, getStreakStatus, buyStreakFreeze,
   type SpinStatus, type StreakStatus,
@@ -166,6 +167,11 @@ export default function RewardsPage() {
             : buyingFreeze ? 'Buying…' : `Buy Streak Freeze — ${FREEZE_COST} ✨`}
         </button>
       </section>
+
+      {/* ---------- Power-up shop ---------- */}
+      <div className="mt-7">
+        <PowerupShop />
+      </div>
 
       {/* ---------- Quests ---------- */}
       <section className="mt-7">
