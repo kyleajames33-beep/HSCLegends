@@ -53,10 +53,13 @@ export default function BossPage() {
         <div className="mt-6 flex-1 flex flex-col">
           <div className="text-center">
             <div
-              className={`mx-auto flex h-44 w-44 items-center justify-center rounded-full ${frac <= 0.25 && !boss.defeated ? 'animate-pulse' : ''}`}
+              className={`relative mx-auto flex h-44 w-44 items-end justify-center overflow-hidden rounded-full ${frac <= 0.25 && !boss.defeated ? 'animate-pulse' : ''}`}
               style={{ background: 'radial-gradient(ellipse at center,#2d3142 0%,#16182a 70%)', boxShadow: '0 0 60px rgba(156,92,110,0.6)' }}
             >
-              <BossArt subject={subject} frac={frac} defeated={boss.defeated} className="h-36 w-36" />
+              {/* ground shadow so the (transparent, no-baked-shadow) boss reads as standing on a stage */}
+              <div className="pointer-events-none absolute bottom-5 left-1/2 h-3 w-24 -translate-x-1/2 rounded-[50%]"
+                style={{ background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, transparent 70%)' }} />
+              <BossArt subject={subject} frac={frac} defeated={boss.defeated} className="relative h-40 w-40 pb-4" />
             </div>
             <h2 className="mt-4 text-3xl font-display font-extrabold">{boss.name}</h2>
             <p className="text-white/50 text-sm">Signature move: {boss.attack_name}</p>
