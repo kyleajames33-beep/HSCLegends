@@ -113,6 +113,10 @@ export default function Home() {
                 <div className="text-xs mt-0.5 text-muted">Legend cards</div>
               </Link>
             </div>
+            <Link href="/league" className="lg-card flex items-center justify-between px-4 py-3.5 transition active:translate-y-0.5">
+              <span className="font-display font-bold text-ink">🏆 League</span>
+              <span className="text-sm text-muted inline-flex items-center gap-1">climb divisions <ChevronRight className="h-4 w-4" /></span>
+            </Link>
             <Link href="/achievements" className="lg-card flex items-center justify-between px-4 py-3.5 transition active:translate-y-0.5">
               <span className="font-display font-bold text-ink">🏅 Achievements</span>
               <span className="text-sm text-muted inline-flex items-center gap-1">badges <ChevronRight className="h-4 w-4" /></span>
