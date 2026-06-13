@@ -9,6 +9,7 @@ import { getQuizQuestions, SUBJECTS, type Question, type Subject } from '@/lib/q
 import { recordQuickGame, STREAK_MSG, type QuickResult } from '@/lib/progress';
 import { recordDailyQuiz } from '@/lib/daily';
 import { celebrate } from '@/lib/confetti';
+import CelebrateLottie from '@/components/celebrate-lottie';
 import ShareButton from '@/components/share-button';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
@@ -172,6 +173,7 @@ export default function QuickGame() {
     return (
       <Shell>
         <p className="text-berrydeep font-display font-bold tracking-wide text-sm">QUICK GAME COMPLETE</p>
+        {score === total && <CelebrateLottie className="mx-auto h-28 w-28 -mb-2" />}
         <h1 className="mt-2 text-6xl font-extrabold text-ink">
           {score}/{total}
         </h1>

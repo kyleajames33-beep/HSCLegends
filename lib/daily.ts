@@ -25,7 +25,10 @@ export async function getDailyDone(sb: SupabaseClient): Promise<string[]> {
   return (data ?? []) as string[];
 }
 
-export type BoardRow = { rank: number; name: string; score: number; is_me: boolean };
+export type BoardRow = {
+  rank: number; name: string; score: number; is_me: boolean;
+  avatar_style: string | null; avatar_seed: string | null;
+};
 
 export async function getSubjectLeaderboard(
   sb: SupabaseClient, subject: Subject, year: 11 | 12, period: 'day' | 'week'

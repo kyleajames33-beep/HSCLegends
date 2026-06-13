@@ -94,7 +94,7 @@ export default function LeaderboardPage() {
               <li key={r.rank}
                 className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${r.is_me ? 'bg-gold/25 border border-gold/60' : 'bg-panel'}`}>
                 <span className="text-muted tabular-nums w-5 text-center font-semibold">{r.rank}</span>
-                <Avatar seed={r.name} size={34} className="rounded-full shrink-0" />
+                <Avatar seed={r.avatar_seed || r.name} style={r.avatar_style || 'adventurer'} size={34} className="rounded-full shrink-0" />
                 <span className="font-medium flex-1 truncate">{r.name}{r.is_me ? ' (you)' : ''}</span>
                 <span className="tabular-nums font-bold">{r.score}</span>
               </li>
