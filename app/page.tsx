@@ -6,6 +6,8 @@ import TodayQuizzes from '@/components/today-quizzes';
 import InstallPrompt from '@/components/install-prompt';
 import OnboardingGate from '@/components/onboarding-gate';
 import NotificationToggle from '@/components/notification-toggle';
+import WalletChip from '@/components/wallet-chip';
+import RewardsLink from '@/components/rewards-link';
 
 export default function Home() {
   return (
@@ -19,6 +21,7 @@ export default function Home() {
           <p className="mt-3 text-inksoft md:text-lg md:max-w-2xl md:mx-auto">
             60-second quizzes across all six HSC subjects. Play on the bus, climb the leaderboard.
           </p>
+          <div className="md:flex md:justify-center"><WalletChip /></div>
         </header>
 
         {/* Desktop: two-column dashboard. Mobile: stacks in the same order as before. */}
@@ -27,6 +30,34 @@ export default function Home() {
           <div className="space-y-4">
             <HomeStats />
             <TodayQuizzes />
+            <RewardsLink />
+
+            {/* Sharpen up — the learning engine */}
+            <div>
+              <p className="px-1 pb-2 text-xs font-display font-bold tracking-wide text-muted">SHARPEN UP</p>
+              <div className="grid grid-cols-2 gap-3">
+                <Link href="/review" className="lg-card px-4 py-4 transition active:translate-y-0.5">
+                  <div className="text-2xl">🧠</div>
+                  <div className="font-display font-bold text-ink mt-1">Review</div>
+                  <div className="text-xs mt-0.5 text-muted">spaced repetition</div>
+                </Link>
+                <Link href="/progress" className="lg-card px-4 py-4 transition active:translate-y-0.5">
+                  <div className="text-2xl">📈</div>
+                  <div className="font-display font-bold text-ink mt-1">Progress</div>
+                  <div className="text-xs mt-0.5 text-muted">mastery &amp; band</div>
+                </Link>
+                <Link href="/topics" className="lg-card px-4 py-4 transition active:translate-y-0.5">
+                  <div className="text-2xl">🗺️</div>
+                  <div className="font-display font-bold text-ink mt-1">Topics</div>
+                  <div className="text-xs mt-0.5 text-muted">drill by module</div>
+                </Link>
+                <Link href="/exam" className="lg-card px-4 py-4 transition active:translate-y-0.5">
+                  <div className="text-2xl">📝</div>
+                  <div className="font-display font-bold text-ink mt-1">Exam mode</div>
+                  <div className="text-xs mt-0.5 text-muted">timed Section I</div>
+                </Link>
+              </div>
+            </div>
           </div>
 
           {/* Modes & navigation */}
@@ -70,10 +101,18 @@ export default function Home() {
               </Link>
             </div>
 
-            <Link href="/leaderboard" className="lg-card flex items-center justify-between px-4 py-3.5 transition active:translate-y-0.5">
-              <span className="font-display font-bold text-ink">🏆 Leaderboard</span>
-              <span className="text-sm text-muted inline-flex items-center gap-1">this week <ChevronRight className="h-4 w-4" /></span>
-            </Link>
+            <div className="grid grid-cols-2 gap-3">
+              <Link href="/leaderboard" className="lg-card px-4 py-4 transition active:translate-y-0.5">
+                <div className="text-2xl">🏆</div>
+                <div className="font-display font-bold text-ink mt-1">Leaderboard</div>
+                <div className="text-xs mt-0.5 text-muted">this week</div>
+              </Link>
+              <Link href="/collection" className="lg-card px-4 py-4 transition active:translate-y-0.5">
+                <div className="text-2xl">🃏</div>
+                <div className="font-display font-bold text-ink mt-1">Collection</div>
+                <div className="text-xs mt-0.5 text-muted">Legend cards</div>
+              </Link>
+            </div>
 
             <NotificationToggle />
           </div>

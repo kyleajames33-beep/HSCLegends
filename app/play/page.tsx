@@ -78,6 +78,9 @@ export default function QuickGame() {
       } else {
         setResult(await recordQuickGame(sb, subject, year, correct, tot));
       }
+      // Earn Sparks for the round + advance the daily-quiz quest (non-blocking).
+      sb.rpc('credit_coins', { p_amount: correct * 2 + 5, p_reason: 'quick_game', p_meta: null }).then(undefined, () => {});
+      if (daily) sb.rpc('increment_quest', { p_metric: 'daily_quiz', p_amount: 1 }).then(undefined, () => {});
     } catch (e) {
       setSaveErr(e instanceof Error ? e.message : 'Could not save.');
     }
@@ -119,7 +122,15 @@ export default function QuickGame() {
   function choose(idx: number) {
     if (picked !== null) return;
     setPicked(idx);
-    if (idx === questions[i].correct_index) setScore((s) => s + 1);
+    const q = questions[i];
+    const correct = idx === q.correct_index;
+    if (correct) setScore((s) => s + 1);
+    // Learning + quest hooks (signed-in only, fire-and-forget — never block gameplay).
+    if (user) {
+      sb.rpc('record_attempt', { p_question_id: q.id, p_subject: q.subject, p_topic: q.topic, p_correct: correct }).then(undefined, () => {});
+      sb.rpc('increment_quest', { p_metric: 'answer', p_amount: 1 }).then(undefined, () => {});
+      if (correct) sb.rpc('increment_quest', { p_metric: 'correct', p_amount: 1 }).then(undefined, () => {});
+    }
   }
 
   function next() {
