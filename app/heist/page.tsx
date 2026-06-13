@@ -85,13 +85,13 @@ export default function HeistPage() {
   async function quickPlay() {
     if (!alias.trim()) return;
     setBusy(true); setErr('');
-    try { const r = await heistQuickJoin(sb, subject, year, alias); setCode(r.code); await enter(r.room_id, r.player_id, r.team); }
+    try { const r = await heistQuickJoin(sb, subject, year, alias); setCode(r.code); sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {}); await enter(r.room_id, r.player_id, r.team); }
     catch (e) { setErr(msg(e)); } finally { setBusy(false); }
   }
   async function joinByCode() {
     if (joinCode.length < 6 || !alias.trim()) return;
     setBusy(true); setErr('');
-    try { const r = await heistJoin(sb, joinCode, alias); setCode(joinCode); await enter(r.room_id, r.player_id, r.team); }
+    try { const r = await heistJoin(sb, joinCode, alias); setCode(joinCode); sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {}); await enter(r.room_id, r.player_id, r.team); }
     catch (e) { setErr(msg(e)); } finally { setBusy(false); }
   }
   async function answer(choice: number) {

@@ -37,13 +37,18 @@ export default function DuelPage() {
   const [err, setErr] = useState('');
 
   useEffect(() => {
-    if (result?.outcome === 'win') celebrate(true);
+    if (result?.outcome === 'win') {
+      celebrate(true);
+      sb.rpc('increment_quest', { p_metric: 'duel_win', p_amount: 1 }).then(undefined, () => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
 
   async function find() {
     setBusy(true); setErr('');
     try {
       const m = await duelFindOrCreate(sb, subject, year, ranked);
+      sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {});
       setDuel(m); setScore(0); setIndex(0); setAnswered(null); setPicked(null);
       const first = await duelQuestion(sb, m.duel_id, 0);
       setQ(first); setTotal(first.total);
