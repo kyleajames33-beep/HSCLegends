@@ -172,3 +172,27 @@ P0 (backend spine) → P1 (Live Class Game) → P2 (Quick Game + Streaks) → P3
 ```
 
 Each phase is independently shippable. You can stop after any phase and still have something real.
+
+---
+
+# Phase 5 — The Arena (gamified multiplayer)
+
+> Split the **engine** (answering questions) from the **game** (what correct answers *do*). One realtime engine + question bank powers many modes. Two layers: **the Arena** (live matches) and **the Meta** (persistent progression between matches — the Clash-of-Clans layer).
+
+## Layer 1 — Arena modes
+- **⚔️ Duel** — 1v1 ranked ladder, best-of-7, fastest-correct wins; per-subject ELO; Casual + Ranked. *(DB already scaffolded: `duel_challenges`/`duel_answers`/`duel_elo`.)* Hook: rivalry + rank loss-aversion.
+- **☠️ Knockout** *(BUILDING FIRST — flagship)* — battle royale: many players, one question at a time, wrong/too-slow = eliminated, last Legend standing wins; eliminated players spectate. **Self-driving** (no host; server-timed rounds, client-triggered idempotent advance). Hook: elimination tension + spectator drama. Works in-class *and* open online.
+- **💰 Heist** — 2 teams; correct answers bank gold, "heist" cards steal from the other team / shield yours. Hook: team identity + sabotage + catch-up swings.
+- **🧗 Drop / Tower** — correct answers climb your avatar up a tower; wrong = slip; first to top. Hook: visible progress race.
+- **🐉 Raid** — live co-op version of the Weekly Boss: party shares HP, phases, combo meter, team "Ultimate" at a streak. Hook: raid teamwork.
+
+## Layer 2 — The Meta (later)
+Avatars that evolve (repo already has char-builder + `characters.js`) · earn-don't-buy power-ups / loadout (50-50, Freeze, Double, Shield) · Seasons + Leagues with soft reset + play-to-earn pass · coins (already in `user_stats`) → unlocks · per-topic mastery badges.
+
+## Ethical guardrails
+Earn-don't-buy (no pay-to-win) · luck ≤20% of any outcome · catch-up mechanics · seasons over permanent loss · weekend streak mercy.
+
+## Knockout build (in progress)
+- **Backend:** `ko_rooms` (code, subject, year, status, question_ids, round, round_started_at, per_q_seconds, starts_at), `ko_players` (alive, score, eliminated_round), `ko_answers`. RPCs: create/quick-join/start/advance (idempotent, deadline-guarded)/submit (server-graded, no answer leaked)/get-state. Self-driving: lobby auto-starts on countdown once ≥2 players; rounds auto-advance when the timer expires (first client triggers). Elimination: among alive, correct survive & wrong are out — unless *nobody* is correct (lucky round, all survive). Winner = last alive; ties broken by cumulative score.
+- **Frontend:** quick-play + code join → lobby (countdown) → live round → elimination → **spectate** → podium. Dark battle-arena styling.
+- **Deferred:** bots for thin lobbies, Knockout ELO/season, more modes (Duel next).

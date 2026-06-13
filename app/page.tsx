@@ -30,7 +30,18 @@ export default function Home() {
           <span className="text-sm text-muted">any subject →</span>
         </Link>
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <Link href="/knockout" className="mt-3 block rounded-2xl px-5 py-4 active:translate-y-0.5 transition text-white"
+          style={{ background: 'linear-gradient(135deg,#2d3142,#4e4068)', boxShadow: '0 4px 0 #1a1d2e' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-display font-extrabold text-lg">☠️ Knockout</div>
+              <div className="text-xs text-white/60">battle royale · last one standing</div>
+            </div>
+            <span className="text-2xl">⚡</span>
+          </div>
+        </Link>
+
+        <div className="mt-3 grid grid-cols-2 gap-3">
           <Link href="/join" className="lg-card px-4 py-4 transition active:translate-y-0.5">
             <div className="text-2xl">🎪</div>
             <div className="font-display font-bold text-ink mt-1">Join Class Game</div>
