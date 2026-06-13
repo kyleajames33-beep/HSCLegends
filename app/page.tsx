@@ -31,18 +31,21 @@ export default function Home() {
           <span className="text-sm text-muted inline-flex items-center gap-1">any subject <ChevronRight className="h-4 w-4" /></span>
         </Link>
 
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <Link href="/knockout" className="rounded-2xl px-4 py-4 active:translate-y-0.5 transition text-white"
+        <div className="mt-3 grid grid-cols-3 gap-3">
+          <Link href="/knockout" className="rounded-2xl px-3 py-4 text-center active:translate-y-0.5 transition text-white"
             style={{ background: 'linear-gradient(135deg,#2d3142,#4e4068)', boxShadow: '0 4px 0 #1a1d2e' }}>
             <div className="text-2xl">☠️</div>
-            <div className="font-display font-extrabold mt-1">Knockout</div>
-            <div className="text-xs text-white/60">battle royale</div>
+            <div className="font-display font-extrabold mt-1 text-sm">Knockout</div>
           </Link>
-          <Link href="/duel" className="rounded-2xl px-4 py-4 active:translate-y-0.5 transition text-white"
+          <Link href="/duel" className="rounded-2xl px-3 py-4 text-center active:translate-y-0.5 transition text-white"
             style={{ background: 'linear-gradient(135deg,#9c5c6e,#6d5b8a)', boxShadow: '0 4px 0 #4e4068' }}>
             <div className="text-2xl">⚔️</div>
-            <div className="font-display font-extrabold mt-1">Duel</div>
-            <div className="text-xs text-white/70">1v1 · ranked ELO</div>
+            <div className="font-display font-extrabold mt-1 text-sm">Duel</div>
+          </Link>
+          <Link href="/heist" className="rounded-2xl px-3 py-4 text-center active:translate-y-0.5 transition text-white"
+            style={{ background: 'linear-gradient(135deg,#243d5e,#a87f3f)', boxShadow: '0 4px 0 #16182a' }}>
+            <div className="text-2xl">💰</div>
+            <div className="font-display font-extrabold mt-1 text-sm">Heist</div>
           </Link>
         </div>
 
