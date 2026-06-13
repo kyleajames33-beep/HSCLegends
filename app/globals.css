@@ -28,6 +28,7 @@
 }
 
 html { -webkit-tap-highlight-color: transparent; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
 body {
   /* backdrop behind the app column (warm, slightly deeper than the app) */
   background:
