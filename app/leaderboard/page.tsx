@@ -8,6 +8,7 @@ import { SUBJECTS, type Subject } from '@/lib/questions';
 import { setLeaderboardOptIn } from '@/lib/progress';
 import { getSubjectLeaderboard, type BoardRow } from '@/lib/daily';
 import Avatar from '@/components/avatar';
+import { PodiumSpot } from '@/components/spot';
 
 export default function LeaderboardPage() {
   const sb = useMemo(() => createClient(), []);
@@ -87,7 +88,10 @@ export default function LeaderboardPage() {
         {loading ? (
           <p className="text-muted">Loading…</p>
         ) : rows.length === 0 ? (
-          <p className="text-muted text-sm">No scores yet. Do this {period === 'day' ? "subject's daily quiz" : 'week’s quizzes'} to get on the board.</p>
+          <div className="flex flex-col items-center text-center mt-4">
+            <PodiumSpot className="w-52 h-auto" />
+            <p className="text-muted text-sm mt-3">No scores yet — do this {period === 'day' ? "subject's daily quiz" : 'week’s quizzes'} and claim #1.</p>
+          </div>
         ) : (
           <ol className="space-y-2">
             {rows.map((r) => (

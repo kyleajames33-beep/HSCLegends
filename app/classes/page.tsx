@@ -8,6 +8,7 @@ import {
   createClass, joinClass, getMyClasses, getClassDashboard,
   type ClassRow, type ClassMemberStat,
 } from '@/lib/classes';
+import { ClassSpot } from '@/components/spot';
 
 export default function ClassesPage() {
   const sb = useMemo(() => createClient(), []);
@@ -98,7 +99,12 @@ export default function ClassesPage() {
             </div>
           </button>
         ))}
-        {!classes.length && <p className="text-muted text-sm">No classes yet. Create one or join with a code.</p>}
+        {!classes.length && (
+          <div className="flex flex-col items-center text-center py-2">
+            <ClassSpot className="w-48 h-auto" />
+            <p className="text-muted text-sm mt-2">No classes yet — create one or join with a code.</p>
+          </div>
+        )}
       </div>
 
       <div className="mt-7 rounded-2xl border border-rule p-4">
