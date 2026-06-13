@@ -230,7 +230,7 @@ export default function KnockoutPage() {
   const eliminated = me && !me.alive;
   const tLeft = secs(st?.round_started_at ?? null, (st?.per_q_seconds ?? 0) * 1000);
   return (
-    <Arena>
+    <Arena wide>
       <div className="flex items-center justify-between text-sm">
         <span className="text-white/60">Q{(st?.round ?? 0) + 1}/{st?.total ?? 0}</span>
         <span className="font-bold">🟢 {st?.alive ?? 0} alive</span>
@@ -252,9 +252,9 @@ export default function KnockoutPage() {
         </div>
       )}
 
-      <h2 className="mt-4 text-xl font-display font-bold leading-snug"><MathText text={st?.stem ?? ''} /></h2>
+      <h2 className="mt-4 text-xl md:text-3xl md:text-center font-display font-bold leading-snug"><MathText text={st?.stem ?? ''} /></h2>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
         {(st?.options ?? []).map((o, i) => (
           <AnswerTile key={i} index={i}
             disabled={busy || !!answered || !!eliminated || tLeft <= 0}
@@ -276,10 +276,16 @@ export default function KnockoutPage() {
 }
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
-function Arena({ children }: { children: React.ReactNode }) {
+function Arena({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
   return (
-    <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md w-full mx-auto text-white" style={{ background: ARENA }}>
-      {children}
+    <main className="flex flex-1 flex-col w-full text-white" style={{ background: ARENA }}>
+      <div
+        className={`flex flex-1 flex-col w-full mx-auto px-6 pt-12 pb-10 ${
+          wide ? 'max-w-md md:max-w-6xl md:justify-center md:px-12' : 'max-w-md'
+        }`}
+      >
+        {children}
+      </div>
     </main>
   );
 }

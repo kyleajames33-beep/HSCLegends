@@ -230,7 +230,7 @@ export default function QuickGame() {
   // phase === 'play'
   const q = questions[i];
   return (
-    <Shell>
+    <Shell wide>
       <div className="flex items-center justify-between text-sm text-muted font-semibold">
         <span>
           Question {i + 1}/{questions.length}
@@ -241,11 +241,11 @@ export default function QuickGame() {
         <div className="h-full bg-gold transition-all" style={{ width: `${(i / questions.length) * 100}%` }} />
       </div>
 
-      <h2 className="mt-5 text-xl font-display font-bold leading-snug text-ink">
+      <h2 className="mt-5 text-xl md:text-3xl md:text-center font-display font-bold leading-snug text-ink">
         <MathText text={q.stem} />
       </h2>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
         {q.options.map((opt, idx) => {
           const revealed = picked !== null;
           const reveal = !revealed
@@ -278,6 +278,14 @@ export default function QuickGame() {
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
-  return <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md w-full mx-auto">{children}</main>;
+function Shell({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
+  return (
+    <main
+      className={`flex flex-1 flex-col px-6 pt-12 pb-10 w-full mx-auto ${
+        wide ? 'max-w-md md:max-w-6xl md:justify-center md:px-12' : 'max-w-md'
+      }`}
+    >
+      {children}
+    </main>
+  );
 }

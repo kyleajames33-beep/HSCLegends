@@ -52,7 +52,7 @@ export default function LeaderboardPage() {
   const label = SUBJECTS.find((s) => s.id === subject)?.label ?? subject;
 
   return (
-    <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md w-full mx-auto">
+    <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md md:max-w-3xl w-full mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-extrabold text-ink">🏆 Leaderboard</h1>
         <Link href="/" className="text-sm text-muted underline">Home</Link>

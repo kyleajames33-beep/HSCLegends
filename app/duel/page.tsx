@@ -126,7 +126,7 @@ export default function DuelPage() {
   // ---------- PLAYING ----------
   if (phase === 'playing' && q) {
     return (
-      <Shell>
+      <Shell wide>
         <div className="flex items-center justify-between text-sm text-muted">
           <span>Q{index + 1}/{total}</span>
           <span>{duel?.is_opponent ? `vs ${duel.opp_name} (${duel.opp_elo})` : 'setting the pace'}</span>
@@ -134,8 +134,8 @@ export default function DuelPage() {
         <div className="mt-1 h-2 rounded-full bg-parchment-deep overflow-hidden">
           <div className="h-full bg-gold" style={{ width: `${(index / total) * 100}%` }} />
         </div>
-        <h2 className="mt-4 text-xl font-display font-bold text-ink leading-snug"><MathText text={q.stem ?? ''} /></h2>
-        <div className="mt-5 space-y-3">
+        <h2 className="mt-4 text-xl md:text-3xl md:text-center font-display font-bold text-ink leading-snug"><MathText text={q.stem ?? ''} /></h2>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
           {(q.options ?? []).map((o, i) => (
             <AnswerTile key={i} index={i} disabled={busy || !!answered} onClick={() => answer(i)}
               reveal={answered ? (i === answered.correct_index ? 'correct' : i === picked ? 'wrong' : 'dim') : null}>
@@ -214,8 +214,14 @@ export default function DuelPage() {
 }
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
-const Shell = ({ children }: { children: React.ReactNode }) => (
-  <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md w-full mx-auto">{children}</main>
+const Shell = ({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) => (
+  <main
+    className={`flex flex-1 flex-col px-6 pt-12 pb-10 w-full mx-auto ${
+      wide ? 'max-w-md md:max-w-6xl md:justify-center md:px-12' : 'max-w-md'
+    }`}
+  >
+    {children}
+  </main>
 );
 const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-extrabold text-ink">{children}</h1>;
 const Err = ({ children }: { children: React.ReactNode }) => <p className="mt-3 text-brick text-sm">{children}</p>;

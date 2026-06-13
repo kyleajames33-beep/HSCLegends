@@ -40,20 +40,15 @@ body {
 }
 h1, h2, h3 { font-family: var(--font-display); }
 
-/* Phone-width app column: full-bleed on mobile, framed panel on desktop. */
+/* App column: full-bleed on phones, full-width on desktop (no narrow phone
+   frame). Each page caps its own content width so it reads well on big screens. */
 .app-shell {
-  max-width: 440px;
   width: 100%;
   margin-inline: auto;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--color-parchment);
-}
-@media (min-width: 480px) {
-  .app-shell {
-    box-shadow: 0 0 0 1px var(--color-rule), 0 24px 70px rgba(45, 49, 66, 0.16);
-  }
 }
 
 /* Signature chunky offset shadow (the "sticker / card-game" feel). */

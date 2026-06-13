@@ -39,7 +39,7 @@ export default function AnswerTile({
     <button
       onClick={onClick}
       disabled={disabled || !onClick}
-      className="group flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-left font-display font-bold transition active:translate-y-[3px] disabled:cursor-default"
+      className="group flex w-full items-center gap-3 md:gap-4 rounded-2xl px-4 py-4 md:px-5 md:py-6 text-left text-base md:text-xl font-display font-bold transition active:translate-y-[3px] disabled:cursor-default"
       style={{
         background: bg,
         color: fg,
@@ -49,7 +49,7 @@ export default function AnswerTile({
       }}
     >
       <span
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg font-extrabold"
+        className="flex h-8 w-8 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-lg md:rounded-xl text-lg md:text-2xl font-extrabold"
         style={{ background: 'rgba(255,255,255,0.28)', color: fg }}
       >
         {badge}

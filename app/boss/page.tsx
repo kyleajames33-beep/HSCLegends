@@ -30,9 +30,10 @@ export default function BossPage() {
 
   return (
     <main
-      className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md w-full mx-auto text-white"
+      className="flex flex-1 flex-col w-full text-white"
       style={{ background: ARENA, backgroundImage: `${STARS},${ARENA}` }}
     >
+      <div className="flex flex-1 flex-col px-6 pt-12 pb-10 w-full mx-auto max-w-md md:max-w-2xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-extrabold">Weekly Boss 👹</h1>
         <Link href="/" className="text-sm text-white/60 underline">Home</Link>
@@ -104,6 +105,7 @@ export default function BossPage() {
           </Link>
         </div>
       )}
+      </div>
     </main>
   );
 }

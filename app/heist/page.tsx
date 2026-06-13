@@ -175,7 +175,7 @@ export default function HeistPage() {
   // ACTIVE
   const tLeft = secs(st?.round_started_at ?? null, (st?.per_q_seconds ?? 0) * 1000);
   return (
-    <Vault>
+    <Vault wide>
       <div className="flex items-center justify-between text-sm">
         <span className="text-white/60">Q{(st?.round ?? 0) + 1}/{st?.total ?? 0}</span>
         <span style={{ color: TEAM[myTeam].color }} className="font-bold">Team {TEAM[myTeam].name}</span>
@@ -187,8 +187,8 @@ export default function HeistPage() {
           💰 HEIST ROUND — a correct answer ROBS the other team!
         </div>
       )}
-      <h2 className="mt-4 text-xl font-display font-bold leading-snug"><MathText text={st?.stem ?? ''} /></h2>
-      <div className="mt-4 space-y-3">
+      <h2 className="mt-4 text-xl md:text-3xl md:text-center font-display font-bold leading-snug"><MathText text={st?.stem ?? ''} /></h2>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
         {(st?.options ?? []).map((o, i) => (
           <AnswerTile key={i} index={i} disabled={busy || !!answered || tLeft <= 0} onClick={() => answer(i)}
             reveal={answered ? (i === answered.correct_index ? 'correct' : 'dim') : null}>
@@ -223,6 +223,16 @@ function GoldBar({ a, b }: { a: number; b: number }) {
 }
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
-function Vault({ children }: { children: React.ReactNode }) {
-  return <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md w-full mx-auto text-white" style={{ background: VAULT }}>{children}</main>;
+function Vault({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
+  return (
+    <main className="flex flex-1 flex-col w-full text-white" style={{ background: VAULT }}>
+      <div
+        className={`flex flex-1 flex-col w-full mx-auto px-6 pt-12 pb-10 ${
+          wide ? 'max-w-md md:max-w-6xl md:justify-center md:px-12' : 'max-w-md'
+        }`}
+      >
+        {children}
+      </div>
+    </main>
+  );
 }
