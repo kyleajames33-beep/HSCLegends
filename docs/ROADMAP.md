@@ -35,10 +35,11 @@ All on `main`, prod DB migrated, build-green, RPCs verified end-to-end (rolled-b
 - **Retention** ([/rewards](../app/rewards/page.tsx)) — Daily Spin + login ladder, Streak Freeze, daily/weekly Quests; `increment_quest` wired into `/play` + all Arena modes
 - **Power-ups** — 50-50/Hint/Double Sparks/Skip/Time Freeze; shop on `/rewards`, wired into `/play`
 - **Achievements** ([/achievements](../app/achievements/page.tsx)) — 14 badges from live activity
+- **Leagues** ([/league](../app/league/page.tsx)) — Bronze→Diamond divisions, weekly XP, lazy promotion/relegation rollover
 - **Welcome bonus** — 200 Sparks on first sign-in (idempotent)
 - **Boss art** — Biology real (OpenArt), optimised to 512px (~90% lighter); other 5 = placeholders
 
-**Blocked / deferred:** AI "Quiz My Notes" (needs ANTHROPIC_API_KEY — not in env). Smart notifications (needs pg_cron + device test). Leagues, Friends, Solo Boss Campaign (bigger, not started).
+**Blocked / deferred:** AI "Quiz My Notes" (needs ANTHROPIC_API_KEY + per-user daily caps to bound cost — not built). Smart notifications (no pg_cron on this project; needs pg_net-triggered scheduling + device test). Friends/social, Solo Boss Campaign (bigger, not started).
 
 ---
 
