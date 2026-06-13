@@ -8,6 +8,7 @@ import { SUBJECTS, type Subject } from '@/lib/questions';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
 import { celebrate } from '@/lib/confetti';
+import Avatar from '@/components/avatar';
 import {
   koQuickJoin, koJoin, koState, koMyState, koSubmit, koStart, koAdvance, koResults,
   subscribeRoom, type KoState, type KoMe, type KoResult,
@@ -196,8 +197,10 @@ export default function KnockoutPage() {
         </div>
         <ol className="space-y-2">
           {results.slice(0, 8).map((r) => (
-            <li key={r.rank} className={`flex items-center justify-between rounded-xl px-4 py-3 ${r.is_me ? 'bg-gold/25 border border-gold/60' : 'bg-white/10'}`}>
-              <span className="font-medium">{r.rank === 1 ? '👑' : `${r.rank}.`} {r.alias}{r.is_me ? ' (you)' : ''}</span>
+            <li key={r.rank} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${r.is_me ? 'bg-gold/25 border border-gold/60' : 'bg-white/10'}`}>
+              <span className="w-6 text-center">{r.rank === 1 ? '👑' : r.rank}</span>
+              <Avatar seed={r.alias} size={34} className="rounded-full shrink-0" />
+              <span className="font-medium flex-1 truncate">{r.alias}{r.is_me ? ' (you)' : ''}</span>
               <span className="tabular-nums font-bold">{r.score}</span>
             </li>
           ))}

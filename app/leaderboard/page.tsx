@@ -7,6 +7,7 @@ import { useUser } from '@/lib/use-user';
 import { SUBJECTS, type Subject } from '@/lib/questions';
 import { setLeaderboardOptIn } from '@/lib/progress';
 import { getSubjectLeaderboard, type BoardRow } from '@/lib/daily';
+import Avatar from '@/components/avatar';
 
 export default function LeaderboardPage() {
   const sb = useMemo(() => createClient(), []);
@@ -91,8 +92,10 @@ export default function LeaderboardPage() {
           <ol className="space-y-2">
             {rows.map((r) => (
               <li key={r.rank}
-                className={`flex items-center justify-between rounded-xl px-4 py-3 ${r.is_me ? 'bg-gold/25 border border-gold/60' : 'bg-panel'}`}>
-                <span className="font-medium"><span className="text-muted tabular-nums mr-2">{r.rank}</span>{r.name}{r.is_me ? ' (you)' : ''}</span>
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${r.is_me ? 'bg-gold/25 border border-gold/60' : 'bg-panel'}`}>
+                <span className="text-muted tabular-nums w-5 text-center font-semibold">{r.rank}</span>
+                <Avatar seed={r.name} size={34} className="rounded-full shrink-0" />
+                <span className="font-medium flex-1 truncate">{r.name}{r.is_me ? ' (you)' : ''}</span>
                 <span className="tabular-nums font-bold">{r.score}</span>
               </li>
             ))}

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useCountdown } from '@/lib/use-countdown';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
+import Avatar from '@/components/avatar';
 import { SUBJECTS, type Subject } from '@/lib/questions';
 import {
   createGame, startGame, nextQuestion, getLiveQuestion, fetchPlayers,
@@ -104,7 +105,9 @@ export default function HostPage() {
         <p className="text-center text-inksoft">{players.length} player{players.length === 1 ? '' : 's'} in</p>
         <div className="mt-4 flex flex-wrap gap-2 justify-center min-h-16">
           {players.map((p) => (
-            <span key={p.id} className="rounded-full bg-parchment-deep px-3 py-1 text-sm">{p.alias}</span>
+            <span key={p.id} className="flex items-center gap-1.5 rounded-full bg-parchment-deep pl-1 pr-3 py-1 text-sm">
+              <Avatar seed={p.alias} size={22} className="rounded-full" />{p.alias}
+            </span>
           ))}
         </div>
         <button disabled={busy || players.length === 0} onClick={begin}
@@ -169,8 +172,10 @@ function Scoreboard({ players, podium }: { players: Player[]; podium?: boolean }
   return (
     <ol className="space-y-2">
       {players.map((p, i) => (
-        <li key={p.id} className={`flex items-center justify-between rounded-xl px-4 py-3 ${podium && i < 3 ? 'bg-gold/20 border border-gold/60' : 'bg-panel'}`}>
-          <span className="font-medium">{(podium && medal[i]) || `${i + 1}.`} {p.alias}</span>
+        <li key={p.id} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${podium && i < 3 ? 'bg-gold/20 border border-gold/60' : 'bg-panel'}`}>
+          <span className="w-6 text-center">{(podium && medal[i]) || `${i + 1}.`}</span>
+          <Avatar seed={p.alias} size={32} className="rounded-full shrink-0" />
+          <span className="font-medium flex-1 truncate">{p.alias}</span>
           <span className="tabular-nums font-bold">{p.score}</span>
         </li>
       ))}
