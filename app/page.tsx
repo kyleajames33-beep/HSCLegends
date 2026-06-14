@@ -89,6 +89,19 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
+              <Link href="/campaign" className="lg-card px-4 py-4 transition active:translate-y-0.5">
+                <div className="text-2xl">⚔️</div>
+                <div className="font-display font-bold text-ink mt-1">Campaign</div>
+                <div className="text-xs mt-0.5 text-muted">beat the bosses solo</div>
+              </Link>
+              <Link href="/match" className="lg-card px-4 py-4 transition active:translate-y-0.5">
+                <div className="text-2xl">🔗</div>
+                <div className="font-display font-bold text-ink mt-1">Match</div>
+                <div className="text-xs mt-0.5 text-muted">speed pairs</div>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <Link href="/join" className="lg-card px-4 py-4 transition active:translate-y-0.5">
                 <div className="text-2xl">🎪</div>
                 <div className="font-display font-bold text-ink mt-1">Join Class Game</div>
@@ -129,6 +142,8 @@ export default function Home() {
 
       <p className="mt-8 text-center text-xs text-muted space-x-2">
         <AuthLink />
+        <span>·</span>
+        <Link href="/profile" className="underline">Profile</Link>
         <span>·</span>
         <Link href="/host" className="underline">Host a game</Link>
         <span>·</span>
