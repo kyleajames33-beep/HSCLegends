@@ -34,7 +34,7 @@ export default function HQPage() {
     if (!user) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
-    sb.rpc('get_wallet').then(({ data }) => { if (data?.[0]) setCoins(Number(data[0].coins)); }).catch(() => {});
+    sb.rpc('get_wallet').then(({ data }) => { if (data?.[0]) setCoins(Number(data[0].coins)); }, () => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
