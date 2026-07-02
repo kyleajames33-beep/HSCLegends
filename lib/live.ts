@@ -80,6 +80,12 @@ export async function claimGameXp(
   return data[0];
 }
 
+// Host/projector: how many players have answered the current question.
+export async function liveAnswerCount(sb: SupabaseClient, sessionId: string, index: number): Promise<{ answered: number; total: number; correct: number }> {
+  const { data } = await sb.rpc('live_answer_count', { p_session: sessionId, p_index: index });
+  return (data?.[0] ?? { answered: 0, total: 0, correct: 0 }) as { answered: number; total: number; correct: number };
+}
+
 export async function fetchPlayers(sb: SupabaseClient, sessionId: string): Promise<Player[]> {
   const { data, error } = await sb
     .from('game_players')

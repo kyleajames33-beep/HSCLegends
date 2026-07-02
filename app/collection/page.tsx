@@ -66,7 +66,7 @@ export default function CollectionPage() {
     } catch (e) { setErr(msg(e)); } finally { setBusy(false); }
   }
 
-  // --- group cards by subject (null = Legends) for sectioned grid ---
+  // --- group cards by subject (null = Legends) for sectioned grid, with set-completion ---
   const groups = useMemo(() => {
     const map = new Map<string, OwnedCard[]>();
     for (const c of cards) {
@@ -75,7 +75,11 @@ export default function CollectionPage() {
       if (!arr) { arr = []; map.set(key, arr); }
       arr.push(c);
     }
-    return Array.from(map.entries());
+    return Array.from(map.entries()).map(([key, list]) => ({
+      key, list,
+      have: list.filter((c) => c.count > 0).length,
+      total: list.length,
+    }));
   }, [cards]);
 
   const owned = cards.filter((c) => c.count > 0).length;
@@ -99,9 +103,15 @@ export default function CollectionPage() {
           {coins ?? '—'} ✨
         </span>
       </div>
-      <p className="mt-1 text-sm text-muted">
-        {owned}/{cards.length} cards collected
-      </p>
+      <div className="mt-1">
+        <div className="flex items-center justify-between text-sm text-muted">
+          <span>{owned}/{cards.length} cards collected</span>
+          <span className="tabular-nums font-semibold">{cards.length ? Math.round((owned / cards.length) * 100) : 0}%</span>
+        </div>
+        <div className="mt-1.5 h-2 rounded-full bg-parchment-deep overflow-hidden">
+          <div className="h-full bg-gold transition-all" style={{ width: `${cards.length ? (owned / cards.length) * 100 : 0}%` }} />
+        </div>
+      </div>
 
       {/* Open pack */}
       <button
@@ -130,12 +140,20 @@ export default function CollectionPage() {
 
       {/* Sectioned grid */}
       <div className="mt-6 space-y-6">
-        {groups.map(([key, list]) => (
+        {groups.map(({ key, list, have, total }) => {
+          const complete = total > 0 && have === total;
+          const oneAway = total > 0 && have === total - 1;
+          return (
           <section key={key}>
-            <h2 className="mb-2 font-display text-sm font-bold text-inksoft">
-              {key === '__legends__' ? '👑 Legends' : (SUBJECT_LABEL[key] ?? key)}
-            </h2>
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h2 className="font-display text-sm font-bold text-inksoft">
+                {key === '__legends__' ? '👑 Legends' : (SUBJECT_LABEL[key] ?? key)}
+              </h2>
+              <span className={`shrink-0 text-xs font-bold tabular-nums ${complete ? 'text-golddeep' : oneAway ? 'text-coraldeep' : 'text-muted'}`}>
+                {complete ? '✅ COMPLETE' : oneAway ? `${have}/${total} · one to go!` : `${have}/${total}`}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 lg:grid-cols-6">
               {list.map((c) => (
                 <CardTile
                   key={c.card_id}
@@ -149,7 +167,8 @@ export default function CollectionPage() {
               ))}
             </div>
           </section>
-        ))}
+          );
+        })}
       </div>
 
       <Home />
@@ -205,7 +224,7 @@ export default function CollectionPage() {
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
 const Shell = ({ children }: { children: React.ReactNode }) => (
-  <main className="flex flex-1 flex-col px-6 pt-14 pb-10 max-w-md w-full mx-auto">{children}</main>
+  <main className="flex flex-1 flex-col px-6 pt-14 pb-10 max-w-md md:max-w-5xl w-full mx-auto">{children}</main>
 );
 const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-extrabold text-ink">{children}</h1>;
 const Err = ({ children }: { children: React.ReactNode }) => <p className="mt-3 text-brick text-sm">{children}</p>;

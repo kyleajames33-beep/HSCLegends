@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { SUBJECTS, type Subject } from '@/lib/questions';
 import { getBoss, type Boss } from '@/lib/boss';
 import BossArt from '@/components/boss-art';
+import CountUp from '@/components/count-up';
 
 const ARENA = 'linear-gradient(160deg,#1a1d2e 0%,#2d3142 38%,#4e4068 74%,#9c5c6e 100%)';
 const STARS =
@@ -21,12 +22,16 @@ export default function BossPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     getBoss(sb, subject).then((b) => { setBoss(b); setLoading(false); });
   }, [subject, sb]);
 
   const frac = boss ? Math.max(0, boss.hp / boss.max_hp) : 1;
   const barColor = frac > 0.6 ? '#6b9b7c' : frac > 0.25 ? '#d6a85f' : '#c4646b';
+  const dealt = boss ? Math.max(0, boss.max_hp - boss.hp) : 0;
+  const pctDefeated = boss && boss.max_hp > 0 ? Math.round((dealt / boss.max_hp) * 100) : 0;
+  const yourShare = boss && dealt > 0 ? Math.round((boss.your_damage / dealt) * 100) : 0;
 
   return (
     <main
@@ -54,13 +59,13 @@ export default function BossPage() {
         <div className="mt-6 flex-1 flex flex-col">
           <div className="text-center">
             <div
-              className={`relative mx-auto flex h-44 w-44 items-end justify-center overflow-hidden rounded-full ${frac <= 0.25 && !boss.defeated ? 'animate-pulse' : ''}`}
+              className={`relative mx-auto flex h-56 w-56 md:h-64 md:w-64 items-end justify-center overflow-hidden rounded-full ${frac <= 0.25 && !boss.defeated ? 'animate-pulse' : ''}`}
               style={{ background: 'radial-gradient(ellipse at center,#2d3142 0%,#16182a 70%)', boxShadow: '0 0 60px rgba(156,92,110,0.6)' }}
             >
               {/* ground shadow so the (transparent, no-baked-shadow) boss reads as standing on a stage */}
               <div className="pointer-events-none absolute bottom-5 left-1/2 h-3 w-24 -translate-x-1/2 rounded-[50%]"
                 style={{ background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, transparent 70%)' }} />
-              <BossArt subject={subject} frac={frac} defeated={boss.defeated} className="relative h-40 w-40 pb-4" />
+              <BossArt subject={subject} frac={frac} defeated={boss.defeated} className="relative h-52 w-52 md:h-60 md:w-60 pb-4" />
             </div>
             <h2 className="mt-4 text-3xl font-display font-extrabold">{boss.name}</h2>
             <p className="text-white/50 text-sm">Signature move: {boss.attack_name}</p>
@@ -79,16 +84,19 @@ export default function BossPage() {
               <div className="h-5 rounded-full bg-black/40 overflow-hidden border border-white/10">
                 <div className="h-full transition-all" style={{ width: `${frac * 100}%`, background: barColor }} />
               </div>
+              <p className="mt-1.5 text-center text-xs text-white/60">
+                {pctDefeated >= 90 ? '🔥 So close — finish it!' : `${pctDefeated}% defeated`} · {dealt} damage dealt by the class
+              </p>
             </div>
           )}
 
           <div className="mt-6 grid grid-cols-2 gap-3 text-center">
             <div className="rounded-2xl bg-white/10 px-4 py-3">
-              <div className="text-2xl font-display font-extrabold">{boss.your_damage}</div>
-              <div className="text-xs text-white/50">your damage</div>
+              <div className="text-2xl font-display font-extrabold"><CountUp to={boss.your_damage} /></div>
+              <div className="text-xs text-white/50">your damage{yourShare > 0 ? ` · ${yourShare}% of the raid` : ''}</div>
             </div>
             <div className="rounded-2xl bg-white/10 px-4 py-3">
-              <div className="text-2xl font-display font-extrabold">{boss.contributors}</div>
+              <div className="text-2xl font-display font-extrabold"><CountUp to={boss.contributors} /></div>
               <div className="text-xs text-white/50">students fighting</div>
             </div>
           </div>

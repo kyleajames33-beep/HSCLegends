@@ -10,7 +10,7 @@ import MathText from '@/components/math-text';
 import { celebrate } from '@/lib/confetti';
 import {
   heistQuickJoin, heistJoin, heistState, heistSubmit, heistStart, heistAdvance, heistResults,
-  subscribeHeist, type HeistState, type HeistResult,
+  heistUsePowerup, subscribeHeist, type HeistState, type HeistResult,
 } from '@/lib/heist';
 
 const VAULT = 'linear-gradient(165deg,#16182a 0%,#243d5e 55%,#a87f3f 140%)';
@@ -40,13 +40,28 @@ export default function HeistPage() {
   drive.current.st = st; drive.current.room = room;
   const ansRound = useRef(-1);
   const celebrated = useRef(false);
+  const goldRef = useRef<{ a: number; b: number } | null>(null);
+  const [stealToast, setStealToast] = useState('');
+  const [raidUsedRound, setRaidUsedRound] = useState<number | null>(null);
 
   useEffect(() => { if (user && !alias) setAlias((user.email ?? '').split('@')[0].slice(0, 16)); }, [user, alias]);
   useEffect(() => () => subRef.current?.(), []);
 
+  function showSteal(m: string) { setStealToast(m); window.setTimeout(() => setStealToast(''), 2600); }
+
   async function sync(rm = room) {
     if (!rm) return;
     const s = await heistState(sb, rm);
+    const prev = goldRef.current;
+    if (prev && s.status === 'active') {
+      const myNow = myTeam === 'a' ? s.gold_a : s.gold_b;
+      const myPrev = myTeam === 'a' ? prev.a : prev.b;
+      const oppNow = myTeam === 'a' ? s.gold_b : s.gold_a;
+      const oppPrev = myTeam === 'a' ? prev.b : prev.a;
+      if (myNow < myPrev) showSteal(`💀 Robbed for ${myPrev - myNow}g!`);
+      else if (oppNow < oppPrev) showSteal(`💰 Your team stole ${oppPrev - oppNow}g!`);
+    }
+    goldRef.current = { a: s.gold_a, b: s.gold_b };
     setSt(s);
     if (s.round !== ansRound.current) setAnswered(null);
     if (s.status === 'finished' && results.length === 0) setResults(await heistResults(sb, rm));
@@ -76,11 +91,17 @@ export default function HeistPage() {
   }, [st?.status, st?.gold_a, st?.gold_b, myTeam]);
 
   async function enter(rm: string, pl: string, team: 'a' | 'b') {
-    setRoom(rm); setPlayer(pl); setMyTeam(team);
-    drive.current.startFired = false; drive.current.advRound = -2;
+    setRoom(rm); setPlayer(pl); setMyTeam(team); setRaidUsedRound(null);
+    drive.current.startFired = false; drive.current.advRound = -2; goldRef.current = null;
     subRef.current?.();
     subRef.current = subscribeHeist(sb, rm, () => syncRef.current(rm));
     await sync(rm);
+  }
+  async function useRaid() {
+    if (!st || !player || raidUsedRound !== null || answered) return;
+    const round = st.round;
+    try { if (await heistUsePowerup(sb, player, round)) setRaidUsedRound(round); }
+    catch (e) { setErr(msg(e)); }
   }
   async function quickPlay() {
     if (!alias.trim()) return;
@@ -100,7 +121,7 @@ export default function HeistPage() {
     try { const r = await heistSubmit(sb, player, st.round, choice); ansRound.current = st.round; setAnswered(r); }
     catch (e) { setErr(msg(e)); } finally { setBusy(false); }
   }
-  function reset() { subRef.current?.(); setRoom(''); setPlayer(''); setSt(null); setResults([]); setAnswered(null); celebrated.current = false; }
+  function reset() { subRef.current?.(); setRoom(''); setPlayer(''); setSt(null); setResults([]); setAnswered(null); setRaidUsedRound(null); celebrated.current = false; }
 
   const secs = (target: string | null, add = 0) => target ? Math.max(0, Math.ceil((new Date(target).getTime() + add - now) / 1000)) : 0;
 
@@ -153,7 +174,7 @@ export default function HeistPage() {
       <Vault>
         <p className="text-gold font-display font-bold text-sm">HEIST OVER</p>
         <div className="text-center my-2">
-          <div className="text-6xl">{winner == null ? '🤝' : meWon ? '🏆' : '💔'}</div>
+          <div className="lg-pop text-6xl">{winner == null ? '🤝' : meWon ? '🏆' : '💔'}</div>
           <h1 className="mt-1 text-3xl font-display font-extrabold">{winner == null ? 'Draw!' : `${TEAM[winner].name} wins!`}</h1>
         </div>
         <GoldBar a={st.gold_a} b={st.gold_b} />
@@ -182,11 +203,24 @@ export default function HeistPage() {
         <span className={`font-bold tabular-nums ${tLeft <= 3 ? 'text-rose-300' : 'text-white'}`}>{tLeft}s</span>
       </div>
       <div className="mt-2"><GoldBar a={st?.gold_a ?? 0} b={st?.gold_b ?? 0} /></div>
+      {stealToast && (
+        <div className="lg-pop mt-2 rounded-xl border border-gold bg-gold/25 px-3 py-1.5 text-center font-display font-extrabold text-gold">{stealToast}</div>
+      )}
       {st?.is_heist && (
         <div className="mt-3 rounded-xl bg-gold/25 border border-gold px-4 py-2 text-center font-display font-extrabold text-gold animate-pulse">
           💰 HEIST ROUND — a correct answer ROBS the other team!
         </div>
       )}
+      {raidUsedRound === st?.round ? (
+        <div className="mt-2 rounded-xl bg-gold/20 border border-gold/60 px-4 py-2 text-center font-bold text-gold">🔓 Raid armed — your steal counts 2×</div>
+      ) : st?.is_heist && raidUsedRound === null && !answered && tLeft > 0 ? (
+        <button onClick={useRaid} disabled={busy}
+          className="mt-2 w-full rounded-xl bg-gradient-to-r from-amber-400/30 to-rose-500/30 border border-gold/50 px-4 py-2.5 text-center font-display font-extrabold text-gold active:translate-y-0.5 disabled:opacity-40">
+          🔓 Use Raid token — DOUBLE your steal this round!
+        </button>
+      ) : st?.is_heist && raidUsedRound !== null ? (
+        <div className="mt-2 text-center text-xs text-white/40">🔓 Raid token already spent</div>
+      ) : null}
       <h2 className="mt-4 text-xl md:text-3xl md:text-center font-display font-bold leading-snug"><MathText text={st?.stem ?? ''} /></h2>
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         {(st?.options ?? []).map((o, i) => (
@@ -198,7 +232,7 @@ export default function HeistPage() {
       </div>
       {answered && (
         <p className={`mt-4 text-center font-display font-extrabold ${answered.correct ? 'text-gold' : 'text-rose-300'}`}>
-          {answered.correct ? (answered.stole ? `💰 Robbed them for ${answered.points}g!` : `+${answered.points}g banked`) : '✗ Wrong — nothing this round'}
+          {answered.correct ? (answered.stole ? `💰 Robbed them for ${answered.points}g!${raidUsedRound === st?.round ? ' (🔓2×)' : ''}` : `+${answered.points}g banked`) : '✗ Wrong — nothing this round'}
         </p>
       )}
       {err && <p className="mt-3 text-rose-300 text-sm text-center">{err}</p>}

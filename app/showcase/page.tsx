@@ -14,7 +14,7 @@ const STATES: { label: string; frac: number; defeated?: boolean }[] = [
 
 export default function Showcase() {
   return (
-    <main className="flex flex-1 flex-col px-6 pt-12 pb-16 max-w-md w-full mx-auto">
+    <main className="flex flex-1 flex-col px-6 pt-12 pb-16 max-w-md md:max-w-5xl w-full mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-extrabold text-ink">Asset showcase</h1>
         <Link href="/" className="text-sm text-muted underline">Home</Link>
@@ -22,7 +22,7 @@ export default function Showcase() {
       <p className="text-inksoft text-sm mt-1">Every custom + library asset in one place.</p>
 
       <Section title="Boss creatures (HP expressions)">
-        <div className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SUBJECTS.map((s) => (
             <div key={s.id} className="rounded-2xl p-3 text-white" style={{ background: 'linear-gradient(160deg,#2d3142,#4e4068)' }}>
               <div className="text-xs font-semibold text-white/70 mb-1">{s.label}</div>
@@ -40,7 +40,7 @@ export default function Showcase() {
       </Section>
 
       <Section title="Avatar styles (DiceBear)">
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3">
           {AVATAR_STYLES.map((st) => (
             <div key={st} className="text-center">
               <Avatar seed="legend-demo" style={st} size={64} className="rounded-full w-full h-auto" />
@@ -62,14 +62,14 @@ export default function Showcase() {
       </Section>
 
       <Section title="Empty-state illustrations">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="lg-card p-2"><PodiumSpot className="w-full h-auto" /></div>
           <div className="lg-card p-2"><ClassSpot className="w-full h-auto" /></div>
         </div>
       </Section>
 
       <Section title="Lottie animations">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="lg-card flex flex-col items-center p-4">
             <LottieBox name="celebrate" className="h-24 w-24" />
             <div className="text-[10px] text-muted">celebrate</div>

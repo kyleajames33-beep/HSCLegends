@@ -29,6 +29,38 @@
 
 html { -webkit-tap-highlight-color: transparent; }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+/* Reward "pop" — a satisfying scale-in for earned payoffs (XP, streak, cards). */
+@keyframes pop { 0% { transform: scale(0.7); opacity: 0; } 60% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+.lg-pop { animation: pop 0.45s cubic-bezier(0.2, 0.8, 0.3, 1.1) both; }
+/* Correct-answer bounce — a quick pulse on a tile that's already on screen. */
+@keyframes correct-pulse { 0% { transform: scale(1); } 45% { transform: scale(1.07); } 100% { transform: scale(1.02); } }
+.lg-correct { animation: correct-pulse 0.4s ease-out; }
+
+/* ── Battle combat FX (Campaign): Pokémon-style hits, lunges, flash/shake, dmg ── */
+@keyframes fx-shake-x { 0%,100%{transform:translateX(0)} 12%{transform:translateX(-15px) rotate(-5deg)} 30%{transform:translateX(14px) rotate(5deg)} 50%{transform:translateX(-11px)} 70%{transform:translateX(9px)} 88%{transform:translateX(-4px)} }
+@keyframes fx-lunge { 0%{transform:translateY(0) scale(1)} 35%{transform:translateY(-26px) scale(1.14)} 100%{transform:translateY(0) scale(1)} }
+@keyframes fx-boss-lunge { 0%{transform:translateY(0) scale(1)} 30%{transform:translateY(26px) scale(1.16)} 55%{transform:translateY(6px) scale(1.05)} 100%{transform:translateY(0) scale(1)} }
+@keyframes fx-screen-shake { 0%,100%{transform:translate(0,0)} 15%{transform:translate(-11px,7px)} 35%{transform:translate(10px,-9px)} 55%{transform:translate(-8px,6px)} 75%{transform:translate(6px,-4px)} }
+@keyframes fx-flash-fade { 0%{opacity:0.72} 100%{opacity:0} }
+@keyframes fx-float-up { 0%{opacity:1;transform:translate(-50%,0) scale(0.7)} 22%{transform:translate(-50%,-16px) scale(1.4)} 100%{opacity:0;transform:translate(-50%,-82px) scale(1.15)} }
+/* Pokémon damage blink: the hit sprite flickers white/transparent a few times. */
+@keyframes fx-hit-blink { 0%{opacity:1;filter:none} 10%{opacity:0.1;filter:brightness(4) saturate(0)} 22%{opacity:1;filter:brightness(4) saturate(0)} 34%{opacity:0.15;filter:none} 48%{opacity:1;filter:brightness(4) saturate(0)} 62%{opacity:0.2;filter:none} 78%{opacity:1;filter:brightness(4) saturate(0)} 100%{opacity:1;filter:none} }
+.fx-shake { animation: fx-shake-x 0.5s ease-in-out; }
+.fx-lunge { animation: fx-lunge 0.45s ease-out; }
+.fx-boss-lunge { animation: fx-boss-lunge 0.5s ease-out; }
+.fx-screen-shake { animation: fx-screen-shake 0.45s ease-in-out; }
+.fx-flash { position: fixed; inset: 0; z-index: 60; pointer-events: none; animation: fx-flash-fade 0.5s ease-out forwards; }
+.fx-float { position: absolute; left: 50%; top: 0; z-index: 30; pointer-events: none; font-weight: 900; animation: fx-float-up 0.9s ease-out forwards; }
+.fx-hit-blink { animation: fx-hit-blink 0.6s linear; }
+/* Low-HP danger vignette (pulsing red edges) */
+@keyframes fx-vignette { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
+.fx-vignette { position: fixed; inset: 0; z-index: 40; pointer-events: none; background: radial-gradient(ellipse at center, transparent 42%, rgba(170,0,0,0.6) 100%); animation: fx-vignette 1s ease-in-out infinite; }
+/* Boss intro title card */
+@keyframes fx-title { 0%{opacity:0;transform:scale(0.55)} 25%{opacity:1;transform:scale(1.1)} 75%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1)} }
+.fx-title { animation: fx-title 1.6s ease-out forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .lg-pop, .lg-correct, .fx-shake, .fx-lunge, .fx-boss-lunge, .fx-screen-shake, .fx-flash, .fx-float, .fx-hit-blink, .fx-vignette, .fx-title { animation: none; }
+}
 body {
   /* backdrop behind the app column (warm, slightly deeper than the app) */
   background:

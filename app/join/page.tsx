@@ -137,7 +137,7 @@ export default function JoinPage() {
 
   if (phase === 'question' && q) {
     return (
-      <Shell>
+      <Shell wide>
         <div className="flex items-center justify-between text-sm text-muted">
           <span>Question {q.index + 1}/{q.total}</span>
           <span className={`font-bold tabular-nums ${timer.remaining <= 5 ? 'text-brick' : 'text-ink'}`}>{timer.remaining}s</span>
@@ -150,8 +150,8 @@ export default function JoinPage() {
             ⚡ DOUBLE POINTS — get this one!
           </div>
         )}
-        <h2 className="mt-3 text-xl font-display font-bold leading-snug"><MathText text={q.stem} /></h2>
-        <div className="mt-5 space-y-3">
+        <h2 className="mt-3 text-xl md:text-3xl md:text-center font-display font-bold leading-snug"><MathText text={q.stem} /></h2>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
           {(q.options ?? []).map((o, i) => (
             <AnswerTile key={i} index={i} disabled={busy || timer.expired} onClick={() => answer(i)}>
               <MathText text={o} />
@@ -208,8 +208,8 @@ export default function JoinPage() {
 }
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
-const Shell = ({ children }: { children: React.ReactNode }) => (
-  <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md w-full mx-auto">{children}</main>
+const Shell = ({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) => (
+  <main className={`flex flex-1 flex-col px-6 pt-12 pb-10 w-full mx-auto ${wide ? 'max-w-md md:max-w-4xl md:justify-center md:px-12' : 'max-w-md'}`}>{children}</main>
 );
 const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-bold">{children}</h1>;
 const Err = ({ children }: { children: React.ReactNode }) => <p className="mt-4 text-brick text-sm">{children}</p>;

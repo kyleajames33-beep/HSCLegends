@@ -6,12 +6,13 @@ import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import { SUBJECTS, type Subject } from '@/lib/questions';
 import AnswerTile from '@/components/answer-tile';
+import CountUp from '@/components/count-up';
 import MathText from '@/components/math-text';
 import { celebrate } from '@/lib/confetti';
 import Avatar from '@/components/avatar';
 import {
-  koQuickJoin, koJoin, koState, koMyState, koSubmit, koStart, koAdvance, koResults,
-  subscribeRoom, type KoState, type KoMe, type KoResult,
+  koQuickJoin, koJoin, koState, koMyState, koSubmit, koStart, koAdvance, koResults, koRecentOut,
+  koPowerup, koUsePowerup, subscribeRoom, type KoState, type KoMe, type KoResult,
 } from '@/lib/knockout';
 
 const ARENA = 'linear-gradient(165deg,#16182a 0%,#2d3142 45%,#4e4068 100%)';
@@ -33,6 +34,9 @@ export default function KnockoutPage() {
   const [results, setResults] = useState<KoResult[]>([]);
   const [now, setNow] = useState(() => Date.now());
   const [koFlash, setKoFlash] = useState(0);
+  const [koFlashNames, setKoFlashNames] = useState<string[]>([]);
+  const [powerup, setPowerup] = useState<'shield' | 'double' | null>(null);
+  const [puUsedRound, setPuUsedRound] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const roundRef = useRef({ round: -2, alive: 0 });
@@ -55,7 +59,8 @@ export default function KnockoutPage() {
     const pr = roundRef.current;
     if (s.status === 'active' && s.round > pr.round && pr.round >= 0 && pr.alive > s.alive) {
       setKoFlash(pr.alive - s.alive);
-      setTimeout(() => setKoFlash(0), 1800);
+      koRecentOut(sb, rm, pr.round).then((names) => setKoFlashNames(names)).catch(() => {});
+      setTimeout(() => { setKoFlash(0); setKoFlashNames([]); }, 2600);
     }
     roundRef.current = { round: s.round, alive: s.alive };
     if (pl) setMe(await koMyState(sb, pl));
@@ -98,10 +103,18 @@ export default function KnockoutPage() {
 
   async function enter(rm: string, pl: string) {
     setRoom(rm); setPlayer(pl);
+    setPowerup(null); setPuUsedRound(null);
     drive.current.startFired = false; drive.current.advanceRound = -2;
     subRef.current?.();
     subRef.current = subscribeRoom(sb, rm, () => syncRef.current(rm, pl));
     await sync(rm, pl);
+    koPowerup(sb, pl).then(setPowerup).catch(() => {});
+  }
+  async function usePowerup() {
+    if (!st || !player || powerup === null || puUsedRound !== null) return;
+    const round = st.round;
+    try { if (await koUsePowerup(sb, player, round)) setPuUsedRound(round); }
+    catch (e) { setErr(msg(e)); }
   }
 
   async function quickPlay() {
@@ -128,6 +141,7 @@ export default function KnockoutPage() {
   function reset() {
     subRef.current?.();
     setRoom(''); setPlayer(''); setSt(null); setMe(null); setResults([]); setAnswered(null); setJoinCode('');
+    setPowerup(null); setPuUsedRound(null);
   }
 
   const secs = (target: string | null, add = 0) =>
@@ -202,10 +216,10 @@ export default function KnockoutPage() {
       <Arena>
         <p className="text-gold font-display font-bold text-sm">KNOCKOUT OVER</p>
         <div className="text-center my-3">
-          <div className="text-7xl">{mine?.rank === 1 ? '👑' : mine && mine.rank <= 3 ? '🏆' : '💀'}</div>
+          <div className="lg-pop text-7xl">{mine?.rank === 1 ? '👑' : mine && mine.rank <= 3 ? '🏆' : '💀'}</div>
           <h1 className="mt-2 text-3xl font-display font-extrabold">{mine ? `#${mine.rank}` : 'Done'}</h1>
           {mine && (user
-            ? <p className="mt-1 text-gold font-display font-bold">+{xp} XP · saved to your League</p>
+            ? <p className="mt-1 text-gold font-display font-bold">+<CountUp to={xp} /> XP · saved to your League</p>
             : <p className="mt-1 text-white/60 text-sm">Sign in before a game to earn XP.</p>)}
         </div>
         <ol className="space-y-2">
@@ -243,7 +257,10 @@ export default function KnockoutPage() {
 
       {koFlash > 0 && (
         <div className="mt-2 rounded-xl bg-rose-500/30 border border-rose-400/50 px-4 py-2 text-center font-display font-extrabold animate-pulse">
-          💀 {koFlash} knocked out!
+          💀 {koFlashNames.length > 0
+            ? `${koFlashNames.slice(0, 3).join(', ')}${koFlashNames.length > 3 ? ` +${koFlashNames.length - 3}` : ''} knocked out!`
+            : `${koFlash} knocked out!`}
+          {st?.status === 'active' ? ` · ${st.alive} left` : ''}
         </div>
       )}
       {eliminated && (
@@ -253,6 +270,25 @@ export default function KnockoutPage() {
       )}
 
       <h2 className="mt-4 text-xl md:text-3xl md:text-center font-display font-bold leading-snug"><MathText text={st?.stem ?? ''} /></h2>
+
+      {!eliminated && powerup && (
+        <div className="mt-3">
+          {puUsedRound === st?.round ? (
+            <div className="rounded-xl bg-emerald-500/20 border border-emerald-400/50 px-4 py-2 text-center text-sm font-bold text-emerald-200">
+              {powerup === 'shield' ? '🛡️ Shield active — a wrong answer won’t knock you out' : '✨ Double active — 2× points this round'}
+            </div>
+          ) : puUsedRound !== null ? (
+            <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-center text-xs text-white/40">
+              {powerup === 'shield' ? '🛡️ Shield' : '✨ Double'} already used
+            </div>
+          ) : !answered && tLeft > 0 ? (
+            <button onClick={usePowerup} disabled={busy}
+              className="w-full rounded-xl bg-gradient-to-r from-fuchsia-500/25 to-amber-400/25 border border-white/25 px-4 py-2.5 text-center text-sm font-display font-extrabold active:translate-y-0.5 disabled:opacity-40">
+              {powerup === 'shield' ? '🛡️ Use Shield — survive one wrong answer' : '✨ Use Double — 2× points this round'}
+            </button>
+          ) : null}
+        </div>
+      )}
 
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         {(st?.options ?? []).map((o, i) => (
@@ -267,7 +303,11 @@ export default function KnockoutPage() {
 
       {answered && !eliminated && (
         <p className={`mt-4 text-center font-display font-extrabold ${answered.correct ? 'text-green-300' : 'text-rose-300'}`}>
-          {answered.correct ? `✓ +${answered.points} — survive the round!` : '✗ Wrong — you might be out…'}
+          {answered.correct
+            ? `✓ +${answered.points}${puUsedRound === st?.round && powerup === 'double' ? ' (✨2×)' : ''} — survive the round!`
+            : puUsedRound === st?.round && powerup === 'shield'
+              ? '✗ Wrong — but 🛡️ Shield saves you!'
+              : '✗ Wrong — you might be out…'}
         </p>
       )}
       {err && <p className="mt-3 text-rose-300 text-sm text-center">{err}</p>}

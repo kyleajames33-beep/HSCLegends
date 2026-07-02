@@ -116,7 +116,7 @@ export default function LeaguePage() {
 }
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
-  <main className="flex flex-1 flex-col px-6 pt-14 pb-10 max-w-md w-full mx-auto">{children}</main>
+  <main className="flex flex-1 flex-col px-6 pt-14 pb-10 max-w-md md:max-w-3xl w-full mx-auto">{children}</main>
 );
 const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-extrabold text-ink">{children}</h1>;
 const HomeLink = () => <Link href="/" className="mt-8 text-center text-sm text-muted underline">Home</Link>;

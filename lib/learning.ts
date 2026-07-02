@@ -80,10 +80,10 @@ export async function gradeReview(
   sb: SupabaseClient,
   questionId: string,
   grade: ReviewGrade
-): Promise<{ due_at: string; interval_days: number }> {
+): Promise<{ due_at: string; interval_days: number; awarded: number }> {
   const { data, error } = await sb.rpc('grade_review', { p_question_id: questionId, p_grade: grade });
   if (error) throw new Error(error.message);
-  return data[0] as { due_at: string; interval_days: number };
+  return data[0] as { due_at: string; interval_days: number; awarded: number };
 }
 
 export async function getProgress(sb: SupabaseClient): Promise<SubjectProgress[]> {

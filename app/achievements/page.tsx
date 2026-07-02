@@ -29,6 +29,12 @@ export default function AchievementsPage() {
   }
 
   const unlocked = items.filter((a) => a.unlocked).length;
+  // Earned trophies first, then locked ones ordered by how close they are — chase the near-misses.
+  const sorted = [...items].sort((a, b) => {
+    if (a.unlocked !== b.unlocked) return a.unlocked ? -1 : 1;
+    if (a.unlocked) return 0;
+    return (b.progress / b.threshold) - (a.progress / a.threshold);
+  });
 
   return (
     <Shell>
@@ -42,12 +48,13 @@ export default function AchievementsPage() {
       </div>
       <p className="mt-2 text-inksoft text-sm">Badges unlock automatically as you play. Chase them all.</p>
 
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        {items.map((a) => {
+      <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {sorted.map((a) => {
           const pct = Math.min(100, Math.round((a.progress / a.threshold) * 100));
+          const almost = !a.unlocked && pct >= 75;
           return (
             <div key={a.id} className={`lg-card px-4 py-4 ${a.unlocked ? '' : 'opacity-90'}`}
-              style={a.unlocked ? { boxShadow: '0 4px 0 #a87f3f' } : undefined}>
+              style={a.unlocked ? { boxShadow: '0 4px 0 #a87f3f' } : almost ? { boxShadow: '0 0 0 2px rgba(212,96,122,0.55)' } : undefined}>
               <div className={`text-3xl ${a.unlocked ? '' : 'grayscale opacity-40'}`}>{a.emoji}</div>
               <div className="font-display font-bold text-ink mt-1 leading-tight">{a.name}</div>
               <div className="text-xs text-muted mt-0.5">{a.description}</div>
@@ -56,9 +63,11 @@ export default function AchievementsPage() {
               ) : (
                 <div className="mt-2">
                   <div className="h-1.5 rounded-full bg-parchment-deep overflow-hidden">
-                    <div className="h-full bg-plum" style={{ width: `${pct}%` }} />
+                    <div className="h-full" style={{ width: `${pct}%`, background: almost ? '#d4607a' : '#6d5b8a' }} />
                   </div>
-                  <div className="text-[10px] text-muted mt-1">{a.progress.toLocaleString()} / {a.threshold.toLocaleString()}</div>
+                  <div className={`text-[10px] mt-1 ${almost ? 'text-coraldeep font-semibold' : 'text-muted'}`}>
+                    {a.progress.toLocaleString()} / {a.threshold.toLocaleString()}{almost ? ' · almost there!' : ''}
+                  </div>
                 </div>
               )}
             </div>
@@ -74,7 +83,7 @@ export default function AchievementsPage() {
 }
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
-  <main className="flex flex-1 flex-col px-6 pt-14 pb-10 max-w-md w-full mx-auto">{children}</main>
+  <main className="flex flex-1 flex-col px-6 pt-14 pb-10 max-w-md md:max-w-5xl w-full mx-auto">{children}</main>
 );
 const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-extrabold text-ink">{children}</h1>;
 const HomeLink = () => <Link href="/" className="mt-8 text-center text-sm text-muted underline">Home</Link>;

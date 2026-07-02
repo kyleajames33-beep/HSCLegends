@@ -44,7 +44,7 @@ export default function AvatarPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md w-full mx-auto">
+    <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md md:max-w-2xl w-full mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-extrabold text-ink">Your Legend</h1>
         <Link href="/" className="text-sm text-muted underline">Home</Link>
@@ -58,7 +58,7 @@ export default function AvatarPage() {
       </div>
 
       <h2 className="mt-7 font-display font-bold text-ink">Style</h2>
-      <div className="mt-3 grid grid-cols-4 gap-3">
+      <div className="mt-3 grid grid-cols-4 md:grid-cols-6 gap-3">
         {AVATAR_STYLES.map((st) => (
           <button key={st} onClick={() => setStyle(st)}
             className={`rounded-2xl p-1.5 transition ${style === st ? 'ring-2 ring-plum bg-parchment-deep' : 'bg-panel'}`}>

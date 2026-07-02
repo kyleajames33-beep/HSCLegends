@@ -82,6 +82,13 @@ export async function openPack(sb: SupabaseClient, pack = 'standard'): Promise<P
   return data[0] as PullCard;
 }
 
+// Free Legend-card drop awarded for defeating a campaign boss (no Sparks cost).
+export async function campaignLoot(sb: SupabaseClient): Promise<PullCard> {
+  const { data, error } = await sb.rpc('campaign_loot');
+  if (error) throw new Error(error.message);
+  return data[0] as PullCard;
+}
+
 export async function getCollection(sb: SupabaseClient): Promise<OwnedCard[]> {
   const { data, error } = await sb.rpc('get_collection');
   if (error) throw new Error(error.message);

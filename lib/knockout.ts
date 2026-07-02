@@ -54,6 +54,22 @@ export async function koStart(sb: SupabaseClient, room: string) {
   await sb.rpc('ko_start', { p_room: room });
 }
 
+// Aliases eliminated in a given round (for the knockout callout).
+export async function koRecentOut(sb: SupabaseClient, room: string, round: number): Promise<string[]> {
+  const { data } = await sb.rpc('ko_recent_out', { p_room: room, p_round: round });
+  return ((data ?? []) as { alias: string }[]).map((r) => r.alias);
+}
+
+// One-use powerup: 'shield' (survive a wrong answer) or 'double' (2× points).
+export async function koPowerup(sb: SupabaseClient, player: string): Promise<'shield' | 'double' | null> {
+  const { data } = await sb.rpc('ko_powerup', { p_player: player });
+  return (data as 'shield' | 'double' | null) ?? null;
+}
+export async function koUsePowerup(sb: SupabaseClient, player: string, round: number): Promise<boolean> {
+  const { data } = await sb.rpc('ko_use_powerup', { p_player: player, p_round: round });
+  return !!data;
+}
+
 export async function koAdvance(sb: SupabaseClient, room: string, round: number) {
   await sb.rpc('ko_advance', { p_room: room, p_round: round });
 }

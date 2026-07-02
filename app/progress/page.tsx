@@ -136,7 +136,7 @@ export default function ProgressPage() {
       )}
 
       <p className="mt-6 mb-3 font-display font-extrabold text-ink">By subject</p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {subjects.map((s) => (
           <div key={s.subject} className="lg-card flex flex-col items-center px-3 py-4">
             <MasteryRing
@@ -157,7 +157,7 @@ export default function ProgressPage() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="flex flex-1 flex-col px-6 pt-14 pb-10 max-w-md w-full mx-auto">
+    <main className="flex flex-1 flex-col px-6 pt-14 pb-10 max-w-md md:max-w-3xl w-full mx-auto">
       {children}
     </main>
   );

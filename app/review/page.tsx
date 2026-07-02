@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import { getDueReviews, gradeReview, type ReviewQuestion, type ReviewGrade } from '@/lib/learning';
 import AnswerTile from '@/components/answer-tile';
+import CountUp from '@/components/count-up';
 import MathText from '@/components/math-text';
 
 type Phase = 'loading' | 'review' | 'empty' | 'done' | 'error' | 'signedout';
@@ -27,6 +28,9 @@ export default function ReviewPage() {
   const [total, setTotal] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [grading, setGrading] = useState(false);
+  const [sessionSparks, setSessionSparks] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [sparkPop, setSparkPop] = useState(0);
   const [err, setErr] = useState('');
 
   async function load() {
@@ -39,6 +43,8 @@ export default function ReviewPage() {
       setTotal(qs.length);
       setI(0);
       setPicked(null);
+      setSessionSparks(0);
+      setStreak(0);
       setPhase('review');
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Something went wrong.');
@@ -56,13 +62,15 @@ export default function ReviewPage() {
   function choose(idx: number) {
     if (picked !== null) return;
     setPicked(idx);
+    setStreak((s) => (idx === queue[i].correct_index ? s + 1 : 0));
   }
 
   async function grade(g: ReviewGrade) {
     if (grading) return;
     setGrading(true);
     try {
-      await gradeReview(sb, queue[i].id, g);
+      const r = await gradeReview(sb, queue[i].id, g);
+      if (r.awarded > 0) { setSessionSparks((s) => s + r.awarded); setSparkPop((p) => p + 1); }
       if (i + 1 >= queue.length) setPhase('done');
       else { setI((n) => n + 1); setPicked(null); }
     } catch (e) {
@@ -117,6 +125,9 @@ export default function ReviewPage() {
       <Shell>
         <p className="text-berrydeep font-display font-bold tracking-wide text-sm">REVIEW COMPLETE</p>
         <h1 className="mt-2 text-5xl font-extrabold text-ink">{total} done 🎉</h1>
+        {sessionSparks > 0 && (
+          <p className="mt-3 text-2xl font-display font-extrabold text-golddeep">+<CountUp to={sessionSparks} /> ✨ earned</p>
+        )}
         <p className="mt-3 text-inksoft">Nice work. The ones you marked harder will come back sooner.</p>
         <div className="mt-6 space-y-3">
           <button onClick={load} className="lg-btn lg-btn-primary block w-full px-4 py-4">Check for more</button>
@@ -134,7 +145,11 @@ export default function ReviewPage() {
     <Shell wide>
       <div className="flex items-center justify-between text-sm text-muted font-semibold">
         <span>🧠 Review {i + 1}/{total}</span>
-        <span className="uppercase tracking-wide">{q.subject.replace('-', ' ')}</span>
+        <span className="flex items-center gap-2.5">
+          {streak >= 2 && <span className="text-coraldeep">🔥 {streak}</span>}
+          {sessionSparks > 0 && <span key={sparkPop} className="lg-pop text-golddeep">✨ {sessionSparks}</span>}
+          <span className="uppercase tracking-wide">{q.subject.replace('-', ' ')}</span>
+        </span>
       </div>
       <div className="mt-1 h-2 rounded-full bg-parchment-deep overflow-hidden">
         <div className="h-full bg-leaf transition-all" style={{ width: `${(i / total) * 100}%` }} />
@@ -196,7 +211,7 @@ function Shell({ children, wide = false }: { children: React.ReactNode; wide?: b
   return (
     <main
       className={`flex flex-1 flex-col px-6 pt-14 pb-10 w-full mx-auto ${
-        wide ? 'max-w-md md:max-w-6xl md:px-12' : 'max-w-md'
+        wide ? 'max-w-md md:max-w-6xl md:px-12' : 'max-w-md md:max-w-2xl'
       }`}
     >
       {children}

@@ -44,7 +44,9 @@ export default function ExamMode() {
   const [questions, setQuestions] = useState<ExamQ[]>([]);
   const [i, setI] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
+  const [flags, setFlags] = useState<boolean[]>([]);
   const [startedAt, setStartedAt] = useState<string | null>(null);
+  const [best, setBest] = useState<{ prev: number; isNew: boolean } | null>(null);
   const [err, setErr] = useState('');
   const submittedRef = useRef(false);
 
@@ -64,6 +66,8 @@ export default function ExamMode() {
       if (!qs.length) throw new Error('No questions found for that selection.');
       setQuestions(qs);
       setAnswers(new Array(qs.length).fill(null));
+      setFlags(new Array(qs.length).fill(false));
+      setBest(null);
       setSel({ subject, year });
       setI(0);
       submittedRef.current = false;
@@ -78,11 +82,27 @@ export default function ExamMode() {
   function finish() {
     if (submittedRef.current) return;
     submittedRef.current = true;
+    // Personal best per subject+year (localStorage — event-driven, no economy/farm risk).
+    const sc = questions.reduce((acc, qq, idx) => acc + (answers[idx] === qq.correct_index ? 1 : 0), 0);
+    const pct = questions.length ? Math.round((sc / questions.length) * 100) : 0;
+    if (sel) {
+      try {
+        const key = `exam-best-${sel.subject}-${sel.year}`;
+        const prev = Number(localStorage.getItem(key) ?? '0');
+        if (pct > prev) { localStorage.setItem(key, String(pct)); setBest({ prev, isNew: prev > 0 }); }
+        else setBest({ prev, isNew: false });
+      } catch { /* private mode / no storage — skip best */ }
+    }
     setPhase('done');
   }
 
-  // Auto-submit when the big timer expires.
+  function toggleFlag() {
+    setFlags((f) => { const next = [...f]; next[i] = !next[i]; return next; });
+  }
+
+  // Auto-submit when the big timer expires (legit setState-from-effect: the clock owns this).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (phase === 'play' && expired) finish();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, expired]);
@@ -165,6 +185,11 @@ export default function ExamMode() {
             {score}/{questions.length}
           </h1>
           <p className="mt-1 text-2xl font-display font-extrabold text-plum">{pct}%</p>
+          {best?.isNew ? (
+            <p className="lg-pop mt-1 text-sm font-display font-extrabold text-golddeep">🎉 New personal best!</p>
+          ) : best && best.prev > 0 ? (
+            <p className="mt-1 text-sm text-muted">Personal best: {best.prev}% · {band(best.prev).band}</p>
+          ) : null}
           <div className="lg-card mt-4 px-5 py-4">
             <div className="font-display font-extrabold text-2xl text-ink">{b.band}</div>
             <div className="text-sm text-inksoft mt-0.5">
@@ -256,11 +281,12 @@ export default function ExamMode() {
   const q = questions[i];
   const picked = answers[i];
   const answeredCount = answers.filter((a) => a !== null).length;
+  const flagCount = flags.filter(Boolean).length;
   return (
     <Shell wide>
       <div className="flex items-center justify-between text-sm font-semibold">
         <span className="text-muted">
-          Question {i + 1}/{questions.length} · {answeredCount} answered
+          Question {i + 1}/{questions.length} · {answeredCount} answered{flagCount > 0 ? ` · 🚩 ${flagCount}` : ''}
         </span>
         <span className="text-base">
           <ExamTimer remaining={remaining} />
@@ -289,9 +315,13 @@ export default function ExamMode() {
           </AnswerTile>
         ))}
       </div>
-      {picked !== null && (
-        <p className="mt-3 text-sm text-leaf font-semibold">Answer locked in — you can change it.</p>
-      )}
+      <div className="mt-3 flex items-center gap-3">
+        <button onClick={toggleFlag}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition ${flags[i] ? 'bg-gold/30 text-golddeep border border-gold/60' : 'bg-parchment-deep text-muted border border-transparent'}`}>
+          🚩 {flags[i] ? 'Flagged for review' : 'Flag for review'}
+        </button>
+        {picked !== null && <span className="text-sm text-leaf font-semibold">Answer recorded — you can change it.</span>}
+      </div>
 
       <div className="mt-6 flex items-center gap-3">
         <button
@@ -311,7 +341,30 @@ export default function ExamMode() {
           </button>
         )}
       </div>
-      <button onClick={finish} className="mt-4 text-sm text-muted underline self-start">
+      {/* Question palette — jump anywhere; see answered / flagged / blank at a glance */}
+      <div className="mt-6 grid grid-cols-10 gap-1.5">
+        {questions.map((_, idx) => {
+          const ans = answers[idx] !== null;
+          const cur = idx === i;
+          return (
+            <button
+              key={idx}
+              onClick={() => setI(idx)}
+              className={`h-8 rounded-md text-xs font-bold tabular-nums transition ${cur ? 'ring-2 ring-plum ring-offset-1' : ''} ${ans ? 'bg-plum text-white' : 'bg-parchment-deep text-muted'}`}
+              style={flags[idx] ? { boxShadow: 'inset 0 0 0 2px #d6a85f' } : undefined}
+            >
+              {idx + 1}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
+        <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded-sm bg-plum" /> answered</span>
+        <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded-sm bg-parchment-deep" /> blank</span>
+        <span className="inline-flex items-center gap-1"><span className="h-3 w-3 rounded-sm" style={{ boxShadow: 'inset 0 0 0 2px #d6a85f' }} /> 🚩 flagged</span>
+      </div>
+
+      <button onClick={finish} className="mt-5 text-sm text-muted underline self-start">
         Submit early
       </button>
     </Shell>
@@ -322,7 +375,7 @@ function Shell({ children, wide = false }: { children: React.ReactNode; wide?: b
   return (
     <main
       className={`flex flex-1 flex-col px-6 pt-12 pb-10 w-full mx-auto ${
-        wide ? 'max-w-md md:max-w-6xl md:px-12' : 'max-w-md'
+        wide ? 'max-w-md md:max-w-6xl md:px-12' : 'max-w-md md:max-w-3xl'
       }`}
     >
       {children}

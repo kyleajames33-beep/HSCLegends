@@ -3,9 +3,14 @@ import type { Subject } from '@/lib/questions';
 // Boss art using Kenney CC0 toon-character sprites (in /public/bosses/<subject>/),
 // with the frame chosen by HP: healthy → enraged → hurt → defeated.
 export default function BossArt({
-  subject, frac, defeated, className,
-}: { subject: Subject; frac: number; defeated?: boolean; className?: string }) {
-  const state = defeated ? 'defeat' : frac <= 0.3 ? 'hurt' : frac <= 0.6 ? 'attack' : 'idle';
+  subject, frac, defeated, className, pose,
+}: {
+  subject: Subject; frac: number; defeated?: boolean; className?: string;
+  // Optional transient pose override (combat): force 'attack'/'hurt' for a beat
+  // so the boss visibly reacts, regardless of its HP-based resting frame.
+  pose?: 'idle' | 'attack' | 'hurt' | 'defeat';
+}) {
+  const state = pose ?? (defeated ? 'defeat' : frac <= 0.3 ? 'hurt' : frac <= 0.6 ? 'attack' : 'idle');
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img

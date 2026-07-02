@@ -2,12 +2,14 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import AuthLink from '@/components/auth-link';
 import HomeStats from '@/components/home-stats';
+import DailyNudge from '@/components/daily-nudge';
 import TodayQuizzes from '@/components/today-quizzes';
 import InstallPrompt from '@/components/install-prompt';
 import OnboardingGate from '@/components/onboarding-gate';
 import NotificationToggle from '@/components/notification-toggle';
 import WalletChip from '@/components/wallet-chip';
 import RewardsLink from '@/components/rewards-link';
+import HqChip from '@/components/hq-chip';
 
 export default function Home() {
   return (
@@ -29,6 +31,8 @@ export default function Home() {
           {/* Daily core */}
           <div className="space-y-4">
             <HomeStats />
+            <DailyNudge />
+            <HqChip />
             <TodayQuizzes />
             <RewardsLink />
 
@@ -100,6 +104,30 @@ export default function Home() {
                 <div className="text-xs mt-0.5 text-muted">speed pairs</div>
               </Link>
             </div>
+
+            <Link href="/tycoon" className="rounded-2xl px-4 py-4 text-white transition active:translate-y-0.5"
+              style={{ background: 'linear-gradient(135deg,#a87f3f,#6b9b7c)', boxShadow: '0 4px 0 #4a7a5b' }}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-2xl">🏦</div>
+                  <div className="font-display font-extrabold mt-1">Lab Tycoon</div>
+                  <div className="text-xs opacity-80">answer → earn → upgrade → repeat</div>
+                </div>
+                <span className="shrink-0 rounded-full bg-white/25 px-2 py-0.5 text-[10px] font-extrabold">NEW</span>
+              </div>
+            </Link>
+
+            <Link href="/hq" className="rounded-2xl px-4 py-4 text-white transition active:translate-y-0.5"
+              style={{ background: 'linear-gradient(135deg,#4e4068,#243d5e)', boxShadow: '0 4px 0 #16182a' }}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-2xl">🏛️</div>
+                  <div className="font-display font-extrabold mt-1">Research HQ</div>
+                  <div className="text-xs opacity-80">build a base that earns ✨ while you study</div>
+                </div>
+                <span className="shrink-0 rounded-full bg-white/25 px-2 py-0.5 text-[10px] font-extrabold">NEW</span>
+              </div>
+            </Link>
 
             <div className="grid grid-cols-2 gap-3">
               <Link href="/join" className="lg-card px-4 py-4 transition active:translate-y-0.5">

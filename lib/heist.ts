@@ -29,6 +29,11 @@ export async function heistSubmit(sb: SupabaseClient, player: string, round: num
   if (error) throw new Error(error.message);
   return data[0] as { correct: boolean; correct_index: number; points: number; stole: boolean };
 }
+// One-use 🔓 Raid token: doubles your steal on the heist round you activate it.
+export async function heistUsePowerup(sb: SupabaseClient, player: string, round: number): Promise<boolean> {
+  const { data } = await sb.rpc('heist_use_powerup', { p_player: player, p_round: round });
+  return !!data;
+}
 export async function heistStart(sb: SupabaseClient, room: string) { await sb.rpc('heist_start', { p_room: room }); }
 export async function heistAdvance(sb: SupabaseClient, room: string, round: number) { await sb.rpc('heist_advance', { p_room: room, p_round: round }); }
 export async function heistResults(sb: SupabaseClient, room: string): Promise<HeistResult[]> {

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import Avatar from '@/components/avatar';
 import { division } from '@/lib/league';
+import { duelPeak, duelTier } from '@/lib/duel';
 import { getProfileSummary, type ProfileSummary } from '@/lib/profile';
 
 export default function ProfilePage() {
@@ -13,6 +14,7 @@ export default function ProfilePage() {
   const { user, loading } = useUser();
 
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
+  const [duelRank, setDuelRank] = useState<{ elo: number; subject: string; year: number } | null>(null);
   const [err, setErr] = useState('');
 
   const load = useCallback(async () => {
@@ -23,8 +25,8 @@ export default function ProfilePage() {
   }, [sb]);
 
   useEffect(() => {
-    if (!loading && user) load();
-  }, [loading, user, load]);
+    if (!loading && user) { load(); duelPeak(sb, user.id).then(setDuelRank).catch(() => {}); }
+  }, [loading, user, load, sb]);
 
   // ---------- gates ----------
   if (loading) {
@@ -82,8 +84,11 @@ export default function ProfilePage() {
           />
           <div className="min-w-0 flex-1">
             <div className="truncate text-xl font-display font-extrabold text-ink">{p?.name ?? 'Legend'}</div>
-            <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-plum/10 border border-rule px-2.5 py-0.5 text-xs font-bold text-ink">
-              {div.emoji} {div.name} League
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 rounded-full bg-plum/10 border border-rule px-2.5 py-0.5 text-xs font-bold text-ink">
+                {div.emoji} {div.name} League
+              </span>
+              {duelRank && <DuelChip elo={duelRank.elo} />}
             </div>
           </div>
         </div>
@@ -111,7 +116,7 @@ export default function ProfilePage() {
       </section>
 
       {/* ---------- Stat grid ---------- */}
-      <div className="mt-5 grid grid-cols-2 gap-3">
+      <div className="mt-5 grid grid-cols-2 md:grid-cols-3 gap-3">
         <Stat label="Questions answered" value={`${p?.answered ?? 0}`} />
         <Stat label="Accuracy" value={`${accuracy}%`} />
         <Stat label="Duels (W–L)" value={`${p?.duels_won ?? 0}–${p?.duels_lost ?? 0}`} />
@@ -121,7 +126,7 @@ export default function ProfilePage() {
       </div>
 
       {/* ---------- Quick links ---------- */}
-      <div className="mt-6 grid grid-cols-2 gap-3">
+      <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
         <QuickLink href="/achievements">🏅 Achievements</QuickLink>
         <QuickLink href="/collection">🃏 Collection</QuickLink>
         <QuickLink href="/league">🏆 League</QuickLink>
@@ -134,6 +139,16 @@ export default function ProfilePage() {
 }
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
+
+const DuelChip = ({ elo }: { elo: number }) => {
+  const t = duelTier(elo);
+  return (
+    <Link href="/duel" className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold"
+      style={{ background: `${t.color}22`, color: t.color, border: `1px solid ${t.color}55` }}>
+      {t.icon} {t.name} · {elo}
+    </Link>
+  );
+};
 
 const Stat = ({ label, value }: { label: string; value: string }) => (
   <div className="lg-card px-4 py-3">
@@ -149,7 +164,7 @@ const QuickLink = ({ href, children }: { href: string; children: React.ReactNode
 );
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
-  <main className="flex flex-1 flex-col px-6 pt-14 pb-10 max-w-md w-full mx-auto">{children}</main>
+  <main className="flex flex-1 flex-col px-6 pt-14 pb-10 max-w-md md:max-w-4xl w-full mx-auto">{children}</main>
 );
 const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-extrabold text-ink">{children}</h1>;
 const Err = ({ children }: { children: React.ReactNode }) => <p className="mt-4 text-brick text-sm">{children}</p>;

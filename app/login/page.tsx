@@ -38,7 +38,7 @@ function LoginInner() {
   }
 
   return (
-    <main className="flex flex-1 flex-col px-6 pt-16 pb-10 max-w-md w-full mx-auto">
+    <main className="flex flex-1 flex-col md:justify-center px-6 pt-16 pb-10 max-w-md w-full mx-auto">
       <h1 className="text-2xl font-bold">{sent ? 'Enter your code' : 'Sign in'}</h1>
       <p className="text-inksoft text-sm mt-1">
         {sent ? `We emailed a 6-digit code to ${email}.` : 'We’ll email you a one-time code — no password.'}

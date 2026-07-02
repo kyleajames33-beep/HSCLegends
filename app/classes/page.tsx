@@ -89,7 +89,7 @@ export default function ClassesPage() {
         <Link href="/" className="text-sm text-muted underline">Home</Link>
       </div>
 
-      <div className="mt-5 space-y-2">
+      <div className="mt-5 space-y-2 md:space-y-0 md:grid md:grid-cols-2 md:gap-3">
         {classes.map((c) => (
           <button key={c.id} onClick={() => openClass(c)}
             className="block w-full text-left rounded-xl bg-panel hover:bg-parchment-deep px-4 py-3 transition">
@@ -138,7 +138,7 @@ export default function ClassesPage() {
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
 const Shell = ({ children }: { children: React.ReactNode }) => (
-  <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md w-full mx-auto">{children}</main>
+  <main className="flex flex-1 flex-col px-6 pt-12 pb-10 max-w-md md:max-w-4xl w-full mx-auto">{children}</main>
 );
 const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-bold">{children}</h1>;
 const Stat = ({ label, value }: { label: string; value: number }) => (

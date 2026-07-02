@@ -10,7 +10,7 @@ import MathText from '@/components/math-text';
 import Avatar from '@/components/avatar';
 import { celebrate } from '@/lib/confetti';
 import {
-  duelFindOrCreate, duelQuestion, duelAnswer, duelResult, getDuelLadder,
+  duelFindOrCreate, duelQuestion, duelAnswer, duelResult, getDuelLadder, duelMyElo, duelTier,
   type DuelMatch, type DuelQ, type DuelResult, type LadderRow,
 } from '@/lib/duel';
 
@@ -33,13 +33,29 @@ export default function DuelPage() {
   const [score, setScore] = useState(0);
   const [result, setResult] = useState<DuelResult | null>(null);
   const [ladder, setLadder] = useState<LadderRow[]>([]);
+  const [myElo, setMyElo] = useState<{ elo: number; wins: number; losses: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
+  // Your division badge on the pick screen — refetched per subject/year and after a result.
+  // (No synchronous reset: the pick screen early-returns the sign-in view when !user.)
   useEffect(() => {
-    if (result?.outcome === 'win') {
+    if (!user) return;
+    let live = true;
+    duelMyElo(sb, user.id, subject, year).then((e) => { if (live) setMyElo(e); }).catch(() => {});
+    return () => { live = false; };
+  }, [user, subject, year, sb, result]);
+
+  useEffect(() => {
+    if (!result) return;
+    if (result.outcome === 'win') {
       celebrate(true);
       sb.rpc('increment_quest', { p_metric: 'duel_win', p_amount: 1 }).then(undefined, () => {});
+    }
+    // promotion to a new division is worth its own celebration even on a draw
+    if (ranked && result.my_delta != null && result.outcome !== 'win') {
+      const up = duelTier(result.my_elo).min > duelTier(result.my_elo - result.my_delta).min;
+      if (up) celebrate(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
@@ -97,6 +113,7 @@ export default function DuelPage() {
       <Shell>
         <H>⚔️ Duel</H>
         <p className="text-inksoft text-sm mt-1">Same 5 questions, head to head. Fastest brain wins ELO.</p>
+        {myElo && <RankCard elo={myElo.elo} wins={myElo.wins} losses={myElo.losses} label={`${SUBJECTS.find((s) => s.id === subject)?.label} · Y${year}`} />}
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           {SUBJECTS.map((s) => (
             <button key={s.id} onClick={() => setSubject(s.id)}
@@ -167,10 +184,13 @@ export default function DuelPage() {
   if (phase === 'done' && result) {
     const pending = result.outcome === 'pending';
     const emoji = pending ? '⏳' : result.outcome === 'win' ? '🏆' : result.outcome === 'draw' ? '🤝' : '💔';
+    const nowTier = duelTier(result.my_elo);
+    const oldTier = !pending && ranked && result.my_delta != null ? duelTier(result.my_elo - result.my_delta) : null;
+    const move = oldTier ? (nowTier.min > oldTier.min ? 'up' : nowTier.min < oldTier.min ? 'down' : null) : null;
     return (
       <Shell>
         <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <div className="text-6xl">{emoji}</div>
+          <div className="lg-pop text-6xl">{emoji}</div>
           <H>{pending ? `You scored ${result.my_score}/${total}` : result.outcome.toUpperCase()}</H>
           {pending ? (
             <p className="mt-2 text-inksoft">Your run’s in — we’ll match you with an opponent and the result lands here.</p>
@@ -183,6 +203,16 @@ export default function DuelPage() {
                 <p className="mt-1 text-plum font-display font-bold">
                   {result.my_delta >= 0 ? '+' : ''}{result.my_delta} ELO · now {result.my_elo}
                 </p>
+              )}
+              {ranked && (
+                move ? (
+                  <div className="lg-pop mt-3 rounded-xl px-4 py-2 font-display font-extrabold"
+                    style={{ background: `${nowTier.color}22`, color: nowTier.color, border: `1px solid ${nowTier.color}66` }}>
+                    {move === 'up' ? '⬆ Promoted to' : '⬇ Demoted to'} {nowTier.icon} {nowTier.name}!
+                  </div>
+                ) : (
+                  <div className="mt-3"><TierBadge elo={result.my_elo} /></div>
+                )
               )}
             </>
           )}
@@ -208,13 +238,49 @@ export default function DuelPage() {
             <Avatar seed={r.name} size={34} className="rounded-full shrink-0" />
             <span className="font-medium flex-1 truncate">{r.name}{r.is_me ? ' (you)' : ''}</span>
             <span className="text-xs text-muted">{r.wins}W {r.losses}L</span>
-            <span className="tabular-nums font-bold w-12 text-right">{r.elo}</span>
+            <span className="text-base" title={duelTier(r.elo).name}>{duelTier(r.elo).icon}</span>
+            <span className="tabular-nums font-bold w-12 text-right" style={{ color: duelTier(r.elo).color }}>{r.elo}</span>
           </li>
         ))}
         {!ladder.length && <p className="text-muted text-sm">No ranked duels played yet. Be the first to climb.</p>}
       </ol>
       <Home />
     </Shell>
+  );
+}
+
+function TierBadge({ elo }: { elo: number }) {
+  const t = duelTier(elo);
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-display font-bold"
+      style={{ background: `${t.color}22`, color: t.color, border: `1px solid ${t.color}55` }}>
+      {t.icon} {t.name} · {elo}
+    </span>
+  );
+}
+
+function RankCard({ elo, wins, losses, label }: { elo: number; wins: number; losses: number; label: string }) {
+  const t = duelTier(elo);
+  const next = t.next != null ? duelTier(t.next) : null;
+  return (
+    <div className="lg-card mt-4 p-4" style={{ borderColor: `${t.color}55` }}>
+      <div className="flex items-center gap-3">
+        <div className="text-4xl leading-none">{t.icon}</div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span className="font-display font-extrabold text-lg" style={{ color: t.color }}>{t.name}</span>
+            <span className="text-sm text-muted tabular-nums">{elo} ELO</span>
+            <span className="ml-auto text-xs text-muted shrink-0">{label}</span>
+          </div>
+          <div className="mt-1.5 h-2 rounded-full bg-parchment-deep overflow-hidden">
+            <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${t.progress * 100}%`, background: t.color }} />
+          </div>
+          <div className="mt-1 text-xs text-muted">
+            {wins}W · {losses}L{next ? ` · ${t.toNext} ELO to ${next.icon} ${next.name}` : ' · top division 👑'}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

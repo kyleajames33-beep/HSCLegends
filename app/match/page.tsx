@@ -7,6 +7,7 @@ import { useUser } from '@/lib/use-user';
 import { getQuizQuestions, SUBJECTS, type Question, type Subject } from '@/lib/questions';
 import { celebrate } from '@/lib/confetti';
 import MathText from '@/components/math-text';
+import CountUp from '@/components/count-up';
 
 type Phase = 'pick' | 'loading' | 'play' | 'done' | 'error';
 type Sel = { subject: Subject; year: 11 | 12 };
@@ -154,7 +155,7 @@ export default function MatchGame() {
       <Shell>
         <h1 className="text-3xl font-extrabold text-ink">Match</h1>
         <p className="text-inksoft mt-1 text-sm">Pair {COUNT} questions with their answers — fast as you can.</p>
-        <div className="mt-6 space-y-2.5">
+        <div className="mt-6 space-y-2.5 sm:grid sm:grid-cols-2 sm:gap-2.5 sm:space-y-0">
           {SUBJECTS.map((s) => (
             <div key={s.id} className="lg-card flex items-center gap-2 px-4 py-2.5">
               <span className="flex-1 font-semibold text-ink">{s.label}</span>
@@ -194,14 +195,14 @@ export default function MatchGame() {
     return (
       <Shell>
         <p className="text-berrydeep font-display font-bold tracking-wide text-sm">MATCH COMPLETE</p>
-        <h1 className="mt-2 text-6xl font-extrabold text-ink">{fmt(elapsed)}</h1>
+        <h1 className="lg-pop mt-2 text-6xl font-extrabold text-ink">{fmt(elapsed)}</h1>
         <p className="mt-3 text-inksoft">
           {mistakes === 0 ? 'Flawless — no misses!' : `${mistakes} mistake${mistakes === 1 ? '' : 's'} (incl. +${WRONG_PENALTY}s each).`}
         </p>
 
         {user ? (
           <div className="lg-card mt-5 px-4 py-4 text-center" style={{ boxShadow: '0 4px 0 #6b9b7c' }}>
-            <div className="text-leaf font-display font-extrabold text-lg">+{Math.max(5, 20 - mistakes)} ✨ Sparks</div>
+            <div className="text-leaf font-display font-extrabold text-lg">+<CountUp to={Math.max(5, 20 - mistakes)} /> ✨ Sparks</div>
             <div className="text-xs text-inksoft mt-1">Earned for finishing the match.</div>
           </div>
         ) : (
@@ -314,7 +315,7 @@ function Shell({ children, wide = false }: { children: React.ReactNode; wide?: b
   return (
     <main
       className={`flex flex-1 flex-col px-6 pt-12 pb-10 w-full mx-auto ${
-        wide ? 'max-w-md md:max-w-3xl' : 'max-w-md'
+        wide ? 'max-w-md md:max-w-3xl' : 'max-w-md md:max-w-2xl'
       }`}
     >
       {children}

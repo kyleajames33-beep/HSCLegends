@@ -355,7 +355,7 @@ function Shell({ children, wide = false }: { children: React.ReactNode; wide?: b
   return (
     <main
       className={`flex flex-1 flex-col px-6 pt-14 pb-10 w-full mx-auto ${
-        wide ? 'max-w-md md:max-w-6xl md:px-12' : 'max-w-md'
+        wide ? 'max-w-md md:max-w-6xl md:px-12' : 'max-w-md md:max-w-3xl'
       }`}
     >
       {children}

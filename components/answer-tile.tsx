@@ -39,7 +39,7 @@ export default function AnswerTile({
     <button
       onClick={onClick}
       disabled={disabled || !onClick}
-      className="group flex w-full items-center gap-3 md:gap-4 rounded-2xl px-4 py-4 md:px-5 md:py-6 text-left text-base md:text-xl font-display font-bold transition active:translate-y-[3px] disabled:cursor-default"
+      className={`group flex w-full items-center gap-3 md:gap-4 rounded-2xl px-4 py-4 md:px-5 md:py-6 text-left text-base md:text-xl font-display font-bold transition active:translate-y-[3px] disabled:cursor-default${reveal === 'correct' ? ' lg-correct' : reveal === 'wrong' ? ' fx-shake' : ''}`}
       style={{
         background: bg,
         color: fg,

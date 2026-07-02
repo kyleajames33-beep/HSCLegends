@@ -7,13 +7,17 @@ import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import { getQuizQuestions, SUBJECTS, type Question, type Subject } from '@/lib/questions';
 import { recordQuickGame, STREAK_MSG, type QuickResult } from '@/lib/progress';
-import { recordDailyQuiz } from '@/lib/daily';
+import { recordDailyQuiz, getSubjectLeaderboard, type BoardRow } from '@/lib/daily';
 import { celebrate } from '@/lib/confetti';
 import CelebrateLottie from '@/components/celebrate-lottie';
+import CountUp from '@/components/count-up';
 import ShareButton from '@/components/share-button';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
 import { getPowerups, usePowerup, QUICKGAME_POWERUPS, type Powerup } from '@/lib/powerups';
+
+// Earn→spend: correct answers bank Energy (capped), spent on free in-run boosts.
+const MAX_ENERGY = 6;
 
 type Phase = 'pick' | 'loading' | 'play' | 'done' | 'error';
 type Sel = { subject: Subject; year: 11 | 12 };
@@ -41,6 +45,11 @@ export default function QuickGame() {
   const [hintShown, setHintShown] = useState(false);
   const [doubleActive, setDoubleActive] = useState(false);
   const [bonusSparks, setBonusSparks] = useState(0);
+  const [combo, setCombo] = useState(0);
+  const [maxCombo, setMaxCombo] = useState(0);
+  const [energy, setEnergy] = useState(0);
+  const [myRank, setMyRank] = useState<BoardRow | null>(null);
+  const [nextGap, setNextGap] = useState<number | null>(null);
 
   // Daily mode: ?daily=1&subject=…&year=… auto-starts the prescribed quiz.
   useEffect(() => {
@@ -65,6 +74,7 @@ export default function QuickGame() {
       setTotal(qs.length);
       setI(0);
       setScore(0);
+      setCombo(0); setMaxCombo(0); setEnergy(0);
       setResult(null);
       setPicked(null);
       setEliminated([]); setHintShown(false); setDoubleActive(false); setBonusSparks(0);
@@ -80,16 +90,22 @@ export default function QuickGame() {
   async function save(subject: Subject, year: 11 | 12, correct: number, tot: number) {
     setSaveErr('');
     try {
+      // Whether this round earns Sparks/quest credit. Daily replays that don't re-count
+      // must not re-credit, or students could farm Sparks by replaying the daily quiz.
+      let earns = true;
       if (daily) {
         const r = await recordDailyQuiz(sb, subject, year, correct, tot);
         setDailyCounted(r.counted);
         setResult({ xp_awarded: r.xp_awarded, total_xp: r.total_xp, streak: r.streak, streak_event: r.streak_event });
+        earns = r.counted;
       } else {
         setResult(await recordQuickGame(sb, subject, year, correct, tot));
       }
       // Earn Sparks for the round (+ any Double Sparks bonus) + advance the daily-quiz quest.
-      sb.rpc('credit_coins', { p_amount: correct * 2 + 5 + bonusSparks, p_reason: 'quick_game', p_meta: null }).then(undefined, () => {});
-      if (daily) sb.rpc('increment_quest', { p_metric: 'daily_quiz', p_amount: 1 }).then(undefined, () => {});
+      if (earns) {
+        sb.rpc('credit_coins', { p_amount: correct * 2 + 5 + bonusSparks, p_reason: 'quick_game', p_meta: null }).then(undefined, () => {});
+        if (daily) sb.rpc('increment_quest', { p_metric: 'daily_quiz', p_amount: 1 }).then(undefined, () => {});
+      }
     } catch (e) {
       setSaveErr(e instanceof Error ? e.message : 'Could not save.');
     }
@@ -128,6 +144,19 @@ export default function QuickGame() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
 
+  // This week's standing for the results rank nudge.
+  useEffect(() => {
+    if (phase !== 'done' || !user || !sel) return;
+    getSubjectLeaderboard(sb, sel.subject, sel.year, 'week').then((rows) => {
+      const me = rows.find((r) => r.is_me);
+      if (!me) return;
+      setMyRank(me);
+      const above = rows.find((r) => r.rank === me.rank - 1);
+      setNextGap(above ? above.score - me.score : null);
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, result]);
+
   function choose(idx: number) {
     if (picked !== null) return;
     setPicked(idx);
@@ -135,7 +164,14 @@ export default function QuickGame() {
     const correct = idx === q.correct_index;
     if (correct) {
       setScore((s) => s + 1);
+      const nc = combo + 1;
+      setCombo(nc);
+      setMaxCombo((m) => Math.max(m, nc));
+      setEnergy((e) => Math.min(MAX_ENERGY, e + 1));
       if (doubleActive) setBonusSparks((b) => b + 2); // doubled question's extra Sparks
+      if (nc >= 3) setBonusSparks((b) => b + 1); // combo bonus: +1 Spark per 3+ streak
+    } else {
+      setCombo(0);
     }
     // Learning + quest hooks (signed-in only, fire-and-forget — never block gameplay).
     if (user) {
@@ -155,6 +191,25 @@ export default function QuickGame() {
   }
 
   // Consume a power-up and apply its effect to the current question.
+  // Energy-funded in-run boosts (free — earned by answering, not bought).
+  function spendEnergy5050() {
+    const cq = questions[i];
+    if (picked !== null || !cq || energy < 3 || eliminated.length > 0) return;
+    setEnergy((e) => e - 3);
+    const wrong = cq.options.map((_, idx) => idx).filter((idx) => idx !== cq.correct_index && !eliminated.includes(idx));
+    setEliminated((e2) => [...e2, ...wrong.slice(0, 2)]);
+  }
+  function spendEnergyHint() {
+    if (picked !== null || hintShown || energy < 2) return;
+    setEnergy((e) => e - 2);
+    setHintShown(true);
+  }
+  function spendEnergyDouble() {
+    if (picked !== null || doubleActive || energy < 4) return;
+    setEnergy((e) => e - 4);
+    setDoubleActive(true);
+  }
+
   function applyPowerup(id: string) {
     const have = powerups.find((p) => p.id === id);
     if (!have || have.count <= 0 || picked !== null) return;
@@ -223,10 +278,29 @@ export default function QuickGame() {
         </p>
 
         {result ? (
-          <div className="lg-card mt-5 px-4 py-4 text-center" style={{ boxShadow: '0 4px 0 #6b9b7c' }}>
-            <div className="text-leaf font-display font-extrabold text-lg">+{result.xp_awarded} XP</div>
+          <div className="lg-pop lg-card mt-5 px-4 py-4 text-center" style={{ boxShadow: '0 4px 0 #6b9b7c' }}>
+            <div className="text-leaf font-display font-extrabold text-lg">+<CountUp to={result.xp_awarded} /> XP</div>
+            {(!daily || dailyCounted) && (
+              <div className="text-golddeep font-display font-extrabold text-sm mt-0.5">+<CountUp to={score * 2 + 5 + bonusSparks} /> ✨ Sparks</div>
+            )}
+            {maxCombo >= 3 && (
+              <div className="lg-pop text-coraldeep font-display font-bold text-sm">🔥 {maxCombo} best streak this round</div>
+            )}
             <div className="text-2xl font-display font-extrabold mt-1 text-ink">🔥 {result.streak} day{result.streak === 1 ? '' : 's'}</div>
             <div className="text-xs text-inksoft mt-1">{STREAK_MSG[result.streak_event]}</div>
+            {myRank && (
+              <div className="lg-pop mt-2 text-sm font-display font-bold text-berrydeep">
+                🏆 #{myRank.rank} in {SUBJECTS.find((s) => s.id === sel?.subject)?.label} this week
+                {nextGap != null && nextGap > 0
+                  ? ` · ${nextGap} pts to #${myRank.rank - 1}`
+                  : myRank.rank === 1 ? ' · top of the board! 👑' : ''}
+              </div>
+            )}
+            {score > 0 && sel && (!daily || dailyCounted) && (
+              <Link href="/boss" className="mt-3 block rounded-xl border border-plum/30 bg-plum/10 px-3 py-2 text-sm font-display font-bold text-plumdeep active:translate-y-0.5 transition">
+                💥 Dealt {score} damage to the {SUBJECTS.find((s) => s.id === sel.subject)?.label} boss →
+              </Link>
+            )}
             <div className="mt-3"><ShareButton streak={result.streak} className="text-sm text-berrydeep font-semibold underline" /></div>
           </div>
         ) : saveErr ? (
@@ -307,6 +381,33 @@ export default function QuickGame() {
       )}
       {hintShown && picked === null && q.explanation && (
         <p className="mt-2 text-sm text-plum md:text-center"><span className="font-bold">Hint:</span> <MathText text={q.explanation.split('. ')[0]} /></p>
+      )}
+
+      {picked === null && (
+        <div className="mt-3 flex items-center gap-2">
+          <span className="text-xs font-bold text-golddeep">⚡ Energy</span>
+          <div className="flex gap-1" aria-label="Energy">
+            {Array.from({ length: MAX_ENERGY }).map((_, k) => (
+              <span key={k} className={`h-2.5 w-2.5 rounded-full ${k < energy ? 'bg-gold' : 'bg-parchment-deep border border-rule'}`} />
+            ))}
+          </div>
+          <div className="ml-auto flex gap-1.5">
+            <button onClick={spendEnergy5050} disabled={energy < 3 || eliminated.length > 0}
+              className="rounded-full bg-plum/15 px-2.5 py-1 text-xs font-bold text-plumdeep transition active:translate-y-0.5 disabled:opacity-40">50/50 · 3</button>
+            <button onClick={spendEnergyHint} disabled={energy < 2 || hintShown}
+              className="rounded-full bg-plum/15 px-2.5 py-1 text-xs font-bold text-plumdeep transition active:translate-y-0.5 disabled:opacity-40">Hint · 2</button>
+            <button onClick={spendEnergyDouble} disabled={energy < 4 || doubleActive}
+              className="rounded-full bg-gold/25 px-2.5 py-1 text-xs font-bold text-golddeep transition active:translate-y-0.5 disabled:opacity-40">2× · 4</button>
+          </div>
+        </div>
+      )}
+
+      {combo >= 2 && (
+        <div key={combo} className="lg-pop mt-3 text-center">
+          <span className="inline-block rounded-full bg-coral/20 px-3 py-1 font-display font-extrabold text-coraldeep">
+            🔥 {combo} streak{combo >= 3 ? ' · +Sparks!' : ''}
+          </span>
+        </div>
       )}
 
       <div className="mt-5 grid gap-3 md:grid-cols-2">
