@@ -105,6 +105,19 @@ export default function Home() {
               </Link>
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <Link href="/type" className="lg-card px-4 py-4 transition active:translate-y-0.5">
+                <div className="text-2xl">⌨️</div>
+                <div className="font-display font-bold text-ink mt-1">Type it</div>
+                <div className="text-xs mt-0.5 text-muted">free-recall typing</div>
+              </Link>
+              <Link href="/friends" className="lg-card px-4 py-4 transition active:translate-y-0.5">
+                <div className="text-2xl">🤝</div>
+                <div className="font-display font-bold text-ink mt-1">Friends</div>
+                <div className="text-xs mt-0.5 text-muted">add &amp; compete</div>
+              </Link>
+            </div>
+
             <Link href="/tycoon" className="rounded-2xl px-4 py-4 text-white transition active:translate-y-0.5"
               style={{ background: 'linear-gradient(135deg,#a87f3f,#6b9b7c)', boxShadow: '0 4px 0 #4a7a5b' }}>
               <div className="flex items-center justify-between gap-2">
