@@ -39,7 +39,13 @@ All on `main`, prod DB migrated, build-green, RPCs verified end-to-end (rolled-b
 - **Welcome bonus** — 200 Sparks on first sign-in (idempotent)
 - **Boss art** — Biology real (OpenArt), optimised to 512px (~90% lighter); other 5 = placeholders
 
-**Blocked / deferred:** AI "Quiz My Notes" (needs ANTHROPIC_API_KEY + per-user daily caps to bound cost — not built). Smart notifications (no pg_cron on this project; needs pg_net-triggered scheduling + device test). Friends/social, Solo Boss Campaign (bigger, not started).
+### Also shipped (Sprint 2, 2026-06-14+)
+- **Solo Boss Campaign** ([/campaign](../app/campaign/page.tsx)), **Profile hub** ([/profile](../app/profile/page.tsx)), **Match mini-game** ([/match](../app/match/page.tsx))
+- **Smart-notification infrastructure** — `notify-streaks` edge function + `streak_nudge_targets()` (built + targeting verified; **not yet deployed/scheduled** — needs Kyle)
+
+**Partial (box still open below, but part-built):** Streak Freeze (freeze exists, no auto-repair cron), Smart notifications (dispatcher built, not scheduled), New question types (Match shipped, type-the-answer pending), Boss art (1 of 6 subjects).
+
+**Blocked / deferred:** AI "Quiz My Notes" (needs ANTHROPIC_API_KEY + per-user daily caps to bound cost). Seasons/Term Pass, Juice pass, Friends/social, Adaptive difficulty, Predicted band, Content QA, Class Championships, hscscience deep-links (not started).
 
 ---
 
@@ -66,36 +72,36 @@ All on `main`, prod DB migrated, build-green, RPCs verified end-to-end (rolled-b
 ## THE HITLIST (prioritised; ⭐ = building this session)
 
 ### Pillar 1 — Retention Engine
-- [ ] ⭐ **Gems economy foundation** — earn-only `gems` balance + `gem_ledger` audit table + `credit_gems()`/`spend_gems()` RPCs. Earn from quizzes, quests, daily goal, league podium, boss wins. _The connective tissue for everything below._
+- [x] ⭐ **Gems economy foundation** — earn-only `gems` balance + `gem_ledger` audit table + `credit_gems()`/`spend_gems()` RPCs. Earn from quizzes, quests, daily goal, league podium, boss wins. _The connective tissue for everything below._
 - [ ] ⭐ **Streak Freeze + auto-repair** — `streak_freezes` count; daily cron decrements a freeze instead of zeroing a missed streak; 1 free/week + 24h grace repair. (Mercy, not a dark pattern.)
-- [ ] ⭐ **Daily Spin + escalating login ladder** — 1 free spin/day (gems/cards), 7-day claim ladder, day-7 guaranteed rare. Wired to web-push.
-- [ ] ⭐ **Quests** — `quests` + `user_quests`; 3 rotating daily ("answer 10 Chem Qs", "get a 5-streak", "play a Duel") + weekly + monthly-completion badge; each grants gems.
+- [x] ⭐ **Daily Spin + escalating login ladder** — 1 free spin/day (gems/cards), 7-day claim ladder, day-7 guaranteed rare. Wired to web-push.
+- [x] ⭐ **Quests** — `quests` + `user_quests`; 3 rotating daily ("answer 10 Chem Qs", "get a 5-streak", "play a Duel") + weekly + monthly-completion badge; each grants gems.
 - [ ] **Smart notification engine** — `notifications_queue` + cron; max 1/day ~3/wk; triggers: streak-at-risk at user's active hour, "league resets in 6h you're 2 from promotion", boss-HP-low, duel-revenge. Encouraging copy, frequency toggle.
-- [ ] **Leagues refinement** — named divisions (Bronze→Diamond), ~30-person cohorts, promotion/relegation via Sunday cron, podium gems, **"Most Improved" badge** so weak students aren't only ever losing.
+- [x] **Leagues refinement** — named divisions (Bronze→Diamond), ~30-person cohorts, promotion/relegation via Sunday cron, podium gems, **"Most Improved" badge** so weak students aren't only ever losing.
 - [ ] **Onboarding hooks** — pick a daily goal; instant Day-1 streak + starter gems + first free card before they leave.
-- [ ] **Achievements/badges** — tiered (`Answer 1k/10k/50k Qs`, `Win 5 Duels`, `30-day streak`). App Badging API for streak-at-risk (PWA widget surrogate).
+- [x] **Achievements/badges** — tiered (`Answer 1k/10k/50k Qs`, `Win 5 Duels`, `30-day streak`). App Badging API for streak-at-risk (PWA widget surrogate).
 
 ### Pillar 2 — Collection & Juice
-- [ ] ⭐ **Legend Cards** — collectible HSC-themed character/scientist cards, rarity tiers (Common→Legendary→**Mythic**), earn-only gacha **packs** with **published drop rates**, duplicate→gems sell-back. Reuse DiceBear + boss art. Pack-opening reveal animation. _#1 engagement gap._
-- [ ] ⭐ **Power-ups** — 5 reusable: **50-50, Time Freeze, Double Points, Streak Saver, Redemption** (one missed Q returns at end). Earned/bought with gems, toggled per mode (Quick/Knockout/Duel/Heist). Cheap, high-juice.
+- [x] ⭐ **Legend Cards** — collectible HSC-themed character/scientist cards, rarity tiers (Common→Legendary→**Mythic**), earn-only gacha **packs** with **published drop rates**, duplicate→gems sell-back. Reuse DiceBear + boss art. Pack-opening reveal animation. _#1 engagement gap._
+- [x] ⭐ **Power-ups** — 5 reusable: **50-50, Time Freeze, Double Points, Streak Saver, Redemption** (one missed Q returns at end). Earned/bought with gems, toggled per mode (Quick/Knockout/Duel/Heist). Cheap, high-juice.
 - [ ] **Seasons / Term Pass** — 8–10 week terms matching the HSC calendar; free XP-gated reward track (+ optional cheap _cosmetic-only flat-price_ track). One fresh seasonal mode per term.
 - [ ] **Juice pass** — sound effects, haptics, richer answer feedback, podium victory animations, more Lottie moments, combo/streak flourishes.
-- [ ] **Solo Boss Campaign** — single-player progression map; correct answers damage a series of subject bosses (reuse boss art + Weekly Boss tech), unlocking cards/areas. For the individual player with no class of 30.
+- [x] **Solo Boss Campaign** — single-player progression map; correct answers damage a series of subject bosses (reuse boss art + Weekly Boss tech), unlocking cards/areas. For the individual player with no class of 30.
 
 ### Pillar 3 — Learning Engine
-- [ ] ⭐ **SRS "Review" mode** — `review_cards(user_id, question_id, ease, interval_days, due_at, reps, lapses, last_reviewed_at)`; created on a wrong answer, SM-2 update RPC with interval fuzz; daily "X due" badge → Review queue. _Highest impact / lowest effort; our pedagogical moat._
-- [ ] ⭐ **Per-topic mastery %** — `topic_mastery(user_id, topic, level, points, ...)`; Khan-style Familiar/Proficient/Mastered, **downgradeable**; roll up to module & subject.
-- [ ] ⭐ **Progress dashboard** — topic heatmap + "Focus on these 3" weak-area drill (2 Qs × 3 weakest topics). Turns invisible learning into visible, addictive gains.
-- [ ] ⭐ **Explanation reveal** — show the stored `explanation` after every answer (attempt-first → learn-why; productive failure). Near-zero effort, already stored.
+- [x] ⭐ **SRS "Review" mode** — `review_cards(user_id, question_id, ease, interval_days, due_at, reps, lapses, last_reviewed_at)`; created on a wrong answer, SM-2 update RPC with interval fuzz; daily "X due" badge → Review queue. _Highest impact / lowest effort; our pedagogical moat._
+- [x] ⭐ **Per-topic mastery %** — `topic_mastery(user_id, topic, level, points, ...)`; Khan-style Familiar/Proficient/Mastered, **downgradeable**; roll up to module & subject.
+- [x] ⭐ **Progress dashboard** — topic heatmap + "Focus on these 3" weak-area drill (2 Qs × 3 weakest topics). Turns invisible learning into visible, addictive gains.
+- [x] ⭐ **Explanation reveal** — show the stored `explanation` after every answer (attempt-first → learn-why; productive failure). Near-zero effort, already stored.
 - [ ] **Confidence rating** — post-answer Shaky/OK/Solid; feeds SRS interval; adds metacognition.
 - [ ] **Adaptive difficulty** — use existing `difficulty 1–3` + `bloom`; escalate as topic accuracy rises, drop back when it falls.
 - [ ] **Predicted HSC band** — per subject, shown as a **narrowing range** ("Band 4–5, sharpening as you practise"); explicit note it estimates the exam half only (not moderated assessment).
 - [ ] **New question types** — type-the-answer (fuzzy/Levenshtein grading), timed Match mini-game, cloze. Variety + desirable difficulty.
 
 ### Pillar 4 — HSC Content & Funnel
-- [ ] ⭐ **Syllabus Topic Map** — per subject, the official 2017 Module → Inquiry-Question/subtopic tree with per-topic mastery rings. (Data already in `module`/`topic`/`topics[]`.)
-- [ ] ⭐ **Exam Mode (timed)** — 20-question "Section I" MC simulation with countdown + band-style scoreout.
-- [ ] ⭐ **Past-Papers-by-Topic** — drill a topic across all years; claim the Studyclix model that has **zero NSW presence**.
+- [x] ⭐ **Syllabus Topic Map** — per subject, the official 2017 Module → Inquiry-Question/subtopic tree with per-topic mastery rings. (Data already in `module`/`topic`/`topics[]`.)
+- [x] ⭐ **Exam Mode (timed)** — 20-question "Section I" MC simulation with countdown + band-style scoreout.
+- [x] ⭐ **Past-Papers-by-Topic** — drill a topic across all years; claim the Studyclix model that has **zero NSW presence**.
 - [ ] **Class Championships** — time-boxed school-vs-school events over existing classes + leaderboards (the EP World Series mechanic, but fun & all-year).
 - [ ] **hscscience.com.au "Learn this" deep-links** — on a wrong answer / weak topic, deep-link to the matching lesson. _The funnel the app exists to serve._
 - [ ] **AI "Quiz My Notes"** — paste/upload notes/PDF → Claude API generates an HSC-style quiz, playable + saved. Table-stakes at the top tier; doubles as a funnel hook.

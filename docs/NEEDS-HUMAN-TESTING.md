@@ -336,3 +336,15 @@ the home modes grid (gold/green "NEW" card).
 - Responsive/fullscreen refactor compiles: **all 26 routes return HTTP 200**, no compile errors,
   no new lint errors introduced.
 - Service worker no longer registers in dev (and unregisters itself) — stale-cache issue fixed.
+
+---
+
+## 🚀 Deploy / keys / infra (merged from NEEDS-FROM-YOU.md — the notifications + economy sprint)
+
+_These are deploy/secret/key actions the audit-sprint produced that aren't covered above._
+
+1. **Deploy + schedule the streak notifier** (`supabase/functions/notify-streaks/`): `supabase secrets set VAPID_PUBLIC_KEY=… VAPID_PRIVATE_KEY=… CRON_SECRET=<random>` → `supabase functions deploy notify-streaks` → schedule daily ~6pm AEST (Dashboard → Edge Functions → Schedules, cron `0 8 * * *` UTC) or hit the URL from any external cron with header `x-cron-secret`. No `pg_cron` on this project, so it's schedule-driven. Sends ≤1 nudge/user/day; targeting verified (found real at-risk users).
+2. **`ANTHROPIC_API_KEY`** — add to app secrets to unlock AI "Quiz My Notes". Will be built with a hard **3 generations/day per-user cap** + cheapest model (Haiku) + `max_tokens` ceiling so cost is bounded.
+3. **Rotate the Supabase `service_role` key** — it was pasted in an earlier chat. Rotate + update deployed function envs.
+4. **Boss art (5 subjects)** — OpenArt sets for Chemistry, Physics, Maths Std/Adv/Ext1 (idle/attack/hurt/defeat), drop into `public/bosses/<subject>/`. Biology done. Guide: `docs/openart-boss-art-guide.md`.
+5. **Web Push (prod)** — confirm VAPID keys are Supabase secrets (not inline) before relying on notifications; needs a real installed PWA to fully test.
