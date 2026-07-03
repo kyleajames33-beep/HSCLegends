@@ -179,6 +179,10 @@ export default function Home() {
               <span className="font-display font-bold text-ink">🎟️ Term Pass</span>
               <span className="text-sm text-muted inline-flex items-center gap-1">free rewards <ChevronRight className="h-4 w-4" /></span>
             </Link>
+            <Link href="/event" className="lg-card flex items-center justify-between px-4 py-3.5 transition active:translate-y-0.5">
+              <span className="font-display font-bold text-ink">🏆 Championship</span>
+              <span className="text-sm text-muted inline-flex items-center gap-1">live event <ChevronRight className="h-4 w-4" /></span>
+            </Link>
 
             <NotificationToggle />
           </div>
