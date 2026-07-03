@@ -1,0 +1,6 @@
+-- Prefer verified questions (complete + explained) across every quiz selector.
+-- Purely a re-order (verified first, then the rest fill in) — still returns the
+-- same count, backward compatible. Applied to get_quiz_questions (shared spine),
+-- get_topic_questions, get_module_questions, get_exam_questions.
+-- See the applied migration `legends_prefer_verified` for the full bodies; each
+-- selector's ORDER BY now leads with `q.verified desc`.
