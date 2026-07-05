@@ -58,8 +58,25 @@ html { -webkit-tap-highlight-color: transparent; }
 /* Boss intro title card */
 @keyframes fx-title { 0%{opacity:0;transform:scale(0.55)} 25%{opacity:1;transform:scale(1.1)} 75%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1)} }
 .fx-title { animation: fx-title 1.6s ease-out forwards; }
+
+/* ── Juice Kit additions (shared FX — components/juice.tsx) ── */
+/* Particle burst: dots fly outward from a point (--dx/--dy set per particle in JS). */
+@keyframes fx-particle { 0%{opacity:1;transform:translate(-50%,-50%) scale(1)} 100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(0.3)} }
+.fx-particle { position: fixed; z-index: 65; pointer-events: none; border-radius: 9999px; animation: fx-particle 0.65s cubic-bezier(0.1,0.7,0.4,1) forwards; }
+/* Floating score/damage numbers pinned to viewport coords (.fx-float is parent-anchored). */
+.fx-float-fixed { position: fixed; z-index: 70; pointer-events: none; font-weight: 900; animation: fx-float-up 0.9s ease-out forwards; }
+/* Streak flame: the combo pill flickers faster (and glows) as the streak climbs. */
+@keyframes fx-flame-flicker { 0%,100%{transform:scale(1) rotate(-2deg)} 30%{transform:scale(1.08) rotate(2deg)} 55%{transform:scale(0.96) rotate(-1deg)} 80%{transform:scale(1.05) rotate(1.5deg)} }
+@keyframes fx-flame-glow { 0%,100%{box-shadow:0 0 6px 1px rgba(255,120,40,0.35)} 50%{box-shadow:0 0 16px 5px rgba(255,80,20,0.55)} }
+.fx-flame-slow { animation: fx-flame-flicker 1.4s ease-in-out infinite; }
+.fx-flame-fast { animation: fx-flame-flicker 0.55s ease-in-out infinite, fx-flame-glow 0.8s ease-in-out infinite; }
+/* Timer urgency: the countdown number thumps when time is nearly out. */
+@keyframes fx-urgent { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
+.fx-urgent { animation: fx-urgent 0.9s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
-  .lg-pop, .lg-correct, .fx-shake, .fx-lunge, .fx-boss-lunge, .fx-screen-shake, .fx-flash, .fx-float, .fx-hit-blink, .fx-vignette, .fx-title { animation: none; }
+  .lg-pop, .lg-correct, .fx-shake, .fx-lunge, .fx-boss-lunge, .fx-screen-shake, .fx-flash, .fx-float, .fx-hit-blink, .fx-vignette, .fx-title,
+  .fx-particle, .fx-float-fixed, .fx-flame-slow, .fx-flame-fast, .fx-urgent { animation: none; }
 }
 body {
   /* backdrop behind the app column (warm, slightly deeper than the app) */

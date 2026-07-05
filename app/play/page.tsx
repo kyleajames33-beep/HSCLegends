@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -14,6 +14,7 @@ import CountUp from '@/components/count-up';
 import ShareButton from '@/components/share-button';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
+import { useJuice, atEvent, StreakFlame, type JuiceAt } from '@/components/juice';
 import { getPowerups, usePowerup, QUICKGAME_POWERUPS, type Powerup } from '@/lib/powerups';
 
 // Earn→spend: correct answers bank Energy (capped), spent on free in-run boosts.
@@ -50,6 +51,9 @@ export default function QuickGame() {
   const [energy, setEnergy] = useState(0);
   const [myRank, setMyRank] = useState<BoardRow | null>(null);
   const [nextGap, setNextGap] = useState<number | null>(null);
+  // Juice Kit FX — bursts/floats anchor to the tapped tile.
+  const juice = useJuice();
+  const lastTap = useRef<JuiceAt | undefined>(undefined);
 
   // Daily mode: ?daily=1&subject=…&year=… auto-starts the prescribed quiz.
   useEffect(() => {
@@ -170,8 +174,11 @@ export default function QuickGame() {
       setEnergy((e) => Math.min(MAX_ENERGY, e + 1));
       if (doubleActive) setBonusSparks((b) => b + 2); // doubled question's extra Sparks
       if (nc >= 3) setBonusSparks((b) => b + 1); // combo bonus: +1 Spark per 3+ streak
+      juice.correct(nc >= 2 ? `+1 · x${nc}` : '+1', lastTap.current);
     } else {
       setCombo(0);
+      juice.flash('red'); // AnswerTile shakes itself; keep solo mode gentler than arena modes
+      juice.buzz(60);
     }
     // Learning + quest hooks (signed-in only, fire-and-forget — never block gameplay).
     if (user) {
@@ -346,6 +353,7 @@ export default function QuickGame() {
   const q = questions[i];
   return (
     <Shell wide>
+      {juice.overlay}
       <div className="flex items-center justify-between text-sm text-muted font-semibold">
         <span>
           Question {i + 1}/{questions.length}
@@ -403,14 +411,12 @@ export default function QuickGame() {
       )}
 
       {combo >= 2 && (
-        <div key={combo} className="lg-pop mt-3 text-center">
-          <span className="inline-block rounded-full bg-coral/20 px-3 py-1 font-display font-extrabold text-coraldeep">
-            🔥 {combo} streak{combo >= 3 ? ' · +Sparks!' : ''}
-          </span>
+        <div className="mt-3 text-center">
+          <StreakFlame combo={combo} label={`streak${combo >= 3 ? ' · +Sparks!' : ''}`} />
         </div>
       )}
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2">
+      <div className="mt-5 grid gap-3 md:grid-cols-2" onPointerDownCapture={(e) => { lastTap.current = atEvent(e); }}>
         {q.options.map((opt, idx) => {
           if (eliminated.includes(idx)) {
             return (
