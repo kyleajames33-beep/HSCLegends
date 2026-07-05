@@ -10,10 +10,12 @@ import CountUp from '@/components/count-up';
 import MathText from '@/components/math-text';
 import { celebrate } from '@/lib/confetti';
 import Avatar from '@/components/avatar';
+import { useJuice, atEvent, TimerBar, StreakFlame, type JuiceAt } from '@/components/juice';
 import {
-  koQuickJoin, koJoin, koState, koMyState, koSubmit, koStart, koAdvance, koResults, koRecentOut,
+  koQuickJoin, koJoin, koRejoin, koState, koMyState, koSubmit, koStart, koAdvance, koResults, koRecentOut,
   koPowerup, koUsePowerup, subscribeRoom, type KoState, type KoMe, type KoResult,
 } from '@/lib/knockout';
+import { startHeartbeat, saveArenaSession, loadArenaSession, clearArenaSession, type ArenaSession } from '@/lib/presence';
 
 const ARENA = 'linear-gradient(165deg,#16182a 0%,#2d3142 45%,#4e4068 100%)';
 
@@ -40,8 +42,15 @@ export default function KnockoutPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const roundRef = useRef({ round: -2, alive: 0 });
+  // Juice Kit FX — bursts/floats anchor to the tapped tile; screen shakes on elimination.
+  const juice = useJuice();
+  const lastTap = useRef<JuiceAt | undefined>(undefined);
+  const [streak, setStreak] = useState(0); // consecutive correct answers this game
+  const wasAlive = useRef<boolean | null>(null);
 
   const subRef = useRef<(() => void) | null>(null);
+  const hbRef = useRef<(() => void) | null>(null);
+  const [resume, setResume] = useState<ArenaSession | null>(null);
   const drive = useRef({ st: null as KoState | null, room: '', startFired: false, advanceRound: -2 });
   drive.current.st = st;
   drive.current.room = room;
@@ -50,7 +59,24 @@ export default function KnockoutPage() {
   useEffect(() => {
     if (user && !alias) setAlias((user.email ?? '').split('@')[0].slice(0, 16));
   }, [user, alias]);
-  useEffect(() => () => subRef.current?.(), []);
+  useEffect(() => () => { subRef.current?.(); hbRef.current?.(); }, []);
+
+  // Drop recovery: a stashed session means a refresh/crash mid-game — offer to rejoin.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setResume(loadArenaSession('knockout'));
+  }, []);
+  async function rejoin(s: ArenaSession) {
+    setBusy(true); setErr('');
+    try {
+      const r = await koRejoin(sb, s.code, s.alias);
+      if (!r) throw new Error('Could not find your player in that game.');
+      setAlias(s.alias); setCode(s.code); setResume(null);
+      await enter(r.room_id, r.player_id);
+    } catch (e) {
+      clearArenaSession('knockout'); setResume(null); setErr(msg(e));
+    } finally { setBusy(false); }
+  }
 
   async function sync(rm = room, pl = player) {
     if (!rm) return;
@@ -65,6 +91,7 @@ export default function KnockoutPage() {
     roundRef.current = { round: s.round, alive: s.alive };
     if (pl) setMe(await koMyState(sb, pl));
     if (s.round !== answeredRound.current) setAnswered(null);
+    if (s.status === 'finished') clearArenaSession('knockout'); // nothing to rejoin
     if (s.status === 'finished' && results.length === 0) setResults(await koResults(sb, rm));
   }
   const syncRef = useRef(sync);
@@ -93,6 +120,18 @@ export default function KnockoutPage() {
     return () => clearInterval(t);
   }, [sb]);
 
+  // The moment YOU get knocked out: red flash + shake + skull float.
+  useEffect(() => {
+    if (me == null) return;
+    if (wasAlive.current === true && !me.alive) {
+      juice.flash('red'); juice.shake();
+      juice.float('💀 OUT', { tone: 'red', big: true });
+      juice.buzz([60, 40, 120]);
+    }
+    wasAlive.current = me.alive;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me?.alive]);
+
   const celebrated = useRef(false);
   useEffect(() => {
     if (st?.status === 'finished' && results.length && !celebrated.current) {
@@ -104,9 +143,12 @@ export default function KnockoutPage() {
   async function enter(rm: string, pl: string) {
     setRoom(rm); setPlayer(pl);
     setPowerup(null); setPuUsedRound(null);
+    setStreak(0); wasAlive.current = null;
     drive.current.startFired = false; drive.current.advanceRound = -2;
     subRef.current?.();
     subRef.current = subscribeRoom(sb, rm, () => syncRef.current(rm, pl));
+    hbRef.current?.();
+    hbRef.current = startHeartbeat(sb, 'knockout', pl);
     await sync(rm, pl);
     koPowerup(sb, pl).then(setPowerup).catch(() => {});
   }
@@ -120,13 +162,25 @@ export default function KnockoutPage() {
   async function quickPlay() {
     if (!alias.trim()) return;
     setBusy(true); setErr('');
-    try { const r = await koQuickJoin(sb, subject, year, alias); setCode(r.code); sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {}); await enter(r.room_id, r.player_id); }
+    try {
+      const r = await koQuickJoin(sb, subject, year, alias);
+      setCode(r.code);
+      saveArenaSession('knockout', { code: r.code, room: r.room_id, player: r.player_id, alias });
+      sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {});
+      await enter(r.room_id, r.player_id);
+    }
     catch (e) { setErr(msg(e)); } finally { setBusy(false); }
   }
   async function joinByCode() {
     if (joinCode.length < 6 || !alias.trim()) return;
     setBusy(true); setErr('');
-    try { const r = await koJoin(sb, joinCode, alias); setCode(joinCode); sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {}); await enter(r.room_id, r.player_id); }
+    try {
+      const r = await koJoin(sb, joinCode, alias);
+      setCode(joinCode);
+      saveArenaSession('knockout', { code: joinCode, room: r.room_id, player: r.player_id, alias });
+      sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {});
+      await enter(r.room_id, r.player_id);
+    }
     catch (e) { setErr(msg(e)); } finally { setBusy(false); }
   }
   async function answer(choice: number) {
@@ -136,12 +190,27 @@ export default function KnockoutPage() {
       const r = await koSubmit(sb, player, st.round, choice);
       answeredRound.current = st.round;
       setAnswered(r);
+      if (r.correct) {
+        setStreak((s) => s + 1);
+        juice.correct(`+${r.points}`, lastTap.current);
+      } else {
+        setStreak(0);
+        if (puUsedRound === st.round && powerup === 'shield') {
+          juice.flash('blue');
+          juice.float('🛡️ SAVED', { tone: 'blue', at: lastTap.current });
+        } else {
+          juice.wrong('✗', lastTap.current);
+        }
+      }
     } catch (e) { setErr(msg(e)); } finally { setBusy(false); }
   }
   function reset() {
     subRef.current?.();
+    hbRef.current?.(); hbRef.current = null;
+    clearArenaSession('knockout');
     setRoom(''); setPlayer(''); setSt(null); setMe(null); setResults([]); setAnswered(null); setJoinCode('');
     setPowerup(null); setPuUsedRound(null);
+    setStreak(0); wasAlive.current = null;
   }
 
   const secs = (target: string | null, add = 0) =>
@@ -153,6 +222,14 @@ export default function KnockoutPage() {
       <Arena>
         <h1 className="text-3xl font-display font-extrabold">☠️ Knockout</h1>
         <p className="text-white/60 mt-1 text-sm">Battle royale. Answer right or get eliminated. Last Legend standing wins.</p>
+
+        {resume && (
+          <button onClick={() => rejoin(resume)} disabled={busy}
+            className="mt-5 w-full rounded-2xl border border-gold/60 bg-gold/20 px-4 py-3 text-left active:translate-y-0.5 disabled:opacity-40">
+            <span className="font-display font-extrabold text-gold">↩️ Rejoin game {resume.code}</span>
+            <span className="block text-sm text-white/70">Pick up where you left off as {resume.alias} — your score is safe.</span>
+          </button>
+        )}
 
         <input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="Your name" maxLength={20}
           className="mt-5 w-full rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-white placeholder-white/40 outline-none focus:border-white/50" />
@@ -245,14 +322,15 @@ export default function KnockoutPage() {
   const tLeft = secs(st?.round_started_at ?? null, (st?.per_q_seconds ?? 0) * 1000);
   return (
     <Arena wide>
+      {juice.overlay}
+      <div className={juice.shakeClass}>
       <div className="flex items-center justify-between text-sm">
         <span className="text-white/60">Q{(st?.round ?? 0) + 1}/{st?.total ?? 0}</span>
         <span className="font-bold">🟢 {st?.alive ?? 0} alive</span>
-        <span className={`font-bold tabular-nums ${tLeft <= 3 ? 'text-rose-300' : 'text-white'}`}>{tLeft}s</span>
+        {streak >= 2 && !eliminated ? <StreakFlame combo={streak} className="text-xs !px-2 !py-0.5" /> : <span />}
       </div>
-      <div className="mt-1 h-2 rounded-full bg-black/30 overflow-hidden">
-        <div className="h-full bg-gold transition-[width] duration-200"
-          style={{ width: `${st?.per_q_seconds ? (tLeft / st.per_q_seconds) * 100 : 0}%` }} />
+      <div className="mt-1">
+        <TimerBar secondsLeft={tLeft} totalSeconds={st?.per_q_seconds ?? 0} trackClass="bg-black/30" />
       </div>
 
       {koFlash > 0 && (
@@ -290,7 +368,7 @@ export default function KnockoutPage() {
         </div>
       )}
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className="mt-4 grid gap-3 md:grid-cols-2" onPointerDownCapture={(e) => { lastTap.current = atEvent(e); }}>
         {(st?.options ?? []).map((o, i) => (
           <AnswerTile key={i} index={i}
             disabled={busy || !!answered || !!eliminated || tLeft <= 0}
@@ -311,6 +389,7 @@ export default function KnockoutPage() {
         </p>
       )}
       {err && <p className="mt-3 text-rose-300 text-sm text-center">{err}</p>}
+      </div>
     </Arena>
   );
 }

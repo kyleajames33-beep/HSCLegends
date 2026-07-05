@@ -33,6 +33,14 @@ export async function koJoin(sb: SupabaseClient, code: string, alias: string) {
   return data[0] as { room_id: string; player_id: string };
 }
 
+// Drop recovery: restore an existing player (score/alive intact) after a
+// refresh or crash. Returns null when no matching player is found.
+export async function koRejoin(sb: SupabaseClient, code: string, alias: string) {
+  const { data, error } = await sb.rpc('ko_rejoin', { p_code: code.toUpperCase(), p_alias: alias });
+  if (error) throw new Error(error.message);
+  return (data?.[0] ?? null) as { room_id: string; player_id: string; alive: boolean; score: number } | null;
+}
+
 export async function koState(sb: SupabaseClient, room: string): Promise<KoState> {
   const { data, error } = await sb.rpc('ko_state', { p_room: room });
   if (error) throw new Error(error.message);

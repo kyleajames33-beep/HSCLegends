@@ -9,9 +9,10 @@ import { useCountdown } from '@/lib/use-countdown';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
 import {
-  joinGame, getLiveQuestion, submitAnswer, fetchPlayers, subscribeGame, claimGameXp,
-  type LiveQuestion, type Player,
+  joinGame, liveRejoin, getLiveQuestion, submitAnswer, fetchPlayers, subscribeGame, claimGameXp,
+  type LiveQuestion,
 } from '@/lib/live';
+import { startHeartbeat, saveArenaSession, loadArenaSession, clearArenaSession, type ArenaSession } from '@/lib/presence';
 
 type Phase = 'form' | 'lobby' | 'question' | 'answered' | 'complete';
 type Result = { is_correct: boolean; correct_index: number; points: number };
@@ -37,7 +38,35 @@ export default function JoinPage() {
 
   const answeredIdx = useRef<number>(-1);
   const subRef = useRef<(() => void) | null>(null);
-  useEffect(() => () => subRef.current?.(), []);
+  const hbRef = useRef<(() => void) | null>(null);
+  const [resume, setResume] = useState<ArenaSession | null>(null);
+  useEffect(() => () => { subRef.current?.(); hbRef.current?.(); }, []);
+
+  // Drop recovery: a stashed session means a refresh/crash mid-game — offer to rejoin.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setResume(loadArenaSession('live'));
+  }, []);
+  async function rejoin(s: ArenaSession) {
+    setBusy(true); setErr('');
+    try {
+      const r = await liveRejoin(sb, s.code, s.alias);
+      if (!r) throw new Error('Could not find your player in that game.');
+      setAlias(s.alias); setCode(s.code); setResume(null);
+      connect(r.session_id, r.player_id);
+      await loadState(r.session_id, r.player_id);
+    } catch (e) {
+      clearArenaSession('live'); setResume(null); setErr(msg(e));
+    } finally { setBusy(false); }
+  }
+
+  function connect(sid: string, pid: string) {
+    setSessionId(sid); setPlayerId(pid);
+    subRef.current?.();
+    subRef.current = subscribeGame(sb, sid, { onSession: () => loadRef.current(sid, pid) });
+    hbRef.current?.();
+    hbRef.current = startHeartbeat(sb, 'live', pid);
+  }
 
   // Resume a claim deferred across the login redirect (player_id stashed before sign-in).
   useEffect(() => {
@@ -68,6 +97,7 @@ export default function JoinPage() {
       const idx = players.findIndex((p) => p.id === pid);
       setMe({ rank: idx + 1, score: players[idx]?.score ?? 0 });
       setPhase('complete');
+      clearArenaSession('live'); // nothing to rejoin
       return;
     }
     if (lq.status === 'lobby') { setPhase('lobby'); return; }
@@ -83,10 +113,8 @@ export default function JoinPage() {
     setBusy(true); setErr('');
     try {
       const j = await joinGame(sb, code, alias);
-      setSessionId(j.session_id); setPlayerId(j.player_id);
-      subRef.current = subscribeGame(sb, j.session_id, {
-        onSession: () => loadRef.current(j.session_id, j.player_id),
-      });
+      saveArenaSession('live', { code, room: j.session_id, player: j.player_id, alias });
+      connect(j.session_id, j.player_id);
       await loadState(j.session_id, j.player_id);
     } catch (e) { setErr(msg(e)); } finally { setBusy(false); }
   }
@@ -106,6 +134,13 @@ export default function JoinPage() {
     return (
       <Shell>
         <H>Join a game</H>
+        {resume && (
+          <button onClick={() => rejoin(resume)} disabled={busy}
+            className="mt-5 w-full rounded-2xl border border-gold bg-gold/15 px-4 py-3 text-left active:translate-y-0.5 disabled:opacity-40">
+            <span className="font-display font-extrabold text-golddeep">↩️ Rejoin game {resume.code}</span>
+            <span className="block text-sm text-inksoft">Pick up where you left off as {resume.alias} — your score is safe.</span>
+          </button>
+        )}
         <form onSubmit={join} className="mt-6 space-y-4">
           <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="CODE" maxLength={6} autoCapitalize="characters"

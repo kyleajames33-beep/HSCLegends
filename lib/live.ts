@@ -39,6 +39,14 @@ export async function joinGame(
   return data[0];
 }
 
+// Drop recovery: restore an existing player (score intact) after a refresh
+// or crash. Returns null when no matching player is found.
+export async function liveRejoin(sb: SupabaseClient, code: string, alias: string) {
+  const { data, error } = await sb.rpc('live_rejoin', { p_code: code.toUpperCase(), p_alias: alias });
+  if (error) throw new Error(error.message);
+  return (data?.[0] ?? null) as { session_id: string; player_id: string; status: string; score: number } | null;
+}
+
 export async function startGame(sb: SupabaseClient, sessionId: string) {
   const { error } = await sb.rpc('start_game', { p_session_id: sessionId });
   if (error) throw new Error(error.message);

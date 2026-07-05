@@ -133,6 +133,19 @@ Each phase is independently shippable and testable. Suggest building + you testi
 ---
 
 ## Progress log
+- **2026-07-05 — Foundations A + C shipped (browser- and multi-client-verified):**
+  - **Foundation A — Juice Kit** ([`components/juice.tsx`](../components/juice.tsx), docs: [`JUICE_KIT.md`](./JUICE_KIT.md)):
+    floats, particle burst, escalating streak-flame, timer-urgency bar, flash/shake/haptics —
+    extracted from Campaign (Campaign untouched) and wired into **Quick Game** + **Knockout**.
+    Note: the doc's "Campaign has 80% of this" oversold it — particle burst and flame
+    *escalation* didn't exist anywhere and were built new.
+  - **Foundation C — presence / late-join / drop recovery** for Knockout, Heist, Live Class
+    (migration `20260705_arena_robustness.sql` applied to live; docs: [`LIVE_ROBUSTNESS.md`](./LIVE_ROBUSTNESS.md)).
+    15-assertion REST simulation + Playwright multi-context browser test all green.
+  - **Bug found & fixed:** `ko_advance`'s shield clause NULL-trapped — any player holding an
+    *unused* shield was immortal. Caught by the 3-client browser simulation, regression-tested.
+  - ⬜ real-device pass still needed (locked-phone heartbeat timing, classroom wifi).
+
 - **2026-06-16 — Phase 1 + Quick Game (safe wins) shipped:**
   - Foundation A: **wrong-answer shake** on the shared AnswerTile (every mode benefits).
   - Quick Game: **combo system** (streak builds → 3+ combo earns bonus Sparks → "best streak" payoff

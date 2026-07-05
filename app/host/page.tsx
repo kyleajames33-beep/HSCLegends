@@ -12,6 +12,7 @@ import {
   createGame, startGame, nextQuestion, getLiveQuestion, fetchPlayers, liveAnswerCount,
   subscribeGame, type LiveQuestion, type Player,
 } from '@/lib/live';
+import { arenaPresences, isPresent } from '@/lib/presence';
 
 export default function HostPage() {
   const sb = useMemo(() => createClient(), []);
@@ -24,9 +25,20 @@ export default function HostPage() {
   const [q, setQ] = useState<LiveQuestion | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [presence, setPresence] = useState<Map<string, number>>(new Map());
   const subRef = useRef<(() => void) | null>(null);
 
   useEffect(() => () => subRef.current?.(), []);
+
+  // Poll presence so disconnected students grey out (and don't stall the count).
+  useEffect(() => {
+    if (phase === 'setup' || phase === 'complete' || !sessionId) return;
+    let live = true;
+    const tick = () => arenaPresences(sb, sessionId).then((m) => { if (live) setPresence(m); }).catch(() => {});
+    tick();
+    const t = setInterval(tick, 10_000);
+    return () => { live = false; clearInterval(t); };
+  }, [phase, sessionId, sb]);
 
   async function refreshQuestion() {
     const lq = await getLiveQuestion(sb, sessionId);
@@ -115,7 +127,13 @@ export default function HostPage() {
       <Shell>
         <p className="text-berrydeep text-sm font-semibold">JOIN AT /join</p>
         <div className="mt-2 text-6xl font-black tracking-[0.2em] text-center py-6">{code}</div>
-        <p className="text-center text-inksoft">{players.length} player{players.length === 1 ? '' : 's'} in</p>
+        <p className="text-center text-inksoft">
+          {(() => {
+            const here = presence.size ? players.filter((p) => isPresent(presence, p.id)).length : players.length;
+            const gone = players.length - here;
+            return <>{here} player{here === 1 ? '' : 's'} in{gone > 0 && <span className="text-muted"> · {gone} disconnected</span>}</>;
+          })()}
+        </p>
 
         <button onClick={() => setTeamMode((v) => !v)}
           className={`mt-4 w-full rounded-xl px-4 py-2.5 text-sm font-semibold border ${teamMode ? 'bg-plum text-white border-plum' : 'bg-panel text-ink border-rule'}`}>
@@ -144,11 +162,14 @@ export default function HostPage() {
           </div>
         ) : (
           <div className="mt-4 flex flex-wrap gap-2 justify-center min-h-16">
-            {players.map((p) => (
-              <span key={p.id} className="flex items-center gap-1.5 rounded-full bg-parchment-deep pl-1 pr-3 py-1 text-sm">
-                <Avatar seed={p.alias} size={22} className="rounded-full" />{p.alias}
-              </span>
-            ))}
+            {players.map((p) => {
+              const away = presence.size > 0 && !isPresent(presence, p.id);
+              return (
+                <span key={p.id} className={`flex items-center gap-1.5 rounded-full bg-parchment-deep pl-1 pr-3 py-1 text-sm ${away ? 'opacity-40' : ''}`}>
+                  <Avatar seed={p.alias} size={22} className="rounded-full" />{p.alias}{away ? ' 📴' : ''}
+                </span>
+              );
+            })}
           </div>
         )}
 

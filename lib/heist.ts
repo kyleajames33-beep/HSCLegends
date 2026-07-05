@@ -19,6 +19,14 @@ export async function heistJoin(sb: SupabaseClient, code: string, alias: string)
   if (error) throw new Error(error.message);
   return data[0] as { room_id: string; player_id: string; team: 'a' | 'b' };
 }
+
+// Drop recovery: restore an existing player (team/gold intact) after a
+// refresh or crash. Returns null when no matching player is found.
+export async function heistRejoin(sb: SupabaseClient, code: string, alias: string) {
+  const { data, error } = await sb.rpc('heist_rejoin', { p_code: code.toUpperCase(), p_alias: alias });
+  if (error) throw new Error(error.message);
+  return (data?.[0] ?? null) as { room_id: string; player_id: string; team: 'a' | 'b'; gold: number } | null;
+}
 export async function heistState(sb: SupabaseClient, room: string): Promise<HeistState> {
   const { data, error } = await sb.rpc('heist_state', { p_room: room });
   if (error) throw new Error(error.message);

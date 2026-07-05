@@ -9,9 +9,10 @@ import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
 import { celebrate } from '@/lib/confetti';
 import {
-  heistQuickJoin, heistJoin, heistState, heistSubmit, heistStart, heistAdvance, heistResults,
+  heistQuickJoin, heistJoin, heistRejoin, heistState, heistSubmit, heistStart, heistAdvance, heistResults,
   heistUsePowerup, subscribeHeist, type HeistState, type HeistResult,
 } from '@/lib/heist';
+import { startHeartbeat, saveArenaSession, loadArenaSession, clearArenaSession, type ArenaSession } from '@/lib/presence';
 
 const VAULT = 'linear-gradient(165deg,#16182a 0%,#243d5e 55%,#a87f3f 140%)';
 const TEAM = { a: { name: 'Crimson', color: '#c47b8a', deep: '#9c5c6e' }, b: { name: 'Violet', color: '#8a86d6', deep: '#4e4068' } };
@@ -44,8 +45,28 @@ export default function HeistPage() {
   const [stealToast, setStealToast] = useState('');
   const [raidUsedRound, setRaidUsedRound] = useState<number | null>(null);
 
+  const hbRef = useRef<(() => void) | null>(null);
+  const [resume, setResume] = useState<ArenaSession | null>(null);
+
   useEffect(() => { if (user && !alias) setAlias((user.email ?? '').split('@')[0].slice(0, 16)); }, [user, alias]);
-  useEffect(() => () => subRef.current?.(), []);
+  useEffect(() => () => { subRef.current?.(); hbRef.current?.(); }, []);
+
+  // Drop recovery: a stashed session means a refresh/crash mid-game — offer to rejoin.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setResume(loadArenaSession('heist'));
+  }, []);
+  async function rejoin(s: ArenaSession) {
+    setBusy(true); setErr('');
+    try {
+      const r = await heistRejoin(sb, s.code, s.alias);
+      if (!r) throw new Error('Could not find your player in that game.');
+      setAlias(s.alias); setCode(s.code); setResume(null);
+      await enter(r.room_id, r.player_id, r.team);
+    } catch (e) {
+      clearArenaSession('heist'); setResume(null); setErr(msg(e));
+    } finally { setBusy(false); }
+  }
 
   function showSteal(m: string) { setStealToast(m); window.setTimeout(() => setStealToast(''), 2600); }
 
@@ -64,6 +85,7 @@ export default function HeistPage() {
     goldRef.current = { a: s.gold_a, b: s.gold_b };
     setSt(s);
     if (s.round !== ansRound.current) setAnswered(null);
+    if (s.status === 'finished') clearArenaSession('heist'); // nothing to rejoin
     if (s.status === 'finished' && results.length === 0) setResults(await heistResults(sb, rm));
   }
   const syncRef = useRef(sync); syncRef.current = sync;
@@ -95,6 +117,8 @@ export default function HeistPage() {
     drive.current.startFired = false; drive.current.advRound = -2; goldRef.current = null;
     subRef.current?.();
     subRef.current = subscribeHeist(sb, rm, () => syncRef.current(rm));
+    hbRef.current?.();
+    hbRef.current = startHeartbeat(sb, 'heist', pl);
     await sync(rm);
   }
   async function useRaid() {
@@ -106,13 +130,25 @@ export default function HeistPage() {
   async function quickPlay() {
     if (!alias.trim()) return;
     setBusy(true); setErr('');
-    try { const r = await heistQuickJoin(sb, subject, year, alias); setCode(r.code); sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {}); await enter(r.room_id, r.player_id, r.team); }
+    try {
+      const r = await heistQuickJoin(sb, subject, year, alias);
+      setCode(r.code);
+      saveArenaSession('heist', { code: r.code, room: r.room_id, player: r.player_id, alias, team: r.team });
+      sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {});
+      await enter(r.room_id, r.player_id, r.team);
+    }
     catch (e) { setErr(msg(e)); } finally { setBusy(false); }
   }
   async function joinByCode() {
     if (joinCode.length < 6 || !alias.trim()) return;
     setBusy(true); setErr('');
-    try { const r = await heistJoin(sb, joinCode, alias); setCode(joinCode); sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {}); await enter(r.room_id, r.player_id, r.team); }
+    try {
+      const r = await heistJoin(sb, joinCode, alias);
+      setCode(joinCode);
+      saveArenaSession('heist', { code: joinCode, room: r.room_id, player: r.player_id, alias, team: r.team });
+      sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {});
+      await enter(r.room_id, r.player_id, r.team);
+    }
     catch (e) { setErr(msg(e)); } finally { setBusy(false); }
   }
   async function answer(choice: number) {
@@ -121,7 +157,12 @@ export default function HeistPage() {
     try { const r = await heistSubmit(sb, player, st.round, choice); ansRound.current = st.round; setAnswered(r); }
     catch (e) { setErr(msg(e)); } finally { setBusy(false); }
   }
-  function reset() { subRef.current?.(); setRoom(''); setPlayer(''); setSt(null); setResults([]); setAnswered(null); setRaidUsedRound(null); celebrated.current = false; }
+  function reset() {
+    subRef.current?.();
+    hbRef.current?.(); hbRef.current = null;
+    clearArenaSession('heist');
+    setRoom(''); setPlayer(''); setSt(null); setResults([]); setAnswered(null); setRaidUsedRound(null); celebrated.current = false;
+  }
 
   const secs = (target: string | null, add = 0) => target ? Math.max(0, Math.ceil((new Date(target).getTime() + add - now) / 1000)) : 0;
 
@@ -131,6 +172,14 @@ export default function HeistPage() {
       <Vault>
         <h1 className="text-3xl font-display font-extrabold">💰 Heist</h1>
         <p className="text-white/60 mt-1 text-sm">Two teams. Bank gold — and on HEIST rounds, rob the other team blind. Most gold wins.</p>
+        {resume && (
+          <button onClick={() => rejoin(resume)} disabled={busy}
+            className="mt-5 w-full rounded-2xl border border-gold/60 bg-gold/20 px-4 py-3 text-left active:translate-y-0.5 disabled:opacity-40">
+            <span className="font-display font-extrabold text-gold">↩️ Rejoin heist {resume.code}</span>
+            <span className="block text-sm text-white/70">Pick up where you left off as {resume.alias} — your gold is safe.</span>
+          </button>
+        )}
+
         <input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="Your name" maxLength={20}
           className="mt-5 w-full rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-white placeholder-white/40 outline-none focus:border-white/50" />
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
