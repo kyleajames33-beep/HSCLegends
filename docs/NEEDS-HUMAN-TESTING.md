@@ -10,6 +10,17 @@ engine is the core; game mechanics serve retention. Not building a standalone st
 
 ## 🔴 Needs human testing (can't verify without real auth / two devices / eyes)
 
+0. **Heist "Break-In" redesign (2026-07-06)** — mechanics machine-verified (RPC economy, raid
+   loop, alarm realtime, sentry placement — see `docs/heist-redesign.md` §7), but **feel and
+   balance need human hands on two laptops**:
+   - ◻️ WASD movement + laser dodging feels fair at real classroom latency (not teleporty).
+   - ◻️ Spotlight-vs-raider chase feels catchable but not oppressive (1.2s detection meter).
+   - ◻️ Economy: is 60⚡/raid the right price? Do raids dominate answering, or vice versa?
+   - ◻️ Two-laptop session: alarm fires on the defender fast enough to react; intruder dot
+     moves smoothly (10Hz broadcast + no interpolation yet — judge if it needs smoothing).
+   - ◻️ Old phones/tablets: page should still let you answer the quiz; raiding is
+     keyboard-only by design (no fallback wanted — confirm that's acceptable messaging).
+
 1. **Two-device live game (host + join)** — ✅ realtime VERIFIED (2026-06-14).
    - ✅ All 6 realtime tables ARE published (`game_players`, `game_sessions`, `heist_*`, `ko_*`) —
      the #1 silent-killer is ruled out.

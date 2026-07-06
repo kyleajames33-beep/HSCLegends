@@ -133,6 +133,16 @@ Each phase is independently shippable and testable. Suggest building + you testi
 ---
 
 ## Progress log
+- **2026-07-06 — Heist REDESIGNED: "The Break-In" (supersedes the Phase-4 line items above):**
+  the steal is no longer a scoring rule — it's an interactive raid. Correct answers bank vault
+  gold + charge personal ⚡energy; energy buys a WASD break-in of the enemy vault (lasers, gold
+  pads, escape-to-bank), sentries (click-placed zoning), and a mouse spotlight defense during
+  intruder alarms. Season "Master Thieves" leaderboard on top. Full design + the reusable
+  interactive-laptop-mode extension contract: [`heist-redesign.md`](./heist-redesign.md).
+  Migration `20260706_heist_breakin.sql` applied to live; verified by a rollback SQL simulation,
+  a 28-assertion 4-client REST match, and a 2-browser Playwright raid/alarm/sentry test.
+  ⬜ human playtest (feel/balance) still needed — see NEEDS-HUMAN-TESTING.
+
 - **2026-07-05 — Foundations A + C shipped (browser- and multi-client-verified):**
   - **Foundation A — Juice Kit** ([`components/juice.tsx`](../components/juice.tsx), docs: [`JUICE_KIT.md`](./JUICE_KIT.md)):
     floats, particle burst, escalating streak-flame, timer-urgency bar, flash/shake/haptics —
