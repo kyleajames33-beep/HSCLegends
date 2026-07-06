@@ -9,7 +9,6 @@ export function VaultBoard({
   grabbed,
   raiderX,
   raiderY,
-  raiderAlias,
   grabProgress,
   detectionProgress,
   children,
@@ -19,9 +18,8 @@ export function VaultBoard({
   tSec: number;
   teamColor: string; // '#c47b8a' (Crimson) or '#8a86d6' (Violet)
   grabbed: number[];
-  raiderX: number;
-  raiderY: number;
-  raiderAlias?: string;
+  raiderX?: number; // omit on the defense board — intruders render via children
+  raiderY?: number;
   grabProgress?: number; // 0-1
   detectionProgress?: number; // 0-1
   children: React.ReactNode;
@@ -170,8 +168,8 @@ export function VaultBoard({
       <g filter="url(#laserGlow)">
         {/* Room 1: horizontal sweep */}
         <g stroke="#ff5555" strokeLinecap="round">
-          <line x1={l1x(tSec)} y1={63.5} x2={l1x(tSec)} y2={B.entryY - 1.5} strokeWidth="3.2" opacity="0.35" />
-          <line x1={l1x(tSec)} y1={63.5} x2={l1x(tSec)} y2={B.entryY - 1.5} strokeWidth="1.2" opacity="1" />
+          <line x1={l1x(tSec)} y1={63.2} x2={l1x(tSec)} y2={B.entryY - 0.4} strokeWidth="3.2" opacity="0.35" />
+          <line x1={l1x(tSec)} y1={63.2} x2={l1x(tSec)} y2={B.entryY - 0.4} strokeWidth="1.2" opacity="1" />
         </g>
 
         {/* Room 2: rotating beam */}
@@ -198,41 +196,42 @@ export function VaultBoard({
       </g>
 
       {/* Raider character — shows current position during a raid */}
-      {/* Placeholder: toon character sprite, 3x3 unit box */}
-      <g>
-        {/* Character body (simple toon silhouette) */}
-        <circle cx={raiderX} cy={raiderY} r={B.playerR} fill="#fff" stroke="#16182a" strokeWidth="0.8" />
-        {/* Glow when carrying loot */}
-        {grabbed.length > 0 && (
-          <circle cx={raiderX} cy={raiderY} r={B.playerR + 1} fill="none" stroke="#ffd34d" strokeWidth="0.9" opacity="0.8" />
-        )}
-        {/* Detection halo (spotlight) */}
-        {detectionProgress && detectionProgress > 0 && (
-          <circle
-            cx={raiderX}
-            cy={raiderY}
-            r={B.playerR + 2.2}
-            fill="none"
-            stroke="#ff5555"
-            strokeWidth="1"
-            strokeDasharray={`${(detectionProgress / 1) * 2 * Math.PI * (B.playerR + 2.2)} 999`}
-            opacity="0.8"
-          />
-        )}
-        {/* Grabbing progress ring */}
-        {grabProgress && grabProgress > 0 && grabProgress < 1 && (
-          <circle
-            cx={raiderX}
-            cy={raiderY}
-            r={B.playerR + 1.4}
-            fill="none"
-            stroke="#ffd34d"
-            strokeWidth="1.4"
-            strokeDasharray={`${grabProgress * 2 * Math.PI * (B.playerR + 1.4)} 999`}
-            opacity="0.9"
-          />
-        )}
-      </g>
+      {raiderX !== undefined && raiderY !== undefined && (
+        <g>
+          {/* Character body (simple toon silhouette) */}
+          <circle cx={raiderX} cy={raiderY} r={B.playerR} fill="#fff" stroke="#16182a" strokeWidth="0.8" />
+          {/* Glow when carrying loot */}
+          {grabbed.length > 0 && (
+            <circle cx={raiderX} cy={raiderY} r={B.playerR + 1} fill="none" stroke="#ffd34d" strokeWidth="0.9" opacity="0.8" />
+          )}
+          {/* Detection halo (spotlight) */}
+          {!!detectionProgress && detectionProgress > 0 && (
+            <circle
+              cx={raiderX}
+              cy={raiderY}
+              r={B.playerR + 2.2}
+              fill="none"
+              stroke="#ff5555"
+              strokeWidth="1"
+              strokeDasharray={`${detectionProgress * 2 * Math.PI * (B.playerR + 2.2)} 999`}
+              opacity="0.8"
+            />
+          )}
+          {/* Grabbing progress ring */}
+          {!!grabProgress && grabProgress > 0 && grabProgress < 1 && (
+            <circle
+              cx={raiderX}
+              cy={raiderY}
+              r={B.playerR + 1.4}
+              fill="none"
+              stroke="#ffd34d"
+              strokeWidth="1.4"
+              strokeDasharray={`${grabProgress * 2 * Math.PI * (B.playerR + 1.4)} 999`}
+              opacity="0.9"
+            />
+          )}
+        </g>
+      )}
 
       {/* Children: sentries, intruders, spotlight, etc. */}
       {children}

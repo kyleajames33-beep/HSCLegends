@@ -18,7 +18,7 @@ create table if not exists public.gamble_rooms (
   code         text not null unique,
   subject      text not null,
   year         smallint not null check (year in (11, 12)),
-  created_by   uuid not null,
+  created_by   uuid,          -- null for anonymous (not-signed-in) creators
   status       text not null default 'lobby' check (status in ('lobby', 'active', 'finished')),
   round        smallint not null default 0,
   total_rounds smallint not null default 6,
@@ -143,7 +143,9 @@ create table if not exists public.gamble_results (
   points_a     int not null,
   points_b     int not null,
   revealed_at  timestamptz not null default now(),
-  unique (room_id, round)
+  -- player_a_id is the canonical (lower uuid) side of the pair, so one row
+  -- per pair per round even in rooms with multiple concurrent pairs.
+  unique (room_id, round, player_a_id)
 );
 create index if not exists gamble_results_room_idx on public.gamble_results (room_id);
 alter table public.gamble_results enable row level security;
@@ -197,8 +199,8 @@ declare
   v_code text;
 begin
   -- Find or create a lobby room in the subject/year (reuse existing or create new).
-  select id into v_room_id from public.gamble_rooms
-  where subject = p_subject and year = p_year and status = 'lobby'
+  select gr.id into v_room_id from public.gamble_rooms gr
+  where gr.subject = p_subject and gr.year = p_year and gr.status = 'lobby'
   limit 1;
 
   if v_room_id is null then
@@ -207,7 +209,7 @@ begin
     values (v_code, p_subject, p_year, auth.uid())
     returning id into v_room_id;
   else
-    select code into v_code from public.gamble_rooms where id = v_room_id;
+    select gr.code into v_code from public.gamble_rooms gr where gr.id = v_room_id;
   end if;
 
   -- Join as a player.
@@ -299,30 +301,30 @@ $$ language plpgsql;
 create or replace function public.gamble_submit(
   p_player uuid, p_room uuid, p_round smallint, p_choice smallint
 ) returns table(correct boolean, correct_index smallint, points_earned int) as $$
+#variable_conflict use_column
 declare
   v_correct boolean;
   v_correct_idx smallint;
   v_points int;
 begin
-  -- Get the question's correct answer.
-  select correct_index into v_correct_idx
-  from public.gamble_rounds
-  where room_id = p_room and round = p_round;
+  -- Get the question's correct answer. (Qualified: the OUT parameter
+  -- correct_index shadows the table column in plpgsql.)
+  select gr.correct_index into v_correct_idx
+  from public.gamble_rounds gr
+  where gr.room_id = p_room and gr.round = p_round;
 
   v_correct := (p_choice = v_correct_idx);
   v_points := case when v_correct then (50 + random() * 50)::int else 5 end;
 
-  -- Record the submission.
+  -- Record the submission. The points are a STAKE in the round's pot — they
+  -- are NOT credited here; gamble_reveal_round pays the pot out based on the
+  -- share/steal outcome.
   insert into public.gamble_submissions (room_id, player_id, round, choice, correct, points_earned)
   values (p_room, p_player, p_round, p_choice, v_correct, v_points)
   on conflict (room_id, player_id, round) do update set
     choice = excluded.choice,
     correct = excluded.correct,
     points_earned = excluded.points_earned;
-
-  -- Add points to the player's pending pool for this round.
-  update public.gamble_players set points = points + v_points
-  where id = p_player;
 
   return query select v_correct, v_correct_idx, v_points;
 end;
@@ -332,13 +334,23 @@ $$ language plpgsql security definer;
 create or replace function public.gamble_decide(
   p_player uuid, p_room uuid, p_round smallint, p_partner uuid, p_choice text
 ) returns table(locked_at timestamptz) as $$
+#variable_conflict use_column
 declare
   v_locked_at timestamptz;
 begin
+  -- First choice wins: once locked, a choice can't be swapped (simultaneous-
+  -- reveal integrity — you can't react to information you shouldn't have).
   insert into public.gamble_choices (room_id, round, player_id, partner_id, choice)
   values (p_room, p_round, p_player, p_partner, p_choice)
   on conflict (room_id, round, player_id) do update set choice = excluded.choice
-  returning locked_at into v_locked_at;
+  where gamble_choices.choice = 'pending' or gamble_choices.choice is null
+  returning gamble_choices.locked_at into v_locked_at;
+
+  if v_locked_at is null then
+    select gc.locked_at into v_locked_at
+    from public.gamble_choices gc
+    where gc.room_id = p_room and gc.round = p_round and gc.player_id = p_player;
+  end if;
 
   return query select v_locked_at;
 end;
@@ -351,32 +363,36 @@ returns table(
   is_me boolean
 ) as $$
 begin
+  -- Aggregate the match log directly (a user has one player row per room —
+  -- joining players to logs would multiply the sums).
   return query
   select
-    gp.alias,
-    count(distinct gml.room_id)::int,
+    (select gp.alias from public.gamble_players gp
+     where gp.user_id = gml.user_id order by gp.created_at desc limit 1),
+    count(*)::int,
     sum(gml.points_earned)::int,
     sum(gml.shares)::int,
     sum(gml.steals)::int,
-    (gp.user_id = auth.uid())
-  from public.gamble_players gp
-  left join public.gamble_match_log gml on gml.user_id = gp.user_id
-    and gml.finished_at > now() - (p_days || ' days')::interval
-  where gp.user_id is not null
-  group by gp.user_id, gp.alias
+    (gml.user_id = auth.uid())
+  from public.gamble_match_log gml
+  where gml.finished_at > now() - (p_days || ' days')::interval
+  group by gml.user_id
   order by sum(gml.points_earned) desc nulls last
   limit 100;
 end;
 $$ language plpgsql;
 
 -- ── RPC: Finish a round (reveal and score) ──────────────────────────────
--- Called server-side when both players have locked their choices (or timeout).
+-- Called from the choices trigger when both sides of a pair have locked.
+-- Pair-scoped and idempotent: the pair is canonicalised (lower uuid = side a),
+-- one result row per pair per round, and the pot is PAID OUT here — question
+-- points are stakes, not income, until the reveal resolves them.
 create or replace function public.gamble_reveal_round(
-  p_room uuid, p_round smallint
-) returns table(outcome text, points_a int, points_b int) as $$
+  p_room uuid, p_round smallint, p_player_x uuid, p_player_y uuid
+) returns void as $$
 declare
-  v_player_a_id uuid;
-  v_player_b_id uuid;
+  v_a uuid := least(p_player_x, p_player_y);
+  v_b uuid := greatest(p_player_x, p_player_y);
   v_choice_a text;
   v_choice_b text;
   v_outcome text;
@@ -384,30 +400,28 @@ declare
   v_points_b int;
   v_pot int;
 begin
-  -- Get the locked choices for both players in this round (pair them).
-  select player_id, partner_id, choice
-  into v_player_a_id, v_player_b_id, v_choice_a
-  from public.gamble_choices
-  where room_id = p_room and round = p_round
-  order by player_id
-  limit 1;
-
-  if v_player_a_id is null then
+  -- Already revealed for this pair? (idempotency)
+  if exists (select 1 from public.gamble_results
+             where room_id = p_room and round = p_round and player_a_id = v_a) then
     return;
   end if;
 
-  select choice into v_choice_b
-  from public.gamble_choices
-  where room_id = p_room and round = p_round and player_id = v_player_b_id;
+  select choice into v_choice_a from public.gamble_choices
+  where room_id = p_room and round = p_round and player_id = v_a;
+  select choice into v_choice_b from public.gamble_choices
+  where room_id = p_room and round = p_round and player_id = v_b;
 
-  -- Calculate pot (both players' pending points this round).
-  select sum(points_earned) into v_pot
+  -- Both sides must be locked.
+  if v_choice_a is null or v_choice_a = 'pending' or v_choice_b is null or v_choice_b = 'pending' then
+    return;
+  end if;
+
+  -- The pot: both players' staked question points this round.
+  select coalesce(sum(points_earned), 0) into v_pot
   from public.gamble_submissions
-  where room_id = p_room and round = p_round and player_id in (v_player_a_id, v_player_b_id);
+  where room_id = p_room and round = p_round and player_id in (v_a, v_b);
 
-  v_pot := coalesce(v_pot, 0);
-
-  -- Determine outcome and payout.
+  -- Determine outcome and payout. both_steal burns the pot.
   if v_choice_a = 'share' and v_choice_b = 'share' then
     v_outcome := 'both_share';
     v_points_a := (v_pot / 2)::int;
@@ -426,34 +440,37 @@ begin
     v_points_b := 0;
   end if;
 
-  -- Record the result.
+  -- Record the result (idempotent under the unique constraint).
   insert into public.gamble_results (
     room_id, round, player_a_id, player_b_id,
     choice_a, choice_b, outcome, points_a, points_b
-  ) values (p_room, p_round, v_player_a_id, v_player_b_id, v_choice_a, v_choice_b, v_outcome, v_points_a, v_points_b);
+  ) values (p_room, p_round, v_a, v_b, v_choice_a, v_choice_b, v_outcome, v_points_a, v_points_b)
+  on conflict (room_id, round, player_a_id) do nothing;
 
-  -- Update player stats and points based on outcome.
+  -- Pay the pot out. Bots have no player row, so their update is a no-op.
+  update public.gamble_players set points = points + v_points_a where id = v_a;
+  update public.gamble_players set points = points + v_points_b where id = v_b;
+
+  -- Stats.
   if v_choice_a = 'share' then
-    update public.gamble_players set shares = shares + 1 where id = v_player_a_id;
+    update public.gamble_players set shares = shares + 1 where id = v_a;
   else
-    update public.gamble_players set steals = steals + 1 where id = v_player_a_id;
+    update public.gamble_players set steals = steals + 1 where id = v_a;
   end if;
 
   if v_choice_b = 'share' then
-    update public.gamble_players set shares = shares + 1 where id = v_player_b_id;
+    update public.gamble_players set shares = shares + 1 where id = v_b;
   else
-    update public.gamble_players set steals = steals + 1 where id = v_player_b_id;
+    update public.gamble_players set steals = steals + 1 where id = v_b;
   end if;
 
   if v_choice_b = 'steal' then
-    update public.gamble_players set stolen_from = stolen_from + 1 where id = v_player_a_id;
+    update public.gamble_players set stolen_from = stolen_from + 1 where id = v_a;
   end if;
 
   if v_choice_a = 'steal' then
-    update public.gamble_players set stolen_from = stolen_from + 1 where id = v_player_b_id;
+    update public.gamble_players set stolen_from = stolen_from + 1 where id = v_b;
   end if;
-
-  return query select v_outcome, v_points_a, v_points_b;
 end;
 $$ language plpgsql security definer;
 
@@ -474,32 +491,64 @@ begin
       v_idx,
       gen_random_uuid(),
       v_q->>'stem',
-      (v_q->'options')::text[],
+      array(select jsonb_array_elements_text(v_q->'options')),
       (v_q->>'correct_index')::smallint,
       'none'
     )
     on conflict (room_id, round) do nothing;
     v_idx := v_idx + 1;
   end loop;
+
+  -- total_rounds must reflect what was actually loaded, or the game points
+  -- at empty rounds when the question pool comes up short.
+  if v_idx > 0 then
+    update public.gamble_rooms set total_rounds = v_idx
+    where id = p_room and status = 'lobby';
+  end if;
 end;
 $$ language plpgsql security definer;
 
 -- ── RPC: Start a game (move to active, set round 0) ──────────────────
+-- Lobby-only guard: a late quick-joiner calling start must not reset a
+-- game already in progress.
 create or replace function public.gamble_start(p_room uuid) returns void as $$
 begin
   update public.gamble_rooms
   set status = 'active', round = 0, round_started_at = now()
-  where id = p_room;
+  where id = p_room and status = 'lobby';
 end;
 $$ language plpgsql security definer;
 
 -- ── RPC: Advance to next round ──────────────────────────────────────────
 -- Idempotent: safe to call multiple times per round. Resets the round timer.
+-- Advancing past the last round finishes the room and writes the match log
+-- (the leaderboard source) for signed-in players.
 create or replace function public.gamble_advance(p_room uuid, p_round smallint) returns void as $$
+declare
+  v_total smallint;
 begin
-  update public.gamble_rooms
-  set round = p_round, round_started_at = now()
-  where id = p_room and round < p_round; -- idempotent: only advance if we're behind
+  select total_rounds into v_total from public.gamble_rooms where id = p_room;
+  if v_total is null then
+    return;
+  end if;
+
+  if p_round >= v_total then
+    update public.gamble_rooms
+    set status = 'finished', finished_at = now()
+    where id = p_room and status = 'active';
+
+    if found then
+      insert into public.gamble_match_log (user_id, room_id, points_earned, rounds_played, shares, steals, stolen_from)
+      select gp.user_id, gp.room_id, gp.points, v_total, gp.shares, gp.steals, gp.stolen_from
+      from public.gamble_players gp
+      where gp.room_id = p_room and gp.user_id is not null
+      on conflict (user_id, room_id) do nothing;
+    end if;
+  else
+    update public.gamble_rooms
+    set round = p_round, round_started_at = now()
+    where id = p_room and round < p_round; -- idempotent: only advance if we're behind
+  end if;
 end;
 $$ language plpgsql security definer;
 
@@ -520,17 +569,17 @@ $$ language plpgsql;
 -- Stores pairing so clients can look it up via gamble_get_partner.
 create or replace function public.gamble_assign_pairs(p_room uuid, p_round smallint)
 returns table(player_id uuid, partner_id uuid, is_bot boolean) as $$
+#variable_conflict use_column
 declare
   v_players uuid[];
   v_count int;
   v_i int;
   v_bot_id uuid;
 begin
-  -- Fetch all active players in the room.
-  select array_agg(id) into v_players
+  -- Fetch all active players in the room (stable join order).
+  select array_agg(id order by created_at) into v_players
   from public.gamble_players
-  where room_id = p_room
-  order by created_at;
+  where room_id = p_room;
 
   v_count := coalesce(array_length(v_players, 1), 0);
 
@@ -583,18 +632,21 @@ returns table(locked_at timestamptz) as $$
 declare
   v_locked_at timestamptz;
 begin
-  insert into public.gamble_choices (room_id, round, player_id, partner_id, choice, status)
-  select p_room, p_round, p_player, partner_id, 'share', 'locked'
-  from public.gamble_choices
-  where room_id = p_room and round = p_round and player_id = p_player
-  on conflict (room_id, round, player_id) do nothing
-  returning locked_at into v_locked_at;
+  -- The player's row always pre-exists (gamble_assign_pairs creates it as
+  -- 'pending'), so flip it to SHARE only if no real choice was made. The
+  -- conditional update never overwrites a real choice, and the reveal
+  -- trigger fires only when a row actually changes.
+  update public.gamble_choices gc
+  set choice = 'share'
+  where gc.room_id = p_room and gc.round = p_round and gc.player_id = p_player
+    and gc.choice = 'pending'
+  returning gc.locked_at into v_locked_at;
 
-  -- If we didn't insert (conflict), fetch the existing row.
+  -- Already locked (or no pairing row): fetch what's there.
   if v_locked_at is null then
-    select locked_at into v_locked_at
-    from public.gamble_choices
-    where room_id = p_room and round = p_round and player_id = p_player;
+    select gc.locked_at into v_locked_at
+    from public.gamble_choices gc
+    where gc.room_id = p_room and gc.round = p_round and gc.player_id = p_player;
   end if;
 
   return query select v_locked_at;
@@ -606,6 +658,7 @@ $$ language plpgsql security definer;
 create or replace function public.gamble_bot_decide(
   p_bot_id uuid, p_room uuid, p_round smallint, p_partner_id uuid
 ) returns table(choice text) as $$
+#variable_conflict use_column
 declare
   v_choice text;
   v_seed int;
@@ -613,7 +666,7 @@ declare
 begin
   -- Seed: hash of bot_id + round, deterministic across calls.
   v_seed := (('x' || substring(md5(p_bot_id::text || p_round::text), 1, 8))::bit(32)::int);
-  v_rand := (v_seed % 100)::int;
+  v_rand := abs(v_seed % 100)::int;
   v_choice := case when v_rand < 70 then 'share' else 'steal' end;
 
   insert into public.gamble_choices (room_id, round, player_id, partner_id, choice, status)
@@ -625,24 +678,19 @@ end;
 $$ language plpgsql security definer;
 
 -- ── Auto-reveal when both players have locked (trigger) ──────────────
--- When a player locks a choice, check if their partner has also locked.
--- If so, reveal the round (idempotent).
+-- When a player locks a choice, check whether THEIR PARTNER has also locked
+-- (pair-scoped — a room can hold several concurrent pairs). If so, reveal
+-- that pair. gamble_reveal_round is idempotent, so double-fires are safe.
 create or replace function public.gamble_auto_reveal_trigger() returns trigger as $$
 declare
-  v_partner_id uuid;
-  v_both_locked int;
+  v_partner_choice text;
 begin
-  -- Check if partner has already locked for this round
-  select count(*) into v_both_locked
-  from public.gamble_choices
-  where room_id = new.room_id
-    and round = new.round
-    and choice is not null
-    and choice != 'pending';
+  select gc.choice into v_partner_choice
+  from public.gamble_choices gc
+  where gc.room_id = new.room_id and gc.round = new.round and gc.player_id = new.partner_id;
 
-  -- If both players have locked (count = 2), reveal the round
-  if v_both_locked = 2 then
-    perform public.gamble_reveal_round(new.room_id, new.round);
+  if v_partner_choice is not null and v_partner_choice != 'pending' then
+    perform public.gamble_reveal_round(new.room_id, new.round, new.player_id, new.partner_id);
   end if;
 
   return new;
@@ -651,7 +699,36 @@ $$ language plpgsql;
 
 drop trigger if exists gamble_auto_reveal_trigger on public.gamble_choices;
 create trigger gamble_auto_reveal_trigger
-after update on public.gamble_choices
+after insert or update on public.gamble_choices
 for each row
 when (new.choice is not null and new.choice != 'pending')
 execute function public.gamble_auto_reveal_trigger();
+
+-- ── Presence: teach arena_heartbeat about gamble players ──────────────────
+-- Extends the Foundation-C function (20260705_arena_robustness.sql) with a
+-- gamble branch so /gamble heartbeats stop raising 'Unknown mode'.
+create or replace function public.arena_heartbeat(p_mode text, p_player uuid)
+returns void language plpgsql security definer set search_path to 'public' as $$
+declare v_room uuid;
+begin
+  if p_mode = 'knockout' then
+    select room_id into v_room from public.ko_players where id = p_player;
+  elsif p_mode = 'heist' then
+    select room_id into v_room from public.heist_players where id = p_player;
+  elsif p_mode = 'gamble' then
+    select room_id into v_room from public.gamble_players where id = p_player;
+  elsif p_mode = 'live' then
+    select session_id into v_room from public.game_players where id = p_player;
+  else
+    raise exception 'Unknown mode';
+  end if;
+  if v_room is null then raise exception 'Unknown player'; end if;
+  insert into public.arena_presence(player_id, room_id, mode, last_seen)
+  values (p_player, v_room, p_mode, now())
+  on conflict (player_id) do update set last_seen = now();
+end $$;
+
+-- Allow gamble in the presence mode check (arena_presence is from 20260705).
+alter table public.arena_presence drop constraint if exists arena_presence_mode_check;
+alter table public.arena_presence add constraint arena_presence_mode_check
+  check (mode in ('knockout', 'heist', 'gamble', 'live'));

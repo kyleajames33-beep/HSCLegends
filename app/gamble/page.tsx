@@ -5,16 +5,15 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import { getQuizQuestions, SUBJECTS, type Subject } from '@/lib/questions';
-import { celebrate } from '@/lib/confetti';
-import { useJuice, TimerBar, atEvent, type JuiceAt } from '@/components/juice';
+import { useJuice, TimerBar, atEvent } from '@/components/juice';
 import MathText from '@/components/math-text';
 import AnswerTile from '@/components/answer-tile';
 import {
   gambleQuickJoin, gambleJoin, gambleRejoin, gambleState, gambleMe, gambleSubmit, gambleDecide, gambleLeaderboard,
-  gambleStart, gambleAdvance, gambleGetPartner, gambleAssignPairs, gambleDecideDefault, gambleBotDecide, gambleGetPlayers,
-  gamblePopulateQuestions,
-  subscribeGamble, joinGambleLive,
-  type GambleState, type GambleMe, type GambleRevealEvent, type GambleLeader,
+  gambleStart, gambleAdvance, gambleGetPartner, gambleAssignPairs, gambleDecideDefault, gambleBotDecide,
+  gamblePopulateQuestions, gambleGetResult,
+  subscribeGamble,
+  type GambleState, type GambleMe, type GambleResultRow, type GambleLeader,
 } from '@/lib/gamble';
 import { PartnerCard, PotDisplay, DecisionButton, RevealCard } from '@/components/gamble-ui';
 import { startHeartbeat, saveArenaSession, loadArenaSession, clearArenaSession, type ArenaSession } from '@/lib/presence';
@@ -25,7 +24,7 @@ type RoundPhase = 'question' | 'decision' | 'reveal' | 'finished';
 const TOTAL_ROUNDS = 6;
 const QUESTION_SECONDS = 18;
 const DECISION_SECONDS = 5;
-const REVEAL_SECONDS = 2;
+const REVEAL_SECONDS = 4; // the reveal is the payoff — give it time to land
 
 export default function GamblePage() {
   const sb = useMemo(() => createClient(), []);
@@ -54,22 +53,25 @@ export default function GamblePage() {
   // Round state
   const [roundPhase, setRoundPhase] = useState<RoundPhase>('question');
   const [answered, setAnswered] = useState<{ correct: boolean; correct_index: number; points_earned: number } | null>(null);
+  const [picked, setPicked] = useState<number | null>(null);
   const [partner, setPartner] = useState('');
   const [partnerAlias, setPartnerAlias] = useState('');
-  const [repHint, setRepHint] = useState('');
-  const [potSize, setPotSize] = useState(0);
   const [myChoice, setMyChoice] = useState<'share' | 'steal' | null>(null);
-  const [lastReveal, setLastReveal] = useState<GambleRevealEvent | null>(null);
-  const [matchResults, setMatchResults] = useState<{ [playerId: string]: { alias: string; points: number } }>({});
+  const [lastReveal, setLastReveal] = useState<GambleResultRow | null>(null);
 
   // Refs for async operations
   const subRef = useRef<(() => void) | null>(null);
-  const liveRef = useRef<ReturnType<typeof joinGambleLive> | null>(null);
   const hbRef = useRef<(() => void) | null>(null);
   const drive = useRef({ st: null as GambleState | null, room: '', clock: 0 });
   const ansRound = useRef(-1);
   const decideRound = useRef(-1);
-  const roundPhaseT = useRef(0);
+  const defaultedRound = useRef(-1);      // my auto-SHARE fired for this round
+  const partnerDefaultedRound = useRef(-1); // partner failsafe auto-SHARE fired
+  const advancedRound = useRef(-1);       // gambleAdvance fired after this round's reveal
+  const botRound = useRef(-1);            // bot decision fired for this round
+  const seenRound = useRef(-1);           // per-round state reset tracker
+  const revealAt = useRef(0);             // when the reveal hit this client (min display time)
+  const lastPoll = useRef(0);             // throttle for the reveal fallback poll
   const syncRef = useRef<(rm?: string, pid?: string) => Promise<void>>(() => Promise.resolve());
 
   useEffect(() => {
@@ -79,7 +81,6 @@ export default function GamblePage() {
   useEffect(() => () => {
     subRef.current?.();
     hbRef.current?.();
-    liveRef.current?.leave();
   }, []);
 
   useEffect(() => {
@@ -122,43 +123,73 @@ export default function GamblePage() {
 
   syncRef.current = sync;
 
-  // Self-driving clock
+  // Self-driving clock. The server room row (round, round_started_at) is the
+  // source of truth; this drives the local question → decision → reveal flow
+  // and fires the idempotent server nudges (defaults, advance) on schedule.
   useEffect(() => {
     const tick = setInterval(() => {
       const ms = Date.now();
       setNow(ms);
       const d = drive.current;
-      if (!d.st || !d.room) return;
+      if (!d.st || !d.room || d.st.status !== 'active') return;
 
-      const roundMs = ms - new Date(d.st.round_started_at || 0).getTime();
-      const roundSecs = Math.floor(roundMs / 1000);
+      const roundSecs = (ms - new Date(d.st.round_started_at || 0).getTime()) / 1000;
 
-      // Auto-advance round when question time is up (idempotent)
-      if (d.st.status === 'active' && roundSecs >= d.st.per_q_seconds && roundPhase === 'question') {
-        // Move to decision phase
+      // Question time up → decision phase (even if you didn't answer: the
+      // partner may have staked points, and you can still share or steal).
+      if (roundSecs >= d.st.per_q_seconds && roundPhase === 'question') {
         setRoundPhase('decision');
       }
 
-      // Auto-default to SHARE if decision window expires without a choice
-      if (roundPhase === 'decision' && roundSecs >= d.st.per_q_seconds + DECISION_SECONDS && !myChoice && ansRound.current === d.st.round) {
-        gambleDecideDefault(sb, player, d.room, d.st.round).catch(() => {});
+      if (roundPhase === 'decision') {
+        // My side: default to SHARE when the window closes without a choice.
+        if (roundSecs >= d.st.per_q_seconds + DECISION_SECONDS && !myChoice && defaultedRound.current !== d.st.round) {
+          defaultedRound.current = d.st.round;
+          gambleDecideDefault(sb, player, d.room, d.st.round).then(() => setMyChoice('share')).catch(() => {});
+        }
+        // Partner failsafe: if they dropped, either client may default them
+        // after a grace period so the reveal can't stall. Idempotent server-side.
+        if (roundSecs >= d.st.per_q_seconds + DECISION_SECONDS + 2 && partner && partnerDefaultedRound.current !== d.st.round) {
+          partnerDefaultedRound.current = d.st.round;
+          gambleDecideDefault(sb, partner, d.room, d.st.round).catch(() => {});
+        }
+        // Reveal fallback: if the realtime insert was missed, poll for it.
+        if (roundSecs >= d.st.per_q_seconds + DECISION_SECONDS + 3 && !lastReveal && ms - lastPoll.current > 1000) {
+          lastPoll.current = ms;
+          gambleGetResult(sb, d.room, d.st.round).then((row) => {
+            if (row && (row.player_a_id === player || row.player_b_id === player)) {
+              revealAt.current = Date.now();
+              setLastReveal(row);
+              setRoundPhase('reveal');
+            }
+          }).catch(() => {});
+        }
       }
 
-      // Auto-advance to next round after reveal
-      if (roundPhase === 'reveal' && roundSecs >= d.st.per_q_seconds + DECISION_SECONDS + REVEAL_SECONDS) {
-        if (d.st.round + 1 >= TOTAL_ROUNDS) {
-          setPhase('finished');
-        } else {
-          gambleAdvance(sb, d.room, d.st.round + 1).catch(() => {});
-          setRoundPhase('question');
-          setAnswered(null);
-          setMyChoice(null);
-          setLastReveal(null);
-        }
+      // After the reveal has been on screen long enough, advance the room.
+      // gamble_advance is idempotent and finishes the room past the last round.
+      if (roundPhase === 'reveal' && lastReveal && revealAt.current &&
+          ms - revealAt.current >= REVEAL_SECONDS * 1000 && advancedRound.current !== lastReveal.round) {
+        advancedRound.current = lastReveal.round;
+        gambleAdvance(sb, d.room, lastReveal.round + 1).catch(() => {});
       }
     }, 250);
     return () => clearInterval(tick);
-  }, [roundPhase, myChoice, player, room]);
+  }, [roundPhase, myChoice, player, partner, room, lastReveal]);
+
+  // Server round changed → reset all per-round local state.
+  useEffect(() => {
+    if (!st || seenRound.current === st.round) return;
+    seenRound.current = st.round;
+    setRoundPhase('question');
+    setAnswered(null);
+    setPicked(null);
+    setMyChoice(null);
+    setLastReveal(null);
+    setPartner('');
+    setPartnerAlias('');
+    revealAt.current = 0;
+  }, [st?.round]);
 
   // Sync state when it changes
   useEffect(() => {
@@ -190,14 +221,20 @@ export default function GamblePage() {
     hbRef.current = startHeartbeat(sb, 'gamble', playerId);
 
     subRef.current?.();
-    subRef.current = subscribeGamble(sb, roomId, () => syncRef.current(roomId, playerId));
-
-    liveRef.current?.leave();
-    liveRef.current = joinGambleLive(sb, roomId, (event) => {
-      setLastReveal(event);
-      juice.flash(event.outcome === 'both_share' ? 'gold' : 'red');
-      juice.burst({ tone: event.outcome === 'both_share' ? 'green' : 'red' });
-    });
+    subRef.current = subscribeGamble(
+      sb, roomId,
+      () => syncRef.current(roomId, playerId),
+      (row) => {
+        // Only my pair's reveal matters to this client.
+        if (row.player_a_id !== playerId && row.player_b_id !== playerId) return;
+        const mine = row.player_a_id === playerId ? row.points_a : row.points_b;
+        revealAt.current = Date.now();
+        setLastReveal(row);
+        setRoundPhase('reveal');
+        juice.flash(row.outcome === 'both_share' ? 'gold' : 'red');
+        juice.burst({ tone: mine > 0 ? 'green' : 'red' });
+      },
+    );
 
     await sync(roomId, playerId);
   }
@@ -240,50 +277,39 @@ export default function GamblePage() {
     }
   }
 
-  // Assign partners at the start of each round (idempotent)
+  // Assign partners at the start of each round (idempotent server-side).
   const pairingRound = useRef(-1);
   useEffect(() => {
-    if (phase !== 'play' || !st || !player || !room || pairingRound.current === st.round) return;
+    if (phase !== 'play' || !st || st.status !== 'active' || !player || !room || pairingRound.current === st.round) return;
 
     (async () => {
       try {
-        // Assign pairs for this round (idempotent)
         await gambleAssignPairs(sb, room, st.round);
-        pairingRound.current = st.round;
-
-        // Get this player's partner
         const partnerInfo = await gambleGetPartner(sb, player, room, st.round);
         if (partnerInfo) {
+          pairingRound.current = st.round;
           setPartner(partnerInfo.partner_id);
           setPartnerAlias(partnerInfo.alias);
-
-          // Reputation hint
-          if (me && me.stolen_from > 0) {
-            setRepHint(`Has stolen ${me.stolen_from}x`);
-          } else {
-            setRepHint('Fresh start');
-          }
-
-          // Pot is the submitted points this round
-          setPotSize(me?.points || 0);
-
-          // If partner is a bot, auto-decide for it
-          const isBot = partnerInfo.alias === 'Bot';
-          if (isBot && roundPhase === 'decision') {
-            const botChoice = Math.random() < 0.7 ? 'share' : 'steal';
-            await gambleBotDecide(sb, partnerInfo.partner_id, room, st.round, player);
-          }
         }
       } catch (e) {
         console.error('Failed to assign pairs:', msg(e));
       }
     })();
-  }, [phase, st?.round, player, room, roundPhase, me]);
+  }, [phase, st?.round, st?.status, player, room]);
+
+  // Bot partners lock their (deterministic, server-rolled) choice once the
+  // decision phase opens. Runs on whichever client is paired with the bot.
+  useEffect(() => {
+    if (roundPhase !== 'decision' || !st || !partner || partnerAlias !== 'Bot' || botRound.current === st.round) return;
+    botRound.current = st.round;
+    gambleBotDecide(sb, partner, room, st.round, player).catch(() => {});
+  }, [roundPhase, st?.round, partner, partnerAlias, room, player, sb, st]);
 
   async function submitAnswer(choice: number) {
     if (ansRound.current === st?.round || !st) return;
     setBusy(true);
     try {
+      setPicked(choice);
       const res = await gambleSubmit(sb, player, room, st.round, choice);
       setAnswered(res);
       ansRound.current = st.round;
@@ -420,7 +446,7 @@ export default function GamblePage() {
           <div className="flex-1 flex flex-col gap-4 lg:border-r border-gray-300 dark:border-gray-700 lg:pr-4">
             <div className="flex justify-between items-center">
               <div className="text-sm font-mono text-gray-600 dark:text-gray-400">
-                Round {st.round + 1} / {TOTAL_ROUNDS}
+                Round {st.round + 1} / {st.total}
               </div>
               <div className="text-lg font-bold text-black dark:text-white">{me.points} pts</div>
             </div>
@@ -438,13 +464,9 @@ export default function GamblePage() {
                     {(st.options || []).map((opt, i) => {
                       let reveal: 'correct' | 'wrong' | 'dim' | null = null;
                       if (answered) {
-                        if (answered.correct_index === i && answered.correct) {
-                          reveal = 'correct';
-                        } else if (answered.correct_index === i && !answered.correct) {
-                          reveal = 'wrong';
-                        } else {
-                          reveal = 'dim';
-                        }
+                        if (i === answered.correct_index) reveal = 'correct';
+                        else if (i === picked && !answered.correct) reveal = 'wrong';
+                        else reveal = 'dim';
                       }
                       return (
                         <AnswerTile
@@ -465,7 +487,9 @@ export default function GamblePage() {
                   <div
                     className={`p-4 rounded text-center font-semibold text-white ${answered.correct ? 'bg-green-600' : 'bg-red-600'}`}
                   >
-                    {answered.correct ? `✓ +${answered.points_earned}` : '✗ Try next'}
+                    {answered.correct
+                      ? `✓ ${answered.points_earned} points staked in the pot`
+                      : `✗ Wrong — only ${answered.points_earned} staked`}
                   </div>
                 )}
               </div>
@@ -474,69 +498,77 @@ export default function GamblePage() {
 
           {/* Decision/Reveal pane */}
           <div className="flex-1 flex flex-col gap-4 lg:min-h-0">
-            {roundPhase === 'question' && !answered && (
+            {roundPhase === 'question' && (
               <div className="flex-1 flex items-center justify-center text-gray-600 dark:text-gray-400 text-center">
-                <p>Answer the question to unlock the decision...</p>
+                <p>{answered ? 'Locked in. The SHARE/STEAL decision opens when time runs out...' : 'Answer to build your stake — the decision comes next.'}</p>
               </div>
             )}
 
-            {roundPhase === 'question' && answered && (
+            {roundPhase === 'decision' && !partner && (
               <div className="flex-1 flex items-center justify-center text-gray-600 dark:text-gray-400 text-center">
-                <p>Waiting for decision phase...</p>
+                <p>Sitting out this round — you&apos;ll be paired next round.</p>
               </div>
             )}
 
-            {roundPhase === 'decision' && answered && (
-              <>
-                <PartnerCard
-                  name={partnerAlias || 'Unknown'}
-                  stolenFromYou={me?.stolen_from || 0}
-                  timeoutSeconds={Math.max(0, DECISION_SECONDS - Math.floor((now - new Date(st?.round_started_at || 0).getTime()) / 1000) + 18)}
-                />
-                <PotDisplay amount={potSize} />
-                {!myChoice ? (
-                  <div className="flex-1 flex flex-col justify-end gap-3">
-                    <p className="text-center text-sm font-semibold text-gray-300">Choose fast</p>
-                    <div className="flex gap-3">
-                      <DecisionButton
-                        choice="share"
-                        isSelected={myChoice === 'share'}
-                        isLocked={!!myChoice}
-                        disabled={busy}
-                        timeoutFraction={Math.max(0, DECISION_SECONDS - Math.floor((now - new Date(st?.round_started_at || 0).getTime()) / 1000) + 18) / DECISION_SECONDS}
-                        onClick={() => submitChoice('share')}
-                      />
-                      <DecisionButton
-                        choice="steal"
-                        isSelected={myChoice === 'steal'}
-                        isLocked={!!myChoice}
-                        disabled={busy}
-                        timeoutFraction={Math.max(0, DECISION_SECONDS - Math.floor((now - new Date(st?.round_started_at || 0).getTime()) / 1000) + 18) / DECISION_SECONDS}
-                        onClick={() => submitChoice('steal')}
-                      />
+            {roundPhase === 'decision' && partner && (() => {
+              const roundSecs = st.round_started_at ? (now - new Date(st.round_started_at).getTime()) / 1000 : 0;
+              const decisionLeft = Math.max(0, st.per_q_seconds + DECISION_SECONDS - roundSecs);
+              const fraction = Math.min(1, Math.max(0, decisionLeft / DECISION_SECONDS));
+              return (
+                <>
+                  <PartnerCard
+                    name={partnerAlias || 'Unknown'}
+                    stolenFromYou={me?.stolen_from || 0}
+                    timeoutSeconds={Math.ceil(decisionLeft)}
+                  />
+                  <PotDisplay amount={answered?.points_earned || 0} />
+                  {!myChoice ? (
+                    <div className="flex-1 flex flex-col justify-end gap-3">
+                      <p className="text-center text-sm font-semibold text-gray-600 dark:text-gray-300">Choose fast — no choice defaults to SHARE</p>
+                      <div className="flex gap-3">
+                        <DecisionButton
+                          choice="share"
+                          isSelected={false}
+                          isLocked={false}
+                          disabled={busy}
+                          timeoutFraction={fraction}
+                          onClick={() => submitChoice('share')}
+                        />
+                        <DecisionButton
+                          choice="steal"
+                          isSelected={false}
+                          isLocked={false}
+                          disabled={busy}
+                          timeoutFraction={fraction}
+                          onClick={() => submitChoice('steal')}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex-1 flex flex-col justify-center items-center gap-4">
-                    <p className="text-sm font-semibold text-gray-400">Your choice locked</p>
-                    <div className={`text-6xl animate-bounce ${myChoice === 'share' ? '🤝' : '💰'}`} />
-                    <p className="text-xs text-gray-500">Waiting for opponent...</p>
-                  </div>
-                )}
-              </>
-            )}
+                  ) : (
+                    <div className="flex-1 flex flex-col justify-center items-center gap-4">
+                      <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Your choice locked</p>
+                      <div className="text-6xl animate-bounce">{myChoice === 'share' ? '🤝' : '💰'}</div>
+                      <p className="text-xs text-gray-500">Waiting for {partnerAlias || 'opponent'}...</p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
-            {roundPhase === 'reveal' && lastReveal && (
-              <div className="flex-1 flex flex-col items-center justify-center">
-                <RevealCard
-                  yourChoice={lastReveal.choice_a as 'share' | 'steal'}
-                  theirChoice={lastReveal.choice_b as 'share' | 'steal'}
-                  yourPoints={lastReveal.points_a}
-                  theirPoints={lastReveal.points_b}
-                  outcome={lastReveal.outcome}
-                />
-              </div>
-            )}
+            {roundPhase === 'reveal' && lastReveal && (() => {
+              const isA = lastReveal.player_a_id === player;
+              return (
+                <div className="flex-1 flex flex-col items-center justify-center">
+                  <RevealCard
+                    yourChoice={isA ? lastReveal.choice_a : lastReveal.choice_b}
+                    theirChoice={isA ? lastReveal.choice_b : lastReveal.choice_a}
+                    yourPoints={isA ? lastReveal.points_a : lastReveal.points_b}
+                    theirPoints={isA ? lastReveal.points_b : lastReveal.points_a}
+                    outcome={lastReveal.outcome}
+                  />
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

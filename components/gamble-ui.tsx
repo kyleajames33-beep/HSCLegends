@@ -33,13 +33,13 @@ export function PartnerCard({
   );
 }
 
-// Pot display: shows what you're fighting for
+// Pot display: your stake in the round's pot (their stake stays hidden until reveal)
 export function PotDisplay({ amount, isCalculating }: { amount: number; isCalculating?: boolean }) {
   return (
     <div className="rounded-xl border-2 border-amber-500/60 bg-amber-500/20 p-4 text-center">
-      <p className="text-xs font-semibold uppercase tracking-wider text-amber-200 mb-2">Pot</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-amber-200 mb-2">Your stake</p>
       <div className={`text-4xl font-bold text-amber-300 transition-all ${isCalculating ? 'scale-110' : 'scale-100'}`}>💰 {amount}</div>
-      <p className="text-xs text-amber-300/70 mt-1">points on the line</p>
+      <p className="text-xs text-amber-300/70 mt-1">in the pot — theirs is hidden until the reveal</p>
     </div>
   );
 }
@@ -65,7 +65,7 @@ export function DecisionButton({
   const bgSelected = isSelected ? (isShare ? 'ring-4 ring-green-300' : 'ring-4 ring-red-300') : '';
   const emoji = isShare ? '🤝' : '💰';
   const label = isShare ? 'SHARE' : 'STEAL';
-  const timeoutPercent = Math.max(0, timeoutFraction * 100);
+  const timeoutPercent = Math.min(100, Math.max(0, timeoutFraction * 100));
 
   return (
     <button

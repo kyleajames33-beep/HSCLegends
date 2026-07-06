@@ -39,19 +39,19 @@ export type GambleLeader = {
   is_me: boolean;
 };
 
-export type GambleRevealEvent = {
-  type: 'reveal';
+// A row from gamble_results — the server-authoritative reveal. Clients receive
+// it over postgres_changes (the table is in the realtime publication) and can
+// also poll it via gambleGetResult as a fallback.
+export type GambleResultRow = {
+  room_id: string;
   round: number;
-  player_a: string;
-  player_b: string;
-  alias_a: string;
-  alias_b: string;
+  player_a_id: string;
+  player_b_id: string;
   choice_a: 'share' | 'steal';
   choice_b: 'share' | 'steal';
   outcome: 'both_share' | 'a_stole' | 'b_stole' | 'both_steal';
   points_a: number;
   points_b: number;
-  modifier: string;
 };
 
 export async function gambleQuickJoin(sb: SupabaseClient, subject: Subject, year: 11 | 12, alias: string) {
@@ -147,23 +147,25 @@ export async function gamblePopulateQuestions(sb: SupabaseClient, room: string, 
   if (error) throw new Error(error.message);
 }
 
-export function subscribeGamble(sb: SupabaseClient, room: string, onChange: () => void): () => void {
+// Fallback fetch for when the realtime insert event is missed (dropped socket).
+export async function gambleGetResult(sb: SupabaseClient, room: string, round: number): Promise<GambleResultRow | null> {
+  const { data, error } = await sb.from('gamble_results').select('*')
+    .eq('room_id', room).eq('round', round).maybeSingle();
+  if (error) return null;
+  return (data ?? null) as GambleResultRow | null;
+}
+
+export function subscribeGamble(
+  sb: SupabaseClient, room: string, onChange: () => void,
+  onResult?: (r: GambleResultRow) => void,
+): () => void {
   const ch = sb.channel(`gamble:${room}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'gamble_rooms', filter: `id=eq.${room}` }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'gamble_players', filter: `room_id=eq.${room}` }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'gamble_results', filter: `room_id=eq.${room}` }, onChange)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'gamble_results', filter: `room_id=eq.${room}` }, (payload) => {
+      if (onResult && payload.new) onResult(payload.new as GambleResultRow);
+      onChange();
+    })
     .subscribe();
   return () => { sb.removeChannel(ch); };
-}
-
-export function joinGambleLive(sb: SupabaseClient, room: string, onReveal?: (event: GambleRevealEvent) => void) {
-  const ch = sb.channel(`gamble-live:${room}`, { config: { broadcast: { self: false } } })
-    .on('broadcast', { event: 'reveal' }, ({ payload }) => onReveal?.(payload as GambleRevealEvent))
-    .subscribe();
-  return {
-    sendReveal: (event: GambleRevealEvent) => {
-      ch.send({ type: 'broadcast', event: 'reveal', payload: event }).then(undefined, () => {});
-    },
-    leave: () => { sb.removeChannel(ch); },
-  };
 }

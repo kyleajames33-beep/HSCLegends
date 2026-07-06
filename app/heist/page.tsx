@@ -696,8 +696,6 @@ function DefenseBoard({ myTeam, player, traps, placing, alarmed, intrudersRef, s
         tSec={view.tSec}
         teamColor={mine.color}
         grabbed={[]}
-        raiderX={0}
-        raiderY={0}
         onPointerMove={(e) => {
           const c = boardCoords(e);
           mouse.current = c;
