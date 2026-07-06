@@ -18,13 +18,29 @@ import {
 import { PartnerCard, PotDisplay, DecisionButton, RevealCard } from '@/components/gamble-ui';
 import { startHeartbeat, saveArenaSession, loadArenaSession, clearArenaSession, type ArenaSession } from '@/lib/presence';
 
-type Phase = 'pick' | 'loading' | 'lobby' | 'play' | 'finished' | 'error';
-type RoundPhase = 'question' | 'decision' | 'reveal' | 'finished';
+type Phase = 'pick' | 'loading' | 'lobby' | 'play' | 'finished';
+type RoundPhase = 'question' | 'decision' | 'reveal';
 
 const TOTAL_ROUNDS = 6;
-const QUESTION_SECONDS = 18;
 const DECISION_SECONDS = 5;
 const REVEAL_SECONDS = 4; // the reveal is the payoff — give it time to land
+
+// Casino-felt shell — same family as the Heist vault, its own wine-dark mood.
+const FELT = 'linear-gradient(165deg,#171021 0%,#31203f 55%,#8a4a3f 140%)';
+
+function Table({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
+  return (
+    <main className="flex flex-1 flex-col w-full text-white" style={{ background: FELT }}>
+      <div
+        className={`flex flex-1 flex-col w-full mx-auto px-6 pt-12 pb-10 ${
+          wide ? 'max-w-md lg:max-w-5xl lg:px-10' : 'max-w-md'
+        }`}
+      >
+        {children}
+      </div>
+    </main>
+  );
+}
 
 export default function GamblePage() {
   const sb = useMemo(() => createClient(), []);
@@ -164,6 +180,11 @@ export default function GamblePage() {
             }
           }).catch(() => {});
         }
+        // No partner this round (odd join timing) → just move the round along.
+        if (roundSecs >= d.st.per_q_seconds + DECISION_SECONDS + 6 && !partner && advancedRound.current !== d.st.round) {
+          advancedRound.current = d.st.round;
+          gambleAdvance(sb, d.room, d.st.round + 1).catch(() => {});
+        }
       }
 
       // After the reveal has been on screen long enough, advance the room.
@@ -175,7 +196,7 @@ export default function GamblePage() {
       }
     }, 250);
     return () => clearInterval(tick);
-  }, [roundPhase, myChoice, player, partner, room, lastReveal]);
+  }, [roundPhase, myChoice, player, partner, room, lastReveal, sb]);
 
   // Server round changed → reset all per-round local state.
   useEffect(() => {
@@ -207,7 +228,7 @@ export default function GamblePage() {
     if (!st) return;
     if (st.status === 'finished') {
       setPhase('finished');
-    } else if (st.status === 'active' && phase === 'lobby') {
+    } else if (st.status === 'active' && (phase === 'lobby' || phase === 'loading')) {
       setPhase('play');
     }
   }, [st?.status, phase]);
@@ -239,28 +260,37 @@ export default function GamblePage() {
     await sync(roomId, playerId);
   }
 
+  // Quick match: create/join a lobby and load questions, but DON'T start —
+  // the lobby shows the code so a second device can join, then anyone starts.
   async function start(subj: Subject, yr: 11 | 12) {
     setPhase('loading');
     setErr('');
     try {
-      const res = await gambleQuickJoin(sb, subj, yr, alias);
+      const res = await gambleQuickJoin(sb, subj, yr, alias.trim());
       setCode(res.code);
-      setSubject(subj);
-      setYear(yr);
-      await enter(res.room_id, res.player_id);
 
-      // Fetch questions and populate gamble_rounds
       const questions = await getQuizQuestions(sb, { subject: subj, year: yr, count: TOTAL_ROUNDS });
-      if (!questions.length) throw new Error('No questions found.');
+      if (!questions.length) throw new Error(`No ${subj} Year ${yr} questions found.`);
+      await gamblePopulateQuestions(sb, res.room_id, questions.map((q) => ({
+        stem: q.stem, options: q.options, correct_index: q.correct_index,
+      })));
 
-      // Populate the game with questions
-      await gamblePopulateQuestions(sb, res.room_id, questions);
-
-      // Start the game
-      await gambleStart(sb, res.room_id);
+      await enter(res.room_id, res.player_id);
     } catch (e) {
       setErr(msg(e));
       setPhase('pick');
+    }
+  }
+
+  async function startMatch() {
+    setBusy(true);
+    try {
+      await gambleStart(sb, room);
+      await sync(room, player);
+    } catch (e) {
+      setErr(msg(e));
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -268,13 +298,29 @@ export default function GamblePage() {
     setPhase('loading');
     setErr('');
     try {
-      const res = await gambleJoin(sb, joinCode, alias);
+      const res = await gambleJoin(sb, joinCode, alias.trim());
       setCode(joinCode);
       await enter(res.room_id, res.player_id);
     } catch (e) {
       setErr(msg(e));
       setPhase('pick');
     }
+  }
+
+  function reset() {
+    subRef.current?.(); subRef.current = null;
+    hbRef.current?.(); hbRef.current = null;
+    clearArenaSession('gamble');
+    setRoom(''); setPlayer(''); setSt(null); setMe(null); setLeaders([]);
+    setCode(''); setJoinCode(''); setErr('');
+    setAnswered(null); setPicked(null); setMyChoice(null); setLastReveal(null);
+    setPartner(''); setPartnerAlias('');
+    setRoundPhase('question');
+    ansRound.current = -1; decideRound.current = -1; defaultedRound.current = -1;
+    partnerDefaultedRound.current = -1; advancedRound.current = -1; botRound.current = -1;
+    seenRound.current = -1; revealAt.current = 0;
+    drive.current = { st: null, room: '', clock: 0 };
+    setPhase('pick');
   }
 
   // Assign partners at the start of each round (idempotent server-side).
@@ -329,7 +375,7 @@ export default function GamblePage() {
       await gambleDecide(sb, player, room, st.round, partner, choice);
       setMyChoice(choice);
       decideRound.current = st.round;
-      // Server will reveal once both players lock
+      // Server reveals once both players lock.
     } catch (e) {
       setErr(msg(e));
     } finally {
@@ -341,172 +387,176 @@ export default function GamblePage() {
     ? Math.max(0, (st.per_q_seconds || 18) - Math.floor((now - new Date(st.round_started_at).getTime()) / 1000))
     : st?.per_q_seconds || 18;
 
-  return (
-    <main className={`min-h-screen ${juice.shakeClass}`}>
-      {juice.overlay}
+  // ── PICK ──
+  if (phase === 'pick') {
+    return (
+      <Table>
+        <h1 className="text-3xl font-display font-extrabold">🤝 Trust or Bust 💰</h1>
+        <p className="text-white/60 mt-1 text-sm">
+          Ace the question to build the pot — then look your partner in the eye and choose:
+          <b className="text-white/90"> SHARE</b> the winnings, or <b className="text-white/90">STEAL</b> the lot. Both steal? The pot burns. 🔥
+        </p>
 
-      {phase === 'pick' && (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-8 p-4 bg-parchment dark:bg-black">
-          <h1 className="text-4xl font-display font-bold text-center text-black dark:text-white">Trust or Bust</h1>
-          <p className="text-lg text-center max-w-md text-gray-700 dark:text-gray-300">
-            Answer HSC science questions. Face off against classmates in rounds of simultaneous SHARE/STEAL.
-          </p>
+        {resume && (
+          <button onClick={() => rejoin(resume)} disabled={busy}
+            className="mt-5 w-full rounded-2xl border border-gold/60 bg-gold/20 px-4 py-3 text-left active:translate-y-0.5 disabled:opacity-40">
+            <span className="font-display font-extrabold text-gold">↩️ Rejoin game {resume.code}</span>
+            <span className="block text-sm text-white/70">Pick up where you left off as {resume.alias} — your points are safe.</span>
+          </button>
+        )}
 
-          {resume && (
-            <div className="border-2 border-amber-600 rounded-lg p-4 bg-amber-50 dark:bg-amber-950 w-full max-w-md">
-              <p className="font-semibold mb-3 text-black dark:text-white">Resume {resume.code}?</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => rejoin(resume)}
-                  className="flex-1 bg-amber-600 text-white py-2 rounded font-semibold hover:bg-amber-700"
-                >
-                  Resume
-                </button>
-                <button
-                  onClick={() => {
-                    clearArenaSession('gamble');
-                    setResume(null);
-                  }}
-                  className="flex-1 bg-gray-400 dark:bg-gray-700 py-2 rounded text-black dark:text-white"
-                >
-                  New
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="w-full max-w-md space-y-4">
-            <div>
-              <label className="block text-sm font-semibold mb-2 text-black dark:text-white">Your name</label>
-              <input
-                type="text"
-                value={alias}
-                onChange={(e) => setAlias(e.target.value.slice(0, 16))}
-                placeholder="e.g., Alex"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 text-black dark:text-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-black dark:text-white">Quick start</p>
-              {Object.entries(SUBJECTS).map(([s, subj]) => (
-                <button
-                  key={s}
-                  onClick={() => start(s as Subject, year)}
-                  disabled={busy || !alias}
-                  className="w-full bg-blue-600 text-white py-3 rounded font-semibold hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {subj.label} Year {year}
-                </button>
-              ))}
-            </div>
-
-            <div className="text-center text-gray-600 dark:text-gray-400 text-sm">or</div>
-
-            <div className="space-y-2">
-              <input
-                type="text"
-                placeholder="Game code"
-                value={joinCode}
-                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 text-black dark:text-white"
-              />
-              <button
-                onClick={joinByCode}
-                disabled={busy || !joinCode || !alias}
-                className="w-full bg-gray-600 text-white py-3 rounded font-semibold hover:bg-gray-700 disabled:opacity-50"
-              >
-                Join by code
-              </button>
-            </div>
-          </div>
-
-          {err && <div className="bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100 p-3 rounded max-w-md">{err}</div>}
+        <input value={alias} onChange={(e) => setAlias(e.target.value.slice(0, 16))} placeholder="Your name" maxLength={16}
+          className="mt-5 w-full rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-white placeholder-white/40 outline-none focus:border-white/50" />
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          {SUBJECTS.map((s) => (
+            <button key={s.id} onClick={() => setSubject(s.id)}
+              className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold ${subject === s.id ? 'bg-white text-ink' : 'bg-white/10 text-white/80'}`}>
+              {s.label}
+            </button>
+          ))}
         </div>
-      )}
-
-      {(phase === 'loading' || phase === 'lobby') && (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4 bg-parchment dark:bg-black">
-          <div className="animate-spin text-4xl">⏳</div>
-          <p className="text-lg font-semibold text-black dark:text-white">
-            {phase === 'loading' ? 'Starting...' : `Waiting in ${code}`}
-          </p>
-          {phase === 'lobby' && st && (
-            <div className="text-center text-gray-600 dark:text-gray-400">
-              <p className="text-sm mb-2">Players: {st.players}</p>
-              <p className="text-xs">Game will start when host begins...</p>
-            </div>
-          )}
+        <div className="mt-2 flex gap-2">
+          {[11, 12].map((y) => (
+            <button key={y} onClick={() => setYear(y as 11 | 12)}
+              className={`rounded-full px-3 py-1 text-sm font-semibold ${year === y ? 'bg-gold text-ink' : 'bg-white/10 text-white/80'}`}>
+              Year {y}
+            </button>
+          ))}
         </div>
-      )}
 
-      {phase === 'play' && st && me && (
-        <div className="flex flex-col lg:flex-row min-h-screen gap-0 lg:gap-4 p-4 bg-parchment dark:bg-gray-900">
+        <button onClick={() => start(subject, year)} disabled={busy || !alias.trim()}
+          className="mt-6 w-full rounded-2xl bg-gold text-ink px-6 py-5 text-lg font-display font-extrabold active:translate-y-0.5 disabled:opacity-40"
+          style={{ boxShadow: '0 4px 0 #a87f3f' }}>
+          🎲 Quick Match
+        </button>
+
+        <div className="mt-4 flex gap-2">
+          <input value={joinCode} onChange={(e) => setJoinCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6))} placeholder="CODE"
+            className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 tracking-[0.2em] text-white placeholder-white/40 outline-none focus:border-white/50" />
+          <button onClick={joinByCode} disabled={busy || joinCode.length < 4 || !alias.trim()}
+            className="rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold disabled:opacity-40">
+            Join
+          </button>
+        </div>
+
+        {err && <p className="mt-3 text-rose-300 text-sm">{err}</p>}
+        <Link href="/" className="mt-6 text-center text-sm text-white/50 underline">Home</Link>
+      </Table>
+    );
+  }
+
+  // ── LOADING ──
+  if (phase === 'loading') {
+    return (
+      <Table>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3">
+          <div className="animate-spin text-4xl">🎲</div>
+          <p className="font-display font-extrabold text-lg">Setting the table…</p>
+        </div>
+      </Table>
+    );
+  }
+
+  // ── LOBBY ──
+  if (phase === 'lobby') {
+    const players = st?.players ?? 1;
+    return (
+      <Table>
+        <p className="text-white/60 text-sm font-semibold">SHARE TO JOIN</p>
+        <div className="text-6xl font-display font-black tracking-[0.2em] text-center py-5">{code}</div>
+        <p className="text-center text-2xl font-display font-extrabold">
+          {players >= 2 ? 'Your table is ready!' : 'Waiting for a rival…'}
+        </p>
+        <p className="text-center text-white/60 mt-1">{players} at the table</p>
+
+        <button onClick={startMatch} disabled={busy}
+          className="mt-6 w-full rounded-2xl bg-gold text-ink px-6 py-5 text-lg font-display font-extrabold active:translate-y-0.5 disabled:opacity-40"
+          style={{ boxShadow: '0 4px 0 #a87f3f' }}>
+          {players >= 2 ? '▶ Deal us in' : '🤖 Play the Bot instead'}
+        </button>
+
+        <div className="mt-6 rounded-2xl bg-white/5 border border-white/15 p-4 text-sm text-white/70 space-y-1.5">
+          <p className="font-display font-extrabold text-white">How Trust or Bust works</p>
+          <p>✅ Answer the question — correct answers stake big points into a shared pot.</p>
+          <p>🤝 Then you both secretly pick <b>SHARE</b> or <b>💰 STEAL</b> in 5 seconds flat.</p>
+          <p>⚖️ Both share → split the pot. One steals → takes it all. Both steal → 🔥 nothing.</p>
+          <p>🏆 {st?.total ?? TOTAL_ROUNDS} rounds. Richest legend wins.</p>
+        </div>
+
+        {err && <p className="mt-3 text-rose-300 text-sm">{err}</p>}
+        <button onClick={reset} className="mt-8 text-center text-sm text-white/50 underline">Leave</button>
+      </Table>
+    );
+  }
+
+  // ── PLAY ──
+  if (phase === 'play' && st && me) {
+    return (
+      <Table wide>
+        {juice.overlay}
+        <div className={`flex items-center justify-between ${juice.shakeClass}`}>
+          <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-white/80">
+            Round {st.round + 1} <span className="text-white/40">/ {st.total}</span>
+          </span>
+          <span className="rounded-full bg-gold/20 border border-gold/50 px-3 py-1 text-sm font-display font-extrabold text-gold tabular-nums">
+            {me.points} pts
+          </span>
+        </div>
+
+        <div className="mt-3 flex flex-1 flex-col lg:flex-row gap-5">
           {/* Question pane */}
-          <div className="flex-1 flex flex-col gap-4 lg:border-r border-gray-300 dark:border-gray-700 lg:pr-4">
-            <div className="flex justify-between items-center">
-              <div className="text-sm font-mono text-gray-600 dark:text-gray-400">
-                Round {st.round + 1} / {st.total}
-              </div>
-              <div className="text-lg font-bold text-black dark:text-white">{me.points} pts</div>
-            </div>
-
-            <TimerBar secondsLeft={remainingTime} totalSeconds={st.per_q_seconds} trackClass="bg-gray-200 dark:bg-black/40" />
-
-            {st.stem && (
-              <div className="flex-1 flex flex-col gap-4">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-300 dark:border-gray-700">
-                  <h2 className="text-lg font-semibold mb-6 text-black dark:text-white">
-                    <MathText text={st.stem} />
-                  </h2>
-
-                  <div className="space-y-2">
-                    {(st.options || []).map((opt, i) => {
-                      let reveal: 'correct' | 'wrong' | 'dim' | null = null;
-                      if (answered) {
-                        if (i === answered.correct_index) reveal = 'correct';
-                        else if (i === picked && !answered.correct) reveal = 'wrong';
-                        else reveal = 'dim';
-                      }
-                      return (
-                        <AnswerTile
-                          key={i}
-                          index={i}
-                          onClick={() => !answered && submitAnswer(i)}
-                          disabled={!!answered || busy}
-                          reveal={reveal}
-                        >
-                          {opt}
-                        </AnswerTile>
-                      );
-                    })}
-                  </div>
+          <div className="flex-1 flex flex-col gap-3">
+            <TimerBar secondsLeft={remainingTime} totalSeconds={st.per_q_seconds} trackClass="bg-white/10" />
+            {st.stem ? (
+              <div className="rounded-2xl bg-white/5 border border-white/15 p-5">
+                <h2 className="text-lg font-display font-bold mb-4">
+                  <MathText text={st.stem} />
+                </h2>
+                <div className="space-y-2">
+                  {(st.options || []).map((opt, i) => {
+                    let reveal: 'correct' | 'wrong' | 'dim' | null = null;
+                    if (answered) {
+                      if (i === answered.correct_index) reveal = 'correct';
+                      else if (i === picked && !answered.correct) reveal = 'wrong';
+                      else reveal = 'dim';
+                    }
+                    return (
+                      <AnswerTile
+                        key={i}
+                        index={i}
+                        onClick={() => !answered && submitAnswer(i)}
+                        disabled={!!answered || busy || roundPhase !== 'question'}
+                        reveal={reveal}
+                      >
+                        {opt}
+                      </AnswerTile>
+                    );
+                  })}
                 </div>
-
                 {answered && (
-                  <div
-                    className={`p-4 rounded text-center font-semibold text-white ${answered.correct ? 'bg-green-600' : 'bg-red-600'}`}
-                  >
+                  <p className={`mt-4 rounded-xl px-4 py-3 text-center font-display font-extrabold ${answered.correct ? 'bg-emerald-500/25 text-emerald-200' : 'bg-rose-500/20 text-rose-200'}`}>
                     {answered.correct
                       ? `✓ ${answered.points_earned} points staked in the pot`
                       : `✗ Wrong — only ${answered.points_earned} staked`}
-                  </div>
+                  </p>
                 )}
               </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-white/50">Shuffling the next question…</div>
             )}
           </div>
 
-          {/* Decision/Reveal pane */}
-          <div className="flex-1 flex flex-col gap-4 lg:min-h-0">
+          {/* Decision / Reveal pane */}
+          <div className="flex-1 flex flex-col gap-4 lg:max-w-md">
             {roundPhase === 'question' && (
-              <div className="flex-1 flex items-center justify-center text-gray-600 dark:text-gray-400 text-center">
-                <p>{answered ? 'Locked in. The SHARE/STEAL decision opens when time runs out...' : 'Answer to build your stake — the decision comes next.'}</p>
+              <div className="flex-1 flex items-center justify-center rounded-2xl border border-dashed border-white/15 p-6 text-center text-white/50">
+                <p>{answered ? '🔒 Stake locked. The SHARE / STEAL showdown starts when time runs out…' : 'Answer to build your stake — the showdown comes next.'}</p>
               </div>
             )}
 
             {roundPhase === 'decision' && !partner && (
-              <div className="flex-1 flex items-center justify-center text-gray-600 dark:text-gray-400 text-center">
-                <p>Sitting out this round — you&apos;ll be paired next round.</p>
+              <div className="flex-1 flex items-center justify-center rounded-2xl border border-dashed border-white/15 p-6 text-center text-white/50">
+                <p>Sitting this one out — you&apos;ll be dealt in next round.</p>
               </div>
             )}
 
@@ -524,31 +574,19 @@ export default function GamblePage() {
                   <PotDisplay amount={answered?.points_earned || 0} />
                   {!myChoice ? (
                     <div className="flex-1 flex flex-col justify-end gap-3">
-                      <p className="text-center text-sm font-semibold text-gray-600 dark:text-gray-300">Choose fast — no choice defaults to SHARE</p>
+                      <p className="text-center text-sm font-semibold text-white/70">Choose fast — silence means SHARE</p>
                       <div className="flex gap-3">
-                        <DecisionButton
-                          choice="share"
-                          isSelected={false}
-                          isLocked={false}
-                          disabled={busy}
-                          timeoutFraction={fraction}
-                          onClick={() => submitChoice('share')}
-                        />
-                        <DecisionButton
-                          choice="steal"
-                          isSelected={false}
-                          isLocked={false}
-                          disabled={busy}
-                          timeoutFraction={fraction}
-                          onClick={() => submitChoice('steal')}
-                        />
+                        <DecisionButton choice="share" isSelected={false} isLocked={false} disabled={busy}
+                          timeoutFraction={fraction} onClick={() => submitChoice('share')} />
+                        <DecisionButton choice="steal" isSelected={false} isLocked={false} disabled={busy}
+                          timeoutFraction={fraction} onClick={() => submitChoice('steal')} />
                       </div>
                     </div>
                   ) : (
-                    <div className="flex-1 flex flex-col justify-center items-center gap-4">
-                      <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Your choice locked</p>
+                    <div className="flex-1 flex flex-col justify-center items-center gap-3 py-6">
+                      <p className="text-sm font-semibold text-white/60">Your choice is locked</p>
                       <div className="text-6xl animate-bounce">{myChoice === 'share' ? '🤝' : '💰'}</div>
-                      <p className="text-xs text-gray-500">Waiting for {partnerAlias || 'opponent'}...</p>
+                      <p className="text-xs text-white/40">Waiting for {partnerAlias || 'your partner'}…</p>
                     </div>
                   )}
                 </>
@@ -558,7 +596,7 @@ export default function GamblePage() {
             {roundPhase === 'reveal' && lastReveal && (() => {
               const isA = lastReveal.player_a_id === player;
               return (
-                <div className="flex-1 flex flex-col items-center justify-center">
+                <div className="flex-1 flex flex-col justify-center">
                   <RevealCard
                     yourChoice={isA ? lastReveal.choice_a : lastReveal.choice_b}
                     theirChoice={isA ? lastReveal.choice_b : lastReveal.choice_a}
@@ -571,61 +609,56 @@ export default function GamblePage() {
             })()}
           </div>
         </div>
-      )}
 
-      {phase === 'finished' && (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-8 p-4 bg-parchment dark:bg-black">
-          <h1 className="text-4xl font-display font-bold text-black dark:text-white">Match complete!</h1>
+        {err && <p className="mt-3 text-rose-300 text-sm">{err}</p>}
+      </Table>
+    );
+  }
 
-          {me && (
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-300 dark:border-gray-700 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Your final score</p>
-              <p className="text-5xl font-bold text-black dark:text-white">{me.points}</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-3">
-                {me.shares} shares · {me.steals} steals
-              </p>
-            </div>
-          )}
+  // ── FINISHED ──
+  if (phase === 'finished') {
+    return (
+      <Table>
+        {juice.overlay}
+        <p className="text-gold font-display font-bold text-sm">GAME OVER</p>
+        <div className="text-center my-2">
+          <div className="lg-pop text-6xl">🏆</div>
+          <h1 className="mt-1 text-3xl font-display font-extrabold">Cash out!</h1>
+        </div>
 
-          <div className="w-full max-w-2xl">
-            <h2 className="text-xl font-semibold text-center text-black dark:text-white mb-4">Season leaderboard</h2>
-            <div className="space-y-2">
-              {leaders.slice(0, 10).map((l, i) => (
-                <div
-                  key={i}
-                  className={`flex items-center justify-between p-3 rounded border-2 ${
-                    l.is_me ? 'bg-blue-50 dark:bg-blue-950 border-blue-500' : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700'
-                  }`}
-                >
-                  <div className="flex-1">
-                    <p className="font-semibold text-black dark:text-white">
-                      {i + 1}. {l.alias} {l.is_me && '👤'}
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{l.games} games</p>
-                  </div>
-                  <p className="text-xl font-bold text-black dark:text-white">{l.points_total || 0}</p>
-                </div>
-              ))}
-            </div>
+        {me && (
+          <div className="mt-3 rounded-2xl bg-white/5 border border-white/15 p-5 text-center">
+            <p className="text-sm text-white/60">Your winnings</p>
+            <p className="text-5xl font-display font-black text-gold tabular-nums mt-1">{me.points}</p>
+            <p className="text-xs text-white/50 mt-2">🤝 {me.shares} shares · 💰 {me.steals} steals · 😤 robbed {me.stolen_from}x</p>
           </div>
+        )}
 
-          <Link href="/" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700">
-            Back home
-          </Link>
-        </div>
-      )}
+        {leaders.length > 0 && (
+          <>
+            <div className="mt-6 text-sm text-white/60">🎰 High Rollers — season board</div>
+            <ol className="mt-2 space-y-1.5">
+              {leaders.slice(0, 8).map((l, i) => (
+                <li key={i} className={`flex items-center justify-between rounded-lg px-3 py-1.5 text-sm ${l.is_me ? 'bg-gold/25 border border-gold/60' : 'bg-white/5'}`}>
+                  <span>#{i + 1} {l.alias}{l.is_me ? ' (you)' : ''} <span className="text-white/40 text-xs">· {l.games} games</span></span>
+                  <span className="tabular-nums font-bold text-gold">{l.points_total || 0}</span>
+                </li>
+              ))}
+            </ol>
+          </>
+        )}
 
-      {phase === 'error' && (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4 bg-parchment dark:bg-black">
-          <p className="text-lg font-semibold text-black dark:text-white">Error</p>
-          <p className="text-gray-700 dark:text-gray-300 max-w-md text-center">{err}</p>
-          <button onClick={() => setPhase('pick')} className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700">
-            Back
-          </button>
-        </div>
-      )}
-    </main>
-  );
+        <button onClick={reset}
+          className="mt-8 w-full rounded-2xl bg-gold text-ink px-6 py-4 text-lg font-display font-extrabold active:translate-y-0.5"
+          style={{ boxShadow: '0 4px 0 #a87f3f' }}>
+          🎲 Play again
+        </button>
+        <Link href="/" className="mt-4 text-center text-sm text-white/50 underline">Home</Link>
+      </Table>
+    );
+  }
+
+  return null;
 }
 
 function msg(e: unknown): string {
