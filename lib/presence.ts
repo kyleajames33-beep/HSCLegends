@@ -5,7 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 // and the Live Class Game. Server side: supabase/migrations/20260705_arena_robustness.sql.
 // See docs/LIVE_ROBUSTNESS.md.
 
-export type ArenaMode = 'knockout' | 'heist' | 'live';
+export type ArenaMode = 'knockout' | 'heist' | 'gamble' | 'live';
 
 const BEAT_MS = 10_000; // server counts you present if seen within 25s
 const SESSION_TTL_MS = 3 * 60 * 60 * 1000; // rooms expire server-side at 3h (live: 6h)

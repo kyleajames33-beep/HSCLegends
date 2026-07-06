@@ -184,10 +184,10 @@ export default function GamblePage() {
   async function enter(roomId: string, playerId: string) {
     setRoom(roomId);
     setPlayer(playerId);
-    saveArenaSession('gamble', { code, alias });
+    saveArenaSession('gamble', { code, alias, room: roomId, player: playerId });
     setPhase('lobby');
 
-    hbRef.current = startHeartbeat(sb, { room: roomId, mode: 'gamble' });
+    hbRef.current = startHeartbeat(sb, 'gamble', playerId);
 
     subRef.current?.();
     subRef.current = subscribeGamble(sb, roomId, () => syncRef.current(roomId, playerId));
@@ -363,14 +363,14 @@ export default function GamblePage() {
 
             <div className="space-y-2">
               <p className="text-sm font-semibold text-black dark:text-white">Quick start</p>
-              {Object.entries(SUBJECTS).map(([s, label]) => (
+              {Object.entries(SUBJECTS).map(([s, subj]) => (
                 <button
                   key={s}
                   onClick={() => start(s as Subject, year)}
                   disabled={busy || !alias}
                   className="w-full bg-blue-600 text-white py-3 rounded font-semibold hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {label} Year {year}
+                  {subj.label} Year {year}
                 </button>
               ))}
             </div>
@@ -435,18 +435,29 @@ export default function GamblePage() {
                   </h2>
 
                   <div className="space-y-2">
-                    {(st.options || []).map((opt, i) => (
-                      <AnswerTile
-                        key={i}
-                        label={String.fromCharCode(65 + i)}
-                        text={opt}
-                        selected={answered?.correct_index === i}
-                        correct={answered?.correct_index === i && answered.correct}
-                        incorrect={answered && answered.correct_index === i && !answered.correct}
-                        onClick={() => !answered && submitAnswer(i)}
-                        disabled={!!answered || busy}
-                      />
-                    ))}
+                    {(st.options || []).map((opt, i) => {
+                      let reveal: 'correct' | 'wrong' | 'dim' | null = null;
+                      if (answered) {
+                        if (answered.correct_index === i && answered.correct) {
+                          reveal = 'correct';
+                        } else if (answered.correct_index === i && !answered.correct) {
+                          reveal = 'wrong';
+                        } else {
+                          reveal = 'dim';
+                        }
+                      }
+                      return (
+                        <AnswerTile
+                          key={i}
+                          index={i}
+                          onClick={() => !answered && submitAnswer(i)}
+                          disabled={!!answered || busy}
+                          reveal={reveal}
+                        >
+                          {opt}
+                        </AnswerTile>
+                      );
+                    })}
                   </div>
                 </div>
 
