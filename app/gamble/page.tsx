@@ -196,7 +196,9 @@ export default function GamblePage() {
       }
     }, 250);
     return () => clearInterval(tick);
-  }, [roundPhase, myChoice, player, partner, room, lastReveal, sb]);
+    // sb is a stable useMemo instance — deliberately not a dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roundPhase, myChoice, player, partner, room, lastReveal]);
 
   // Server round changed → reset all per-round local state.
   useEffect(() => {
@@ -349,7 +351,9 @@ export default function GamblePage() {
     if (roundPhase !== 'decision' || !st || !partner || partnerAlias !== 'Bot' || botRound.current === st.round) return;
     botRound.current = st.round;
     gambleBotDecide(sb, partner, room, st.round, player).catch(() => {});
-  }, [roundPhase, st?.round, partner, partnerAlias, room, player, sb, st]);
+    // sb stable; st.round covers the st read.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roundPhase, st?.round, partner, partnerAlias, room, player]);
 
   async function submitAnswer(choice: number) {
     if (ansRound.current === st?.round || !st) return;
