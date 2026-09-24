@@ -156,7 +156,7 @@ export default function RewardsPage() {
             <div className="text-xs text-muted">freezes (max {FREEZE_CAP})</div>
           </div>
         </div>
-        <p className="mt-3 text-sm text-inksoft">A Streak Freeze shields one missed day — life happens.</p>
+        <p className="mt-3 text-sm text-inksoft">Weekends never count. A bought freeze covers a missed weekday once your free weekly one is used. <Link href="/streak" className="font-semibold text-plumdeep underline">See your streak</Link></p>
         <button
           onClick={handleBuyFreeze}
           disabled={buyingFreeze || (streak?.freezes ?? 0) >= FREEZE_CAP}

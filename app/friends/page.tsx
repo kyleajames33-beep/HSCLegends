@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import TabBar from '@/components/tab-bar';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import Avatar from '@/components/avatar';
@@ -152,7 +153,7 @@ export default function FriendsPage() {
 }
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
-  <main className="flex flex-1 flex-col px-6 pt-14 pb-10 max-w-md w-full mx-auto">{children}</main>
+  <main className="flex flex-1 flex-col px-6 pt-14 pb-4 max-w-md w-full mx-auto">{children}<TabBar active="friends" /></main>
 );
 const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-extrabold text-ink">{children}</h1>;
 const HomeLink = () => <Link href="/" className="mt-8 text-center text-sm text-muted underline">Home</Link>;

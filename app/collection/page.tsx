@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import TabBar from '@/components/tab-bar';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import CardTile from '@/components/card-tile';
@@ -224,7 +225,7 @@ export default function CollectionPage() {
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
 const Shell = ({ children }: { children: React.ReactNode }) => (
-  <main className="flex flex-1 flex-col px-6 pt-14 pb-10 max-w-md md:max-w-5xl w-full mx-auto">{children}</main>
+  <main className="flex flex-1 flex-col px-6 pt-14 pb-4 max-w-md md:max-w-5xl w-full mx-auto">{children}<TabBar active="cards" /></main>
 );
 const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-extrabold text-ink">{children}</h1>;
 const Err = ({ children }: { children: React.ReactNode }) => <p className="mt-3 text-brick text-sm">{children}</p>;
