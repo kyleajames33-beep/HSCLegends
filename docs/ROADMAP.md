@@ -43,7 +43,7 @@ All on `main`, prod DB migrated, build-green, RPCs verified end-to-end (rolled-b
 - **Solo Boss Campaign** ([/campaign](../app/campaign/page.tsx)), **Profile hub** ([/profile](../app/profile/page.tsx)), **Match mini-game** ([/match](../app/match/page.tsx))
 - **Smart-notification infrastructure** — `notify-streaks` edge function + `streak_nudge_targets()` (built + targeting verified; **not yet deployed/scheduled** — needs Kyle)
 
-**Partial (box still open below, but part-built):** Streak Freeze (freeze exists, no auto-repair cron), Smart notifications (dispatcher built, not scheduled), New question types (Match shipped, type-the-answer pending), Boss art (1 of 6 subjects).
+**Partial (box still open below, but part-built):** Streak Freeze (bought freezes now spent + same-day repair, pending migration apply), Smart notifications (dispatcher built, not scheduled), New question types (Match shipped, type-the-answer pending), Boss art (1 of 6 subjects).
 
 **Blocked / deferred:** AI "Quiz My Notes" (needs ANTHROPIC_API_KEY + per-user daily caps to bound cost). Seasons/Term Pass, Juice pass, Friends/social, Adaptive difficulty, Predicted band, Content QA, Class Championships, hscscience deep-links (not started).
 

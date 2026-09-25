@@ -28,3 +28,34 @@ export async function buyStreakFreeze(sb: SupabaseClient): Promise<number> {
   if (error) throw new Error(error.message);
   return data as number;
 }
+
+// Streak screen read model (get_streak_overview). Weekends never break a streak;
+// the free weekly freeze covers one missed weekday, then bought freezes cover more.
+export type StreakOverview = {
+  current: number;
+  freezes: number;
+  weekly_freeze_ready: boolean;
+  last_date: string | null;
+  active_days: string[];
+  frozen_days: string[];
+  missed_days: number;       // weekdays missed since last play (before today)
+  will_reset: boolean;       // playing today would reset — not enough freezes
+  repair_open: boolean;      // a broken streak can be won back today
+  broken_streak: number | null;
+  repair_progress: number;   // questions answered today
+  repair_target: number;
+  next_repair_on: string | null;
+};
+
+export async function getStreakOverview(sb: SupabaseClient): Promise<StreakOverview | null> {
+  const { data, error } = await sb.rpc('get_streak_overview');
+  if (error) throw new Error(error.message);
+  return (data?.[0] as StreakOverview) ?? null;
+}
+
+// Win a broken streak back (20 questions today, once per 14 days). Returns the restored streak.
+export async function repairStreak(sb: SupabaseClient): Promise<number> {
+  const { data, error } = await sb.rpc('repair_streak');
+  if (error) throw new Error(error.message);
+  return data as number;
+}

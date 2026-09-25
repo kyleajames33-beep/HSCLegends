@@ -295,6 +295,11 @@ export default function QuickGame() {
             )}
             <div className="text-2xl font-display font-extrabold mt-1 text-ink">🔥 {result.streak} day{result.streak === 1 ? '' : 's'}</div>
             <div className="text-xs text-inksoft mt-1">{STREAK_MSG[result.streak_event]}</div>
+            {(result.streak_event === 'reset' || result.streak_event === 'freeze_used') && (
+              <Link href="/streak" className="mt-1 inline-block text-sm font-semibold text-berrydeep underline">
+                {result.streak_event === 'reset' ? 'Win your old streak back →' : 'See your streak →'}
+              </Link>
+            )}
             {myRank && (
               <div className="lg-pop mt-2 text-sm font-display font-bold text-berrydeep">
                 🏆 #{myRank.rank} in {SUBJECTS.find((s) => s.id === sel?.subject)?.label} this week
