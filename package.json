@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --import ./tests/support/deny-network.mjs --test tests/offline/*.test.mjs",
+    "test:regressions": "node --import ./tests/support/deny-network.mjs --test tests/regressions/*.test.mjs",
+    "test:all": "npm test && npm run test:regressions"
   },
   "dependencies": {
     "@dicebear/collection": "^9.4.2",

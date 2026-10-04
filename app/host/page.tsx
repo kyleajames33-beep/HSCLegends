@@ -1,115 +1,86 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useCountdown } from '@/lib/use-countdown';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
 import Avatar from '@/components/avatar';
-import { SUBJECTS, type Subject } from '@/lib/questions';
-import {
-  createGame, startGame, nextQuestion, getLiveQuestion, fetchPlayers, liveAnswerCount,
-  subscribeGame, type LiveQuestion, type Player,
-} from '@/lib/live';
+import { SUBJECTS } from '@/lib/questions';
+import { liveAnswerCount, type Player } from '@/lib/live';
 import { arenaPresences, isPresent } from '@/lib/presence';
+import { useUser } from '@/lib/use-user';
+import { LiveHostController } from '@/lib/live-host-controller';
+import type { ProjectorTeams } from '@/lib/live-session-cache';
 
 export default function HostPage() {
   const sb = useMemo(() => createClient(), []);
-  const [phase, setPhase] = useState<'setup' | 'lobby' | 'active' | 'complete'>('setup');
-  const [code, setCode] = useState('');
-  const [sessionId, setSessionId] = useState('');
-  const [players, setPlayers] = useState<Player[]>([]);
+  const { user, loading } = useUser();
+  const controller = useMemo(() => new LiveHostController(sb), [sb]);
+  const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getServerSnapshot);
+  const { phase, code, sessionId, players, teamMode, teams, q, busy, err, notice, resume } = state;
   const [ac, setAc] = useState({ answered: 0, total: 0, correct: 0 });
-  const [teamMode, setTeamMode] = useState(false);
-  const [q, setQ] = useState<LiveQuestion | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
   const [presence, setPresence] = useState<Map<string, number>>(new Map());
-  const subRef = useRef<(() => void) | null>(null);
-
-  useEffect(() => () => subRef.current?.(), []);
+  const ownerId = user?.id ?? null;
+  const canControl = !loading && !!ownerId && state.ownerId === ownerId && state.ready;
+  useEffect(() => { controller.setAccount(ownerId, loading); }, [controller, ownerId, loading]);
+  useEffect(() => () => controller.dispose(), [controller]);
 
   // Poll presence so disconnected students grey out (and don't stall the count).
   useEffect(() => {
-    if (phase === 'setup' || phase === 'complete' || !sessionId) return;
+    if (!canControl || phase === 'setup' || phase === 'complete' || !sessionId) return;
     let live = true;
     const tick = () => arenaPresences(sb, sessionId).then((m) => { if (live) setPresence(m); }).catch(() => {});
     tick();
     const t = setInterval(tick, 10_000);
     return () => { live = false; clearInterval(t); };
-  }, [phase, sessionId, sb]);
-
-  async function refreshQuestion() {
-    const lq = await getLiveQuestion(sb, sessionId);
-    setQ(lq);
-    if (lq.status === 'complete') setPhase('complete');
-    else if (lq.status === 'active') setPhase('active');
-  }
-
-  async function create(subject: Subject, year: 11 | 12) {
-    setBusy(true); setErr('');
-    try {
-      const g = await createGame(sb, subject, year, 10);
-      setCode(g.code); setSessionId(g.session_id); setPhase('lobby');
-      subRef.current = subscribeGame(sb, g.session_id, {
-        onPlayers: async () => setPlayers(await fetchPlayers(sb, g.session_id)),
-        onSession: () => refreshQuestionRef.current(),
-      });
-      setPlayers(await fetchPlayers(sb, g.session_id));
-    } catch (e) { setErr(msg(e)); } finally { setBusy(false); }
-  }
-
-  // keep a stable ref so the subscription callback always sees current sessionId
-  const refreshQuestionRef = useRef(refreshQuestion);
-  refreshQuestionRef.current = refreshQuestion;
+  }, [phase, sessionId, sb, canControl]);
 
   // Per-question countdown; host auto-advances ~2s after time runs out.
   const timer = useCountdown(q?.question_started_at ?? null, q?.per_question_seconds ?? 15);
-  const advancedFor = useRef(-2);
+  const advancedFor = useRef('');
   useEffect(() => {
-    if (phase !== 'active' || !q) return;
-    if (timer.expired && advancedFor.current !== q.index) {
-      advancedFor.current = q.index;
-      const t = setTimeout(() => advance(), 2000);
+    if (!canControl || phase !== 'active' || !q) return;
+    if (timer.expired && advancedFor.current !== `${sessionId}:${q.index}`) {
+      advancedFor.current = `${sessionId}:${q.index}`;
+      const t = setTimeout(() => { void controller.advance(sessionId, q.index); }, 2000);
       return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timer.expired, q?.index, phase]);
+  }, [timer.expired, q?.index, phase, canControl, controller, sessionId]);
 
   // Host: poll how many players have answered the current question.
   useEffect(() => {
-    if (phase !== 'active' || !q) return;
+    if (!canControl || phase !== 'active' || !q) return;
     let live = true;
     const tick = () => liveAnswerCount(sb, sessionId, q.index).then((c) => { if (live) setAc(c); }).catch(() => {});
     tick();
     const t = setInterval(tick, 1500);
     return () => { live = false; clearInterval(t); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, q?.index, sessionId]);
+  }, [phase, q?.index, sessionId, canControl]);
 
-  async function begin() {
-    setBusy(true);
-    try { await startGame(sb, sessionId); await refreshQuestion(); }
-    catch (e) { setErr(msg(e)); } finally { setBusy(false); }
-  }
-  async function advance() {
-    setBusy(true);
-    try { await nextQuestion(sb, sessionId); await refreshQuestion(); setPlayers(await fetchPlayers(sb, sessionId)); }
-    catch (e) { setErr(msg(e)); } finally { setBusy(false); }
-  }
-
-  if (phase === 'setup') {
+  if (phase === 'setup' || !canControl) {
     return (
       <Shell>
         <H>Host a game</H>
         <p className="text-inksoft text-sm mt-1">Pick a subject. Students join with the code on their phones.</p>
+        {loading ? <p role="status" className="mt-4 text-sm">Checking your sign-in…</p> : !user && <Link href="/login?next=/host" className="mt-4 underline">Sign in to host or resume a game</Link>}
+        {resume && <div className="mt-5 rounded-xl border border-rule p-4">
+          <p className="font-semibold">Saved game {resume.code}</p>
+          {ownerId !== resume.ownerId && <p className="mt-1 text-sm">Sign in with the account that created this game to resume.</p>}
+          <button disabled={busy || loading || ownerId !== resume.ownerId} onClick={() => controller.restore()} className="mt-3 rounded-lg bg-plum px-4 py-2 text-white disabled:opacity-40">Resume game</button>
+          <button disabled={busy} onClick={() => controller.forget()} className="ml-3 mt-3 text-sm underline">Forget saved game</button>
+        </div>}
+        {notice && <p role="status" className="mt-4 text-sm text-inksoft">{notice}</p>}
+        {!resume && notice && <button onClick={() => controller.forget()} className="mt-2 text-sm underline">Clear saved recovery data</button>}
         <div className="mt-6 space-y-3">
           {SUBJECTS.map((s) => (
             <div key={s.id} className="flex items-center gap-2">
               <span className="flex-1 font-medium">{s.label}</span>
               {[11, 12].map((y) => (
-                <button key={y} disabled={busy} onClick={() => create(s.id, y as 11 | 12)}
+                <button key={y} disabled={busy || loading || !user} onClick={() => controller.create(s.id, y as 11 | 12)}
                   className="rounded-lg bg-parchment-deep hover:bg-plum text-white px-4 py-2 text-sm font-semibold disabled:opacity-40">
                   Y{y}
                 </button>
@@ -135,7 +106,7 @@ export default function HostPage() {
           })()}
         </p>
 
-        <button onClick={() => setTeamMode((v) => !v)}
+        <button onClick={() => controller.toggleTeams()}
           className={`mt-4 w-full rounded-xl px-4 py-2.5 text-sm font-semibold border ${teamMode ? 'bg-plum text-white border-plum' : 'bg-panel text-ink border-rule'}`}>
           👥 Team mode: {teamMode ? 'ON — read the teams out, then start' : 'OFF — tap for Red vs Blue'}
         </button>
@@ -143,7 +114,7 @@ export default function HostPage() {
         {teamMode ? (
           <div className="mt-4 grid grid-cols-2 gap-3 min-h-16">
             {(['a', 'b'] as const).map((t) => {
-              const tm = teamMap(players);
+              const tm = teams;
               const mine = players.filter((p) => tm[p.id] === t);
               return (
                 <div key={t} className="rounded-xl p-3 border" style={{ borderColor: `${TEAMS[t].color}66`, background: `${TEAMS[t].color}11` }}>
@@ -173,11 +144,14 @@ export default function HostPage() {
           </div>
         )}
 
-        <button disabled={busy || players.length === 0} onClick={begin}
+        <button disabled={busy || players.length === 0} onClick={() => controller.begin()}
           className="mt-8 w-full rounded-2xl bg-plum hover:bg-plumdeep text-white px-6 py-5 text-lg font-semibold disabled:opacity-40">
           Start game
         </button>
+        {notice && <p role="status" className="mt-3 text-sm">{notice}</p>}
         {err && <Err>{err}</Err>}
+        {err && q === null && <button disabled={busy || !canControl} onClick={() => controller.retryPlayers()}
+          className="mt-3 rounded-xl border border-rule px-4 py-2 disabled:opacity-40">Retry players</button>}
       </Shell>
     );
   }
@@ -205,14 +179,15 @@ export default function HostPage() {
           ))}
         </div>
         <div className="mt-6">
-          {teamMode && players.length > 0 && <div className="mb-4"><TeamBar players={players} /></div>}
+          {teamMode && players.length > 0 && <div className="mb-4"><TeamBar players={players} teams={teams} /></div>}
           <div className="text-sm text-muted mb-2">Live scores</div>
-          <Scoreboard players={players} teams={teamMode} />
+          <Scoreboard players={players} teams={teamMode ? teams : undefined} />
         </div>
-        <button disabled={busy} onClick={advance}
+        <button disabled={busy} onClick={() => controller.advance()}
           className="mt-6 w-full rounded-xl bg-plum hover:bg-plumdeep text-white px-4 py-4 font-semibold disabled:opacity-40">
           {q.index + 1 >= q.total ? 'Finish' : 'Next question'}
         </button>
+        {notice && <p role="status" className="mt-3 text-sm">{notice}</p>}
         {err && <Err>{err}</Err>}
       </Shell>
     );
@@ -223,32 +198,25 @@ export default function HostPage() {
     <Shell>
       <p className="text-berrydeep font-semibold text-sm">FINAL</p>
       <H>Podium</H>
-      {teamMode && players.length > 0 && <div className="mt-5"><TeamBar players={players} showWinner /></div>}
-      <div className="mt-6"><Scoreboard players={players} podium teams={teamMode} /></div>
-      <Link href="/host" className="mt-8 block w-full rounded-xl bg-plum text-white px-4 py-4 text-center font-semibold">
-        New game
-      </Link>
+      {notice && <p role="status" className="mt-3 text-sm">{notice}</p>}
+      {teamMode && players.length > 0 && <div className="mt-5"><TeamBar players={players} teams={teams} showWinner /></div>}
+      <div className="mt-6"><Scoreboard players={players} podium teams={teamMode ? teams : undefined} /></div>
+      <button onClick={() => controller.forget()} className="mt-8 block w-full rounded-xl bg-plum text-white px-4 py-4 text-center font-semibold">New game</button>
     </Shell>
   );
 }
 
 // Host-side team mode: assignment is purely a projector-display grouping — no server or
-// scoring change. Teams are split by stable UUID order (balanced, doesn't shuffle as scores move).
+// scoring change. Assignments persist on this projector; only newcomers receive a team.
 const TEAMS = {
   a: { name: 'Red', emoji: '🔴', color: '#d4607a', deep: '#a23f57' },
   b: { name: 'Blue', emoji: '🔵', color: '#5b8bd0', deep: '#3a5f96' },
 } as const;
-function teamMap(players: Player[]): Record<string, 'a' | 'b'> {
-  const m: Record<string, 'a' | 'b'> = {};
-  [...players].sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0)).forEach((p, i) => { m[p.id] = i % 2 === 0 ? 'a' : 'b'; });
-  return m;
+function teamTotals(players: Player[], teams: ProjectorTeams): { a: number; b: number } {
+  return players.reduce((acc, p) => { const team = teams[p.id]; if (team) acc[team] += p.score; return acc; }, { a: 0, b: 0 });
 }
-function teamTotals(players: Player[]): { a: number; b: number } {
-  const tm = teamMap(players);
-  return players.reduce((acc, p) => { acc[tm[p.id]] += p.score; return acc; }, { a: 0, b: 0 });
-}
-function TeamBar({ players, showWinner }: { players: Player[]; showWinner?: boolean }) {
-  const { a, b } = teamTotals(players);
+function TeamBar({ players, teams, showWinner }: { players: Player[]; teams: ProjectorTeams; showWinner?: boolean }) {
+  const { a, b } = teamTotals(players, teams);
   const total = a + b || 1;
   const winner = a > b ? 'a' : b > a ? 'b' : null;
   return (
@@ -270,17 +238,17 @@ function TeamBar({ players, showWinner }: { players: Player[]; showWinner?: bool
   );
 }
 
-function Scoreboard({ players, podium, teams }: { players: Player[]; podium?: boolean; teams?: boolean }) {
+function Scoreboard({ players, podium, teams }: { players: Player[]; podium?: boolean; teams?: ProjectorTeams }) {
   if (!players.length) return <p className="text-muted text-sm">No scores yet.</p>;
   const medal = ['🥇', '🥈', '🥉'];
-  const tm = teams ? teamMap(players) : null;
+  const tm = teams;
   return (
     <ol className="space-y-2">
       {players.map((p, i) => (
         <li key={p.id} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${podium && i < 3 ? 'bg-gold/20 border border-gold/60' : 'bg-panel'}`}>
           <span className="w-6 text-center">{(podium && medal[i]) || `${i + 1}.`}</span>
           <Avatar seed={p.alias} size={32} className="rounded-full shrink-0" />
-          <span className="font-medium flex-1 truncate">{tm ? <span style={{ color: TEAMS[tm[p.id]].deep }}>{TEAMS[tm[p.id]].emoji} </span> : null}{p.alias}</span>
+          <span className="font-medium flex-1 truncate">{tm?.[p.id] ? <span style={{ color: TEAMS[tm[p.id]].deep }}>{TEAMS[tm[p.id]].emoji} </span> : null}{p.alias}</span>
           <span className="tabular-nums font-bold">{p.score}</span>
         </li>
       ))}
@@ -288,9 +256,8 @@ function Scoreboard({ players, podium, teams }: { players: Player[]; podium?: bo
   );
 }
 
-const msg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
 const Shell = ({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) => (
   <main className={`flex flex-1 flex-col px-6 pt-12 pb-10 w-full mx-auto ${wide ? 'max-w-md md:max-w-6xl md:px-12' : 'max-w-md'}`}>{children}</main>
 );
 const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-bold">{children}</h1>;
-const Err = ({ children }: { children: React.ReactNode }) => <p className="mt-4 text-brick text-sm">{children}</p>;
+const Err = ({ children }: { children: React.ReactNode }) => <p role="alert" className="mt-4 text-brick text-sm">{children}</p>;
