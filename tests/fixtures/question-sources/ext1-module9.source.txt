@@ -1,0 +1,2285 @@
+const lessonQuestionBanks = {
+  "maths-ext1-y12-m9-l01": [
+    {
+      "id": "m9-l01-mc-1",
+      "question": "The area between $y = f(x)$ and $y = g(x)$ where $f(x) \\geq g(x)$ is:",
+      "options": [
+        "$\\int_a^b [f(x) - g(x)],dx$",
+        "$\\int_a^b [f(x) \\cdot g(x)],dx$",
+        "$\\int_a^b \\frac{f(x)}{g(x)},dx$",
+        "$\\int_a^b [f(x) + g(x)],dx$"
+      ],
+      "answer": 0,
+      "explanation": "Area = $\\int_a^b [\\text{upper} - \\text{lower}],dx = \\int_a^b [f(x) - g(x)],dx$."
+    },
+    {
+      "id": "m9-l01-mc-2",
+      "question": "To find the area between curves, you must first:",
+      "options": [
+        "Find the maximum of each function",
+        "Find where the curves intersect",
+        "Differentiate both functions",
+        "Integrate both functions separately"
+      ],
+      "answer": 1,
+      "explanation": "Find intersection points to determine the limits of integration."
+    },
+    {
+      "id": "m9-l01-mc-3",
+      "question": "Question 3 for Lesson 1",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l01-mc-4",
+      "question": "Question 4 for Lesson 1",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l01-mc-5",
+      "question": "Question 5 for Lesson 1",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l01-mc-6",
+      "question": "Question 6 for Lesson 1",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l01-mc-7",
+      "question": "Question 7 for Lesson 1",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l01-mc-8",
+      "question": "Question 8 for Lesson 1",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l02": [
+    {
+      "id": "m9-l02-mc-1",
+      "question": "The area between $y = x^2$ and $y = x$ from $x = 0$ to $x = 1$ is:",
+      "options": [
+        "$\\frac{1}{2}$",
+        "$\\frac{5}{6}$",
+        "$\\frac{1}{6}$",
+        "$\\frac{1}{3}$"
+      ],
+      "answer": 2,
+      "explanation": "$\\int_0^1 (x - x^2),dx = [\\frac{x^2}{2} - \\frac{x^3}{3}]_0^1 = \\frac{1}{2} - \\frac{1}{3} = \\frac{1}{6}$."
+    },
+    {
+      "id": "m9-l02-mc-2",
+      "question": "If curves cross within $[a,b]$, the total area requires:",
+      "options": [
+        "Differentiation",
+        "No adjustment needed",
+        "A single integral",
+        "Splitting into multiple integrals"
+      ],
+      "answer": 3,
+      "explanation": "When curves cross, split the interval and integrate [upper - lower] on each subinterval."
+    },
+    {
+      "id": "m9-l02-mc-3",
+      "question": "Question 3 for Lesson 2",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l02-mc-4",
+      "question": "Question 4 for Lesson 2",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l02-mc-5",
+      "question": "Question 5 for Lesson 2",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l02-mc-6",
+      "question": "Question 6 for Lesson 2",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l02-mc-7",
+      "question": "Question 7 for Lesson 2",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l02-mc-8",
+      "question": "Question 8 for Lesson 2",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l03": [
+    {
+      "id": "m9-l03-mc-1",
+      "question": "Area with respect to the y-axis uses:",
+      "options": [
+        "$x = f(y)$ and $x = g(y)$",
+        "$y = f(x)$ and $y = g(x)$",
+        "$f(x) + g(x)$",
+        "$f(x) \\cdot g(x)$"
+      ],
+      "answer": 0,
+      "explanation": "Express curves as $x = f(y)$ and $x = g(y)$, then $A = \\int_c^d [f(y) - g(y)],dy$."
+    },
+    {
+      "id": "m9-l03-mc-2",
+      "question": "The area bounded by $y = x^2$ and $y = 4$ is best found using:",
+      "options": [
+        "Integration with respect to x",
+        "Integration with respect to y",
+        "Differentiation",
+        "Geometric formula"
+      ],
+      "answer": 1,
+      "explanation": "Using $x = \\sqrt{y}$ and integrating with respect to y can be simpler for some regions."
+    },
+    {
+      "id": "m9-l03-mc-3",
+      "question": "Question 3 for Lesson 3",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l03-mc-4",
+      "question": "Question 4 for Lesson 3",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l03-mc-5",
+      "question": "Question 5 for Lesson 3",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l03-mc-6",
+      "question": "Question 6 for Lesson 3",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l03-mc-7",
+      "question": "Question 7 for Lesson 3",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l03-mc-8",
+      "question": "Question 8 for Lesson 3",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l04": [
+    {
+      "id": "m9-l04-mc-1",
+      "question": "The disk method about the x-axis gives volume:",
+      "options": [
+        "$2\\pi\\int_a^b [f(x)]^2,dx$",
+        "$\\pi\\int_a^b f(x),dx$",
+        "$\\pi\\int_a^b [f(x)]^2,dx$",
+        "$\\int_a^b [f(x)]^2,dx$"
+      ],
+      "answer": 2,
+      "explanation": "$V = \\pi\\int_a^b [f(x)]^2,dx$ for rotation about the x-axis."
+    },
+    {
+      "id": "m9-l04-mc-2",
+      "question": "Rotating $y = \\sqrt{x}$ from $x = 0$ to $x = 4$ about the x-axis gives:",
+      "options": [
+        "$16\\pi$",
+        "$32\\pi$",
+        "$4\\pi$",
+        "$8\\pi$"
+      ],
+      "answer": 3,
+      "explanation": "$V = \\pi\\int_0^4 x,dx = \\pi[\\frac{x^2}{2}]_0^4 = 8\\pi$."
+    },
+    {
+      "id": "m9-l04-mc-3",
+      "question": "Question 3 for Lesson 4",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l04-mc-4",
+      "question": "Question 4 for Lesson 4",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l04-mc-5",
+      "question": "Question 5 for Lesson 4",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l04-mc-6",
+      "question": "Question 6 for Lesson 4",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l04-mc-7",
+      "question": "Question 7 for Lesson 4",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l04-mc-8",
+      "question": "Question 8 for Lesson 4",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l05": [
+    {
+      "id": "m9-l05-mc-1",
+      "question": "Rotating about the y-axis, the volume is:",
+      "options": [
+        "$\\pi\\int_c^d [f(y)]^2,dy$",
+        "$\\pi\\int_a^b [f(x)]^2,dx$",
+        "$2\\pi\\int_a^b x f(x),dx$",
+        "$\\pi\\int_c^d f(y),dy$"
+      ],
+      "answer": 0,
+      "explanation": "For rotation about the y-axis, express $x$ as a function of $y$: $V = \\pi\\int_c^d [f(y)]^2,dy$."
+    },
+    {
+      "id": "m9-l05-mc-2",
+      "question": "Rotating $y = x^3$ from $y = 0$ to $y = 8$ about the y-axis:",
+      "options": [
+        "$\\frac{64\\pi}{5}$",
+        "$\\frac{96\\pi}{5}$",
+        "$\\frac{128\\pi}{5}$",
+        "$\\frac{32\\pi}{5}$"
+      ],
+      "answer": 1,
+      "explanation": "$x = y^{1/3}$, so $V = \\pi\\int_0^8 y^{2/3},dy = \\pi[\\frac{3}{5}y^{5/3}]_0^8 = \\pi \\cdot \\frac{3}{5} \\cdot 32 = \\frac{96\\pi}{5}$."
+    },
+    {
+      "id": "m9-l05-mc-3",
+      "question": "Question 3 for Lesson 5",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l05-mc-4",
+      "question": "Question 4 for Lesson 5",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l05-mc-5",
+      "question": "Question 5 for Lesson 5",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l05-mc-6",
+      "question": "Question 6 for Lesson 5",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l05-mc-7",
+      "question": "Question 7 for Lesson 5",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l05-mc-8",
+      "question": "Question 8 for Lesson 5",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l06": [
+    {
+      "id": "m9-l06-mc-1",
+      "question": "The washer method formula is:",
+      "options": [
+        "$\\int_a^b ([f(x)]^2 - [g(x)]^2),dx$",
+        "$2\\pi\\int_a^b (f(x) - g(x)),dx$",
+        "$\\pi\\int_a^b ([f(x)]^2 - [g(x)]^2),dx$",
+        "$\\pi\\int_a^b (f(x) - g(x))^2,dx$"
+      ],
+      "answer": 2,
+      "explanation": "$V = \\pi\\int_a^b ([R(x)]^2 - [r(x)]^2),dx$ where $R$ is outer radius and $r$ is inner radius."
+    },
+    {
+      "id": "m9-l06-mc-2",
+      "question": "A common error with the washer method is:",
+      "options": [
+        "Using $\\pi$ correctly",
+        "Using correct limits",
+        "Sketching the region",
+        "Squaring the difference instead of difference of squares"
+      ],
+      "answer": 3,
+      "explanation": "The correct formula is $\\pi\\int (R^2 - r^2),dx$, not $\\pi\\int (R-r)^2,dx$."
+    },
+    {
+      "id": "m9-l06-mc-3",
+      "question": "Question 3 for Lesson 6",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l06-mc-4",
+      "question": "Question 4 for Lesson 6",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l06-mc-5",
+      "question": "Question 5 for Lesson 6",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l06-mc-6",
+      "question": "Question 6 for Lesson 6",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l06-mc-7",
+      "question": "Question 7 for Lesson 6",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l06-mc-8",
+      "question": "Question 8 for Lesson 6",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l07": [
+    {
+      "id": "m9-l07-mc-1",
+      "question": "For volumes between curves, the outer radius is:",
+      "options": [
+        "The curve farther from the axis",
+        "The average of the curves",
+        "The sum of the curves",
+        "The curve closer to the axis"
+      ],
+      "answer": 0,
+      "explanation": "The outer radius is the function value farther from the axis of rotation."
+    },
+    {
+      "id": "m9-l07-mc-2",
+      "question": "When rotating about a horizontal line $y = k$, adjust radii by:",
+      "options": [
+        "Subtracting $k$",
+        "Taking $|f(x) - k|$",
+        "Multiplying by $k$",
+        "Adding $k$"
+      ],
+      "answer": 1,
+      "explanation": "The radius is the perpendicular distance from the curve to the axis: $|f(x) - k|$."
+    },
+    {
+      "id": "m9-l07-mc-3",
+      "question": "Question 3 for Lesson 7",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l07-mc-4",
+      "question": "Question 4 for Lesson 7",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l07-mc-5",
+      "question": "Question 5 for Lesson 7",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l07-mc-6",
+      "question": "Question 6 for Lesson 7",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l07-mc-7",
+      "question": "Question 7 for Lesson 7",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l07-mc-8",
+      "question": "Question 8 for Lesson 7",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l08": [
+    {
+      "id": "m9-l08-mc-1",
+      "question": "A differential equation involves:",
+      "options": [
+        "Only polynomials",
+        "Only constants",
+        "Derivatives",
+        "Only integers"
+      ],
+      "answer": 2,
+      "explanation": "A differential equation is an equation involving derivatives of a function."
+    },
+    {
+      "id": "m9-l08-mc-2",
+      "question": "The solution to a differential equation is:",
+      "options": [
+        "A constant",
+        "An inequality",
+        "A number",
+        "A function"
+      ],
+      "answer": 3,
+      "explanation": "Solutions to differential equations are functions, not just numbers."
+    },
+    {
+      "id": "m9-l08-mc-3",
+      "question": "Question 3 for Lesson 8",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l08-mc-4",
+      "question": "Question 4 for Lesson 8",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l08-mc-5",
+      "question": "Question 5 for Lesson 8",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l08-mc-6",
+      "question": "Question 6 for Lesson 8",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l08-mc-7",
+      "question": "Question 7 for Lesson 8",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l08-mc-8",
+      "question": "Question 8 for Lesson 8",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l09": [
+    {
+      "id": "m9-l09-mc-1",
+      "question": "A direction field shows:",
+      "options": [
+        "The slope at various points",
+        "The area under the curve",
+        "The volume of revolution",
+        "The exact solution curve"
+      ],
+      "answer": 0,
+      "explanation": "A direction field (slope field) shows the slope $\\frac{dy}{dx}$ at various $(x,y)$ points."
+    },
+    {
+      "id": "m9-l09-mc-2",
+      "question": "From a direction field, a particular solution:",
+      "options": [
+        "Is always a straight line",
+        "Follows the flow of the slopes",
+        "Is independent of initial conditions",
+        "Can never be determined"
+      ],
+      "answer": 1,
+      "explanation": "Start at the initial condition and follow the direction of the slope segments."
+    },
+    {
+      "id": "m9-l09-mc-3",
+      "question": "Question 3 for Lesson 9",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l09-mc-4",
+      "question": "Question 4 for Lesson 9",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l09-mc-5",
+      "question": "Question 5 for Lesson 9",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l09-mc-6",
+      "question": "Question 6 for Lesson 9",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l09-mc-7",
+      "question": "Question 7 for Lesson 9",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l09-mc-8",
+      "question": "Question 8 for Lesson 9",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l10": [
+    {
+      "id": "m9-l10-mc-1",
+      "question": "$\\frac{dy}{dx} = 3x^2$ has solution:",
+      "options": [
+        "$y = x^3$",
+        "$y = 3x + C$",
+        "$y = x^3 + C$",
+        "$y = 6x + C$"
+      ],
+      "answer": 2,
+      "explanation": "Integrate: $y = \\int 3x^2,dx = x^3 + C$."
+    },
+    {
+      "id": "m9-l10-mc-2",
+      "question": "If $\\frac{dy}{dx} = \\cos x$ and $y(0) = 1$, then:",
+      "options": [
+        "$y = \\sin x + C$",
+        "$y = \\cos x + 1$",
+        "$y = \\sin x$",
+        "$y = \\sin x + 1$"
+      ],
+      "answer": 3,
+      "explanation": "$y = \\sin x + C$. With $y(0) = 1$: $1 = 0 + C$, so $C = 1$. Thus $y = \\sin x + 1$."
+    },
+    {
+      "id": "m9-l10-mc-3",
+      "question": "Question 3 for Lesson 10",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l10-mc-4",
+      "question": "Question 4 for Lesson 10",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l10-mc-5",
+      "question": "Question 5 for Lesson 10",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l10-mc-6",
+      "question": "Question 6 for Lesson 10",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l10-mc-7",
+      "question": "Question 7 for Lesson 10",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l10-mc-8",
+      "question": "Question 8 for Lesson 10",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l11": [
+    {
+      "id": "m9-l11-mc-1",
+      "question": "$\\frac{dy}{dx} = y$ is solved by:",
+      "options": [
+        "$y = Ce^x$",
+        "$y = Ce^{-x}$",
+        "$y = Cx$",
+        "$y = \\ln|x| + C$"
+      ],
+      "answer": 0,
+      "explanation": "$\\int \\frac{1}{y},dy = \\int dx$ gives $\\ln|y| = x + C$, so $y = Ae^x$."
+    },
+    {
+      "id": "m9-l11-mc-2",
+      "question": "$\\frac{dy}{dx} = 2y$ with $y(0) = 3$ gives:",
+      "options": [
+        "$y = e^{2x} + 3$",
+        "$y = 3e^{2x}$",
+        "$y = 3e^x$",
+        "$y = 2e^{3x}$"
+      ],
+      "answer": 1,
+      "explanation": "$\\ln|y| = 2x + C$, so $y = Ae^{2x}$. With $y(0) = 3$: $A = 3$. Thus $y = 3e^{2x}$."
+    },
+    {
+      "id": "m9-l11-mc-3",
+      "question": "Question 3 for Lesson 11",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l11-mc-4",
+      "question": "Question 4 for Lesson 11",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l11-mc-5",
+      "question": "Question 5 for Lesson 11",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l11-mc-6",
+      "question": "Question 6 for Lesson 11",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l11-mc-7",
+      "question": "Question 7 for Lesson 11",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l11-mc-8",
+      "question": "Question 8 for Lesson 11",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l12": [
+    {
+      "id": "m9-l12-mc-1",
+      "question": "Separation of variables applies when:",
+      "options": [
+        "$\\frac{dy}{dx} = \\frac{f(x)}{g(x)}$",
+        "$\\frac{dy}{dx} = f(x) - g(y)$",
+        "$\\frac{dy}{dx} = f(x)g(y)$",
+        "$\\frac{dy}{dx} = f(x) + g(y)$"
+      ],
+      "answer": 2,
+      "explanation": "When the RHS factors into a function of $x$ times a function of $y$, separate and integrate."
+    },
+    {
+      "id": "m9-l12-mc-2",
+      "question": "$\\frac{dy}{dx} = xy$ separates to:",
+      "options": [
+        "$\\int y,dy = \\int x,dx$",
+        "$\\int \\frac{1}{x},dx = \\int y,dy$",
+        "$\\int x,dx = \\int \\frac{1}{y},dy$",
+        "$\\int \\frac{1}{y},dy = \\int x,dx$"
+      ],
+      "answer": 3,
+      "explanation": "$\\frac{1}{y},dy = x,dx$, so $\\int \\frac{1}{y},dy = \\int x,dx$."
+    },
+    {
+      "id": "m9-l12-mc-3",
+      "question": "Question 3 for Lesson 12",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l12-mc-4",
+      "question": "Question 4 for Lesson 12",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l12-mc-5",
+      "question": "Question 5 for Lesson 12",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l12-mc-6",
+      "question": "Question 6 for Lesson 12",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l12-mc-7",
+      "question": "Question 7 for Lesson 12",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l12-mc-8",
+      "question": "Question 8 for Lesson 12",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l13": [
+    {
+      "id": "m9-l13-mc-1",
+      "question": "$\\frac{dy}{dx} = e^x y$ with $y(0) = 2$ gives:",
+      "options": [
+        "$y = 2e^{e^x - 1}$",
+        "$y = 2e^{e^x}$",
+        "$y = e^{e^x} + 1$",
+        "$y = 2e^x$"
+      ],
+      "answer": 0,
+      "explanation": "$\\int \\frac{1}{y},dy = \\int e^x,dx$ gives $\\ln|y| = e^x + C$. With $y(0) = 2$: $C = \\ln 2 - 1$. So $y = 2e^{e^x - 1}$."
+    },
+    {
+      "id": "m9-l13-mc-2",
+      "question": "After separating variables, the next step is:",
+      "options": [
+        "Differentiate",
+        "Integrate both sides",
+        "Multiply by dx",
+        "Add constants"
+      ],
+      "answer": 1,
+      "explanation": "Once separated, integrate both sides with respect to their respective variables."
+    },
+    {
+      "id": "m9-l13-mc-3",
+      "question": "Question 3 for Lesson 13",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l13-mc-4",
+      "question": "Question 4 for Lesson 13",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l13-mc-5",
+      "question": "Question 5 for Lesson 13",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l13-mc-6",
+      "question": "Question 6 for Lesson 13",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l13-mc-7",
+      "question": "Question 7 for Lesson 13",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l13-mc-8",
+      "question": "Question 8 for Lesson 13",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l14": [
+    {
+      "id": "m9-l14-mc-1",
+      "question": "Exponential growth has the form:",
+      "options": [
+        "$N = N_0 + kt$",
+        "$N = N_0 e^{-kt}$",
+        "$N = N_0 e^{kt}$ with $k > 0$",
+        "$N = N_0 e^{kt}$ with $k < 0$"
+      ],
+      "answer": 2,
+      "explanation": "For growth, $k > 0$. For decay, $k < 0$."
+    },
+    {
+      "id": "m9-l14-mc-2",
+      "question": "The half-life formula is:",
+      "options": [
+        "$t_{1/2} = \\frac{k}{\\ln 2}$",
+        "$t_{1/2} = k\\ln 2$",
+        "$t_{1/2} = \\frac{1}{k}$",
+        "$t_{1/2} = \\frac{\\ln 2}{k}$"
+      ],
+      "answer": 3,
+      "explanation": "From $\\frac{N_0}{2} = N_0 e^{-kt}$, we get $t_{1/2} = \\frac{\\ln 2}{k}$."
+    },
+    {
+      "id": "m9-l14-mc-3",
+      "question": "Question 3 for Lesson 14",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l14-mc-4",
+      "question": "Question 4 for Lesson 14",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l14-mc-5",
+      "question": "Question 5 for Lesson 14",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l14-mc-6",
+      "question": "Question 6 for Lesson 14",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l14-mc-7",
+      "question": "Question 7 for Lesson 14",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l14-mc-8",
+      "question": "Question 8 for Lesson 14",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l15": [
+    {
+      "id": "m9-l15-mc-1",
+      "question": "The logistic equation is:",
+      "options": [
+        "$\\frac{dP}{dt} = kP(1 - \\frac{P}{M})$",
+        "$\\frac{dP}{dt} = kP$",
+        "$\\frac{dP}{dt} = k(1 - \\frac{P}{M})$",
+        "$\\frac{dP}{dt} = kP^2$"
+      ],
+      "answer": 0,
+      "explanation": "The logistic equation includes a carrying capacity $M$: $\\frac{dP}{dt} = kP(1 - \\frac{P}{M})$."
+    },
+    {
+      "id": "m9-l15-mc-2",
+      "question": "As $t \\to \\infty$ in the logistic model, $P$ approaches:",
+      "options": [
+        "$\\infty$",
+        "$M$",
+        "$k$",
+        "0"
+      ],
+      "answer": 1,
+      "explanation": "The carrying capacity $M$ is the limiting population: $\\lim_{t\\to\\infty} P(t) = M$."
+    },
+    {
+      "id": "m9-l15-mc-3",
+      "question": "Question 3 for Lesson 15",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l15-mc-4",
+      "question": "Question 4 for Lesson 15",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l15-mc-5",
+      "question": "Question 5 for Lesson 15",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l15-mc-6",
+      "question": "Question 6 for Lesson 15",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l15-mc-7",
+      "question": "Question 7 for Lesson 15",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l15-mc-8",
+      "question": "Question 8 for Lesson 15",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l16": [
+    {
+      "id": "m9-l16-mc-1",
+      "question": "When modelling with DEs, the first step is:",
+      "options": [
+        "Integrate immediately",
+        "Solve the equation",
+        "Identify variables and rates",
+        "Guess the solution"
+      ],
+      "answer": 2,
+      "explanation": "Read carefully to identify what is changing, at what rate, and under what conditions."
+    },
+    {
+      "id": "m9-l16-mc-2",
+      "question": "A differential equation model for continuous compound interest is:",
+      "options": [
+        "$\\frac{dA}{dt} = r$",
+        "$A = rA_0$",
+        "$\\frac{dA}{dt} = A_0$",
+        "$\\frac{dA}{dt} = rA$"
+      ],
+      "answer": 3,
+      "explanation": "The rate of change is proportional to the amount: $\\frac{dA}{dt} = rA$."
+    },
+    {
+      "id": "m9-l16-mc-3",
+      "question": "Question 3 for Lesson 16",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l16-mc-4",
+      "question": "Question 4 for Lesson 16",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l16-mc-5",
+      "question": "Question 5 for Lesson 16",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l16-mc-6",
+      "question": "Question 6 for Lesson 16",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l16-mc-7",
+      "question": "Question 7 for Lesson 16",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l16-mc-8",
+      "question": "Question 8 for Lesson 16",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l17": [
+    {
+      "id": "m9-l17-mc-1",
+      "question": "In a mixing problem, the rate of change of amount equals:",
+      "options": [
+        "Rate in - rate out",
+        "Rate out - rate in",
+        "Rate in $\\times$ rate out",
+        "Rate in + rate out"
+      ],
+      "answer": 0,
+      "explanation": "$\\frac{dA}{dt} = \\text{rate in} - \\text{rate out}$."
+    },
+    {
+      "id": "m9-l17-mc-2",
+      "question": "If a tank has volume $V$ with inflow concentration $c_{in}$, the rate in is:",
+      "options": [
+        "$\\frac{r_{in}}{c_{in}}$",
+        "$c_{in} \\cdot r_{in}$",
+        "$\\frac{c_{in}}{r_{in}}$",
+        "$c_{in} + r_{in}$"
+      ],
+      "answer": 1,
+      "explanation": "Rate in = concentration $\\times$ flow rate = $c_{in} \\cdot r_{in}$."
+    },
+    {
+      "id": "m9-l17-mc-3",
+      "question": "Question 3 for Lesson 17",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l17-mc-4",
+      "question": "Question 4 for Lesson 17",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l17-mc-5",
+      "question": "Question 5 for Lesson 17",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l17-mc-6",
+      "question": "Question 6 for Lesson 17",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l17-mc-7",
+      "question": "Question 7 for Lesson 17",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l17-mc-8",
+      "question": "Question 8 for Lesson 17",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l18": [
+    {
+      "id": "m9-l18-mc-1",
+      "question": "Newton's Law of Cooling states:",
+      "options": [
+        "$T = T_s - (T_0 - T_s)e^{-kt}$",
+        "$T = T_s + (T_0 - T_s)e^{kt}$ with $k > 0$",
+        "$T = T_s + (T_0 - T_s)e^{-kt}$ with $k > 0$",
+        "$T = T_0 e^{-kt}$"
+      ],
+      "answer": 2,
+      "explanation": "$T = T_s + (T_0 - T_s)e^{-kt}$ where $T_s$ is surrounding temperature and $k > 0$."
+    },
+    {
+      "id": "m9-l18-mc-2",
+      "question": "As $t \\to \\infty$, the temperature approaches:",
+      "options": [
+        "$\\infty$",
+        "$T_0$",
+        "$0$",
+        "$T_s$"
+      ],
+      "answer": 3,
+      "explanation": "The object approaches thermal equilibrium with its surroundings: $T \\to T_s$."
+    },
+    {
+      "id": "m9-l18-mc-3",
+      "question": "Question 3 for Lesson 18",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l18-mc-4",
+      "question": "Question 4 for Lesson 18",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l18-mc-5",
+      "question": "Question 5 for Lesson 18",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l18-mc-6",
+      "question": "Question 6 for Lesson 18",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l18-mc-7",
+      "question": "Question 7 for Lesson 18",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l18-mc-8",
+      "question": "Question 8 for Lesson 18",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l19": [
+    {
+      "id": "m9-l19-mc-1",
+      "question": "A mixed application problem may require:",
+      "options": [
+        "Combining multiple calculus techniques",
+        "Only algebra",
+        "Only geometry",
+        "Only one technique"
+      ],
+      "answer": 0,
+      "explanation": "HSC-style problems often combine areas, volumes and differential equations."
+    },
+    {
+      "id": "m9-l19-mc-2",
+      "question": "When solving multi-step problems:",
+      "options": [
+        "Skip steps to save time",
+        "Show all working for part marks",
+        "Guess the answer",
+        "Use only mental maths"
+      ],
+      "answer": 1,
+      "explanation": "Show all working clearly. HSC markers award marks for correct method even with arithmetic errors."
+    },
+    {
+      "id": "m9-l19-mc-3",
+      "question": "Question 3 for Lesson 19",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l19-mc-4",
+      "question": "Question 4 for Lesson 19",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l19-mc-5",
+      "question": "Question 5 for Lesson 19",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l19-mc-6",
+      "question": "Question 6 for Lesson 19",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l19-mc-7",
+      "question": "Question 7 for Lesson 19",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l19-mc-8",
+      "question": "Question 8 for Lesson 19",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ],
+  "maths-ext1-y12-m9-l20": [
+    {
+      "id": "m9-l20-mc-1",
+      "question": "For volume questions, always:",
+      "options": [
+        "Guess the formula",
+        "Skip the sketch",
+        "Sketch the region and identify the axis of rotation",
+        "Use the disk method only"
+      ],
+      "answer": 2,
+      "explanation": "A clear sketch helps identify whether to use disk, washer or shell method."
+    },
+    {
+      "id": "m9-l20-mc-2",
+      "question": "The best exam strategy for DE questions is:",
+      "options": [
+        "Guess the solution",
+        "Leave them to last",
+        "Memorise all standard forms",
+        "Identify the type and apply the correct method"
+      ],
+      "answer": 3,
+      "explanation": "Recognise whether it is direct integration, separable, or requires another technique."
+    },
+    {
+      "id": "m9-l20-mc-3",
+      "question": "Question 3 for Lesson 20",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l20-mc-4",
+      "question": "Question 4 for Lesson 20",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l20-mc-5",
+      "question": "Question 5 for Lesson 20",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 0,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l20-mc-6",
+      "question": "Question 6 for Lesson 20",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 1,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l20-mc-7",
+      "question": "Question 7 for Lesson 20",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 2,
+      "explanation": "Explanation."
+    },
+    {
+      "id": "m9-l20-mc-8",
+      "question": "Question 8 for Lesson 20",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "answer": 3,
+      "explanation": "Explanation."
+    }
+  ]
+};
+
+const moduleQuizQuestions = [
+  {
+    "id": "m9-quiz-mc-1",
+    "question": "Module 9 Quiz Question 1",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 0,
+    "explanation": "Explanation for quiz question 1."
+  },
+  {
+    "id": "m9-quiz-mc-2",
+    "question": "Module 9 Quiz Question 2",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 1,
+    "explanation": "Explanation for quiz question 2."
+  },
+  {
+    "id": "m9-quiz-mc-3",
+    "question": "Module 9 Quiz Question 3",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 2,
+    "explanation": "Explanation for quiz question 3."
+  },
+  {
+    "id": "m9-quiz-mc-4",
+    "question": "Module 9 Quiz Question 4",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 3,
+    "explanation": "Explanation for quiz question 4."
+  },
+  {
+    "id": "m9-quiz-mc-5",
+    "question": "Module 9 Quiz Question 5",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 0,
+    "explanation": "Explanation for quiz question 5."
+  },
+  {
+    "id": "m9-quiz-mc-6",
+    "question": "Module 9 Quiz Question 6",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 1,
+    "explanation": "Explanation for quiz question 6."
+  },
+  {
+    "id": "m9-quiz-mc-7",
+    "question": "Module 9 Quiz Question 7",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 2,
+    "explanation": "Explanation for quiz question 7."
+  },
+  {
+    "id": "m9-quiz-mc-8",
+    "question": "Module 9 Quiz Question 8",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 3,
+    "explanation": "Explanation for quiz question 8."
+  },
+  {
+    "id": "m9-quiz-mc-9",
+    "question": "Module 9 Quiz Question 9",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 0,
+    "explanation": "Explanation for quiz question 9."
+  },
+  {
+    "id": "m9-quiz-mc-10",
+    "question": "Module 9 Quiz Question 10",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 1,
+    "explanation": "Explanation for quiz question 10."
+  },
+  {
+    "id": "m9-quiz-mc-11",
+    "question": "Module 9 Quiz Question 11",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 2,
+    "explanation": "Explanation for quiz question 11."
+  },
+  {
+    "id": "m9-quiz-mc-12",
+    "question": "Module 9 Quiz Question 12",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 3,
+    "explanation": "Explanation for quiz question 12."
+  },
+  {
+    "id": "m9-quiz-mc-13",
+    "question": "Module 9 Quiz Question 13",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 0,
+    "explanation": "Explanation for quiz question 13."
+  },
+  {
+    "id": "m9-quiz-mc-14",
+    "question": "Module 9 Quiz Question 14",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 1,
+    "explanation": "Explanation for quiz question 14."
+  },
+  {
+    "id": "m9-quiz-mc-15",
+    "question": "Module 9 Quiz Question 15",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 2,
+    "explanation": "Explanation for quiz question 15."
+  },
+  {
+    "id": "m9-quiz-mc-16",
+    "question": "Module 9 Quiz Question 16",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 3,
+    "explanation": "Explanation for quiz question 16."
+  },
+  {
+    "id": "m9-quiz-mc-17",
+    "question": "Module 9 Quiz Question 17",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 0,
+    "explanation": "Explanation for quiz question 17."
+  },
+  {
+    "id": "m9-quiz-mc-18",
+    "question": "Module 9 Quiz Question 18",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 1,
+    "explanation": "Explanation for quiz question 18."
+  },
+  {
+    "id": "m9-quiz-mc-19",
+    "question": "Module 9 Quiz Question 19",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 2,
+    "explanation": "Explanation for quiz question 19."
+  },
+  {
+    "id": "m9-quiz-mc-20",
+    "question": "Module 9 Quiz Question 20",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "answer": 3,
+    "explanation": "Explanation for quiz question 20."
+  }
+];
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { lessonQuestionBanks, moduleQuizQuestions };
+}
+
+// ============================================================
+// WIRING, added 2026-08-20 by stream E (Maths Extension 1).
+//
+// `question-bank.js` serves `window[DATA_KEY] || {}` with DATA_KEY =
+// 'HSCQuestionBankData'. A top-level `const` in a classic script is NOT a property
+// of window, so `lessonQuestionBanks` above was invisible to the runtime: this file
+// loaded, parsed, resolved its path, passed `audit:banks` -- and served nothing.
+// Every lesson keyed here had an empty Practice phase for exactly that reason.
+// See the same block in ../module5/question-bank-data.js for the field-map rationale.
+//
+// PLACEHOLDER FILTER, and why it is not optional.
+// This file's `lessonQuestionBanks` is part real question, part scaffold left by
+// whoever stubbed the module: prompts of the form "Question 3 for Lesson 7" with
+// options ["A","B","C","D"], and "Sample question 5 for <title>" with options
+// ["Option A".."Option D"]. Those carry a valid numeric `answer`, so they are
+// ANSWERABLE and every answerability filter passes them straight through to the
+// learner. Wiring this file without the filter below does not repair a dark
+// Practice phase, it fills it with content-free multiple choice -- a worse
+// failure than the empty section, because an empty section reads as missing and a
+// lettered stub reads as taught. Measured at the time of writing: of 732 stored
+// questions across modules 6-10, 540 were scaffold and 192 were real.
+//
+// The filter drops a question when its PROMPT is a scaffold template or when EVERY
+// option is a bare label. Those two tests selected identical sets on all five files
+// (80/80, 96/96, 124/124, 120/120, 120/120); the OR is kept so that a future
+// half-edited stub is caught by whichever half still shows.
+//
+// This wiring therefore RAISES the served count from zero without inventing a
+// single question. Where a lesson stored no real question it still serves none,
+// and that is the honest state -- authoring is a separate job from wiring.
+//
+// NOTE: `moduleQuizQuestions` is NOT wired and must not be. Nothing in the
+// repository reads that name; the module quizzes hold their questions inline in
+// `module-quiz.html`.
+// ============================================================
+window.HSCQuestionBankData = window.HSCQuestionBankData || {};
+(function () {
+  var SCAFFOLD_PROMPT = /^\s*(?:Question\s+\d+\s+for\s+Lesson\s+\d+|Sample\s+question\s+\d+\b|Quiz\s+question\s+\d+\b)/i;
+  var BARE_OPTION = /^\s*(?:Option\s+[A-D]|[A-D])\s*$/;
+  Object.keys(lessonQuestionBanks).forEach(function (lessonId) {
+    var questions = (lessonQuestionBanks[lessonId] || []).map(function (q) {
+      var options = (q.options || []).map(String);
+      var idx = typeof q.answer === 'number' ? q.answer : -1;
+      if (idx < 0 || idx >= options.length) idx = -1;
+      return {
+        id: q.id,
+        prompt: q.question || q.prompt || '',
+        options: options,
+        correctIndex: idx,
+        explanation: q.explanation || '',
+        topic: q.topic || 'further-applications-of-calculus',
+        topics: q.topics || [q.topic || 'further-applications-of-calculus'],
+        difficulty: typeof q.difficulty === 'number' ? q.difficulty : 3,
+        bloom: q.bloom || 'understand'
+      };
+    }).filter(function (q) {
+      // Answerable: the Format A branch of normaliseBankData returns as-is and does
+      // NOT filter, so an unanswerable question here ships visibly broken.
+      if (!q.prompt || q.options.length < 2 || q.correctIndex < 0) return false;
+      // Not scaffold. See the note above.
+      if (SCAFFOLD_PROMPT.test(q.prompt)) return false;
+      if (q.options.every(function (o) { return BARE_OPTION.test(o); })) return false;
+      return true;
+    });
+    // An entry with an empty question list is worse than no entry: the runtime
+    // renders a bank that exists and is empty. Publish only what can be served,
+    // and leave the rest legitimately absent.
+    if (!questions.length) return;
+    window.HSCQuestionBankData[lessonId] = {
+      lessonId: lessonId,
+      subsetSize: Math.min(5, questions.length),
+      questions: questions
+    };
+  });
+})();

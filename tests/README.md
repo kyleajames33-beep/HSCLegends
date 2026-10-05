@@ -125,3 +125,24 @@ Application changes are limited to host/student recovery and their client-side h
 - [Historical robustness claims](../docs/LIVE_ROBUSTNESS.md)
 
 Build and TypeScript success do not override the known failing product regressions or existing repository lint failures. Read every check's exit status and report the categories separately.
+
+## Broader pinned question-source coverage
+
+The local follow-on documented in [`QUESTION-COVERAGE-AUDIT.md`](../docs/QUESTION-COVERAGE-AUDIT.md) adds 14 offline tests (104 total). It checks exact course identities, pinned legacy letter-answer schemas, source dot-point metadata, and authoritative runtime exclusions. It does not introduce a focus-area mapping or add a course. Its 84-bank source inventory is pinned, not current production data, and its five review files are a sample. See [`fixtures/question-sources/README.md`](./fixtures/question-sources/README.md) for provenance. The aggregate gate still has the same real uncached-receipt failure.
+
+## Local classroom programme increment (jobs 11–16)
+
+`offline/classroom-programme.test.mjs` exercises missing-score recovery, duplicate/obsolete answer handlers, receipt validation, missed-event refresh, unscored retry, larger text, honest count/presence failures, local teacher pacing/name hiding, tied ranks and incomplete observed summaries. `offline/classroom-sequence.test.mjs` drives actual page handlers for one host plus 30 synthetic guests through two questions, cached rejoin, host resume and finish using `support/classroom-sequence-double.mjs`. The transport is scripted fixture behavior, not a backend implementation, receipt API or proof of concurrency/security. The timer adapter is manually driven, not browser time.
+
+The latest retained `live_answer_count` migration has all submissions in `answered` but only recently present players in `total`. The client displays those populations separately, never invents missing-answer counts from their difference and never claims “all in.” Postgame observations are incomplete local snapshots, not final assessment or diagnosed misconceptions.
+
+Teacher pacing stops local automatic advancement only, not the server deadline. Retry practice and larger text do not submit/award anything. Uncached receipts, verified explanations, authoritative pause/reading/scoring accommodations and the final misconception report remain blocked. The exact API proposal and unexecuted acceptance matrix are in `docs/proposals/CLASSROOM-SERVER-CONTRACT.md`; the six-item status is in `docs/CLASSROOM-PROGRAMME.md`. A separately reviewed standalone offline Lab Tycoon concept now lives in `prototypes/lab-tycoon`; production integration remains held while core reliability is blocked. Its 52-test suite is separate from the classroom `npm test` command.
+
+
+`offline/classroom-callback-ownership.test.mjs` adds six V2 tests for independent refresh availability, retained callback invocation after room/generation replacement, account/unmount rejection before transport calls, and held read/answer settlement. A connection is captured by the originating render, not reconstructed with a later context epoch. Manual refresh is a read-only escape from a pending answer or older refresh; the newest read still owns state. These additions do not fix the uncached server receipt contract or establish browser/backend safety.
+
+## Reconciliation onto merged main (2026-10-05)
+
+The follow-on is based on merged main `a75b2565455e9ed7857d077ec0d3e89407e252c0`, including both fixes from `10d4256`: newest failed student reads release connection busy state without unlocking an in-flight answer, and newly created hosts subscribe before their initial roster read. The stronger programme connection-generation checks and manual-refresh availability are retained alongside those fixes. All eight existing main offline/regression test files are unchanged. Frozen main passes 98 offline tests; this candidate passes 133. Both have the same two passing product regressions and one genuine uncached-receipt failure. The isolated prototype separately passes 52 tests.
+
+See [`FOLLOW-ON-RECONCILIATION.md`](../docs/FOLLOW-ON-RECONCILIATION.md) for exact scope, negative controls, build/type/lint results and remaining limitations. No new backend operation or production-mode integration is included.

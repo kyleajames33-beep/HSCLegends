@@ -38,7 +38,7 @@ export function memoryStorage() {
 
 // Minimal hooks test double: executes the actual page functions and handlers.
 // It does not implement React scheduling, hydration, DOM, browser history or CSS.
-export function pageHarness(path, sb, storage = memoryStorage(), auth = { user: path.includes('/host/') ? { id: 'synthetic-host-1' } : null, loading: false }) {
+export function pageHarness(path, sb, storage = memoryStorage(), auth = { user: path.includes('/host/') ? { id: 'synthetic-host-1' } : null, loading: false }, options = {}) {
   const slots = [];
   let cursor = 0, dirty = false;
   let pending = [];
@@ -74,10 +74,11 @@ export function pageHarness(path, sb, storage = memoryStorage(), auth = { user: 
       }
     },
   };
-  const window = { setInterval: () => 0, clearInterval: () => {}, setTimeout: () => 0, clearTimeout: () => {} };
+  const window = options.scheduler ?? { setInterval: () => 0, clearInterval: () => {}, setTimeout: () => 0, clearTimeout: () => {} };
   const document = { visibilityState: 'visible', addEventListener: () => {}, removeEventListener: () => {} };
-  const globals = { window, document, localStorage: storage };
+  const globals = { ...window, window, document, localStorage: storage };
   const cache = loadSourceModule('lib/live-session-cache.ts', {}, globals);
+  const learning = loadSourceModule('lib/classroom-learning.ts');
   const dependencies = {
     react,
     'react/jsx-runtime': { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }), Fragment: 'fragment' },
@@ -85,10 +86,11 @@ export function pageHarness(path, sb, storage = memoryStorage(), auth = { user: 
     'next/navigation': { useRouter: () => ({ push: () => {} }) },
     '@/lib/supabase/client': { createClient: () => sb },
     '@/lib/use-user': { useUser: () => auth },
-    '@/lib/use-countdown': { useCountdown: () => ({ remaining: 15, frac: 1, expired: false }) },
+    '@/lib/use-countdown': { useCountdown: () => options.countdown ?? ({ remaining: 15, frac: 1, expired: false }) },
     '@/lib/questions': loadSourceModule('lib/questions.ts'),
     '@/lib/live': loadSourceModule('lib/live.ts'),
     '@/lib/live-session-cache': cache,
+    '@/lib/classroom-learning': learning,
     '@/lib/live-host-controller': loadSourceModule('lib/live-host-controller.ts', { './live': loadSourceModule('lib/live.ts'), './live-session-cache': cache }, globals),
     '@/lib/presence': loadSourceModule('lib/presence.ts', {}, globals),
     '@/components/answer-tile': { default: 'AnswerTile' },

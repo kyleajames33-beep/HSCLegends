@@ -12,6 +12,7 @@ import { liveAnswerCount, type Player } from '@/lib/live';
 import { arenaPresences, isPresent } from '@/lib/presence';
 import { useUser } from '@/lib/use-user';
 import { LiveHostController } from '@/lib/live-host-controller';
+import { recordObservation, type QuestionObservation } from '@/lib/classroom-learning';
 import type { ProjectorTeams } from '@/lib/live-session-cache';
 
 export default function HostPage() {
@@ -20,46 +21,67 @@ export default function HostPage() {
   const controller = useMemo(() => new LiveHostController(sb), [sb]);
   const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getServerSnapshot);
   const { phase, code, sessionId, players, teamMode, teams, q, busy, err, notice, resume } = state;
-  const [ac, setAc] = useState({ answered: 0, total: 0, correct: 0 });
-  const [presence, setPresence] = useState<Map<string, number>>(new Map());
+  const [ac, setAc] = useState<{ sessionId: string; index: number; answered: number; total: number; correct: number; error: string } | null>(null);
+  const [presenceSnapshot, setPresenceSnapshot] = useState<{ sessionId: string; entries: Map<string, number>; error: string } | null>(null);
+  const [autoAdvance, setAutoAdvance] = useState(false);
+  const [hideNames, setHideNames] = useState(false);
+  const [observations, setObservations] = useState<QuestionObservation[]>([]);
+  const presence = presenceSnapshot?.sessionId === sessionId && !presenceSnapshot.error ? presenceSnapshot.entries : null;
+  const count = ac?.sessionId === sessionId && ac.index === q?.index && !ac.error ? ac : null;
   const ownerId = user?.id ?? null;
   const canControl = !loading && !!ownerId && state.ownerId === ownerId && state.ready;
   useEffect(() => { controller.setAccount(ownerId, loading); }, [controller, ownerId, loading]);
   useEffect(() => () => controller.dispose(), [controller]);
 
-  // Poll presence so disconnected students grey out (and don't stall the count).
+  // Presence is a recent heartbeat observation, not proof of connectivity.
   useEffect(() => {
     if (!canControl || phase === 'setup' || phase === 'complete' || !sessionId) return;
-    let live = true;
-    const tick = () => arenaPresences(sb, sessionId).then((m) => { if (live) setPresence(m); }).catch(() => {});
+    let live = true; let version = 0;
+    const tick = () => {
+      const request = ++version;
+      void arenaPresences(sb, sessionId).then((entries) => { if (live && request === version) setPresenceSnapshot({ sessionId, entries, error: '' }); })
+        .catch(() => { if (live && request === version) setPresenceSnapshot({ sessionId, entries: new Map(), error: 'Presence unavailable' }); });
+    };
     tick();
     const t = setInterval(tick, 10_000);
     return () => { live = false; clearInterval(t); };
   }, [phase, sessionId, sb, canControl]);
 
-  // Per-question countdown; host auto-advances ~2s after time runs out.
+  // Teacher-paced by default. This holds advancement, not the server answer clock.
   const timer = useCountdown(q?.question_started_at ?? null, q?.per_question_seconds ?? 15);
   const advancedFor = useRef('');
   useEffect(() => {
-    if (!canControl || phase !== 'active' || !q) return;
+    if (!canControl || !autoAdvance || phase !== 'active' || !q) return;
     if (timer.expired && advancedFor.current !== `${sessionId}:${q.index}`) {
-      advancedFor.current = `${sessionId}:${q.index}`;
-      const t = setTimeout(() => { void controller.advance(sessionId, q.index); }, 2000);
+      const t = setTimeout(() => { advancedFor.current = `${sessionId}:${q.index}`; void controller.advance(sessionId, q.index); }, 2000);
       return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timer.expired, q?.index, phase, canControl, controller, sessionId]);
+  }, [timer.expired, q?.index, phase, canControl, controller, sessionId, autoAdvance]);
 
   // Host: poll how many players have answered the current question.
   useEffect(() => {
     if (!canControl || phase !== 'active' || !q) return;
-    let live = true;
-    const tick = () => liveAnswerCount(sb, sessionId, q.index).then((c) => { if (live) setAc(c); }).catch(() => {});
+    let live = true; let version = 0;
+    const tick = () => {
+      const request = ++version;
+      void liveAnswerCount(sb, sessionId, q.index).then((c) => {
+        if (!live || request !== version) return;
+        setAc({ sessionId, index: q.index, ...c, error: '' });
+        setObservations((previous) => recordObservation(previous, { sessionId, index: q.index, stem: q.stem ?? '', ...c, observedAt: Date.now() }));
+      }).catch(() => { if (live && request === version) setAc({ sessionId, index: q.index, answered: 0, total: 0, correct: 0, error: 'Answer count unavailable' }); });
+    };
     tick();
     const t = setInterval(tick, 1500);
     return () => { live = false; clearInterval(t); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, q?.index, sessionId, canControl]);
+
+  const teacherControls = <section aria-label="Teacher display controls" className="my-4 rounded-xl border border-rule p-3 text-sm">
+    <button aria-pressed={autoAdvance} onClick={() => setAutoAdvance(!autoAdvance)} className="mr-4 underline">{autoAdvance ? 'Switch to teacher-paced' : 'Enable automatic advance'}</button>
+    <button aria-pressed={hideNames} onClick={() => setHideNames(!hideNames)} className="underline">{hideNames ? 'Show student names' : 'Hide student names'}</button>
+    <p className="mt-2 text-inksoft">{autoAdvance ? 'Automatic advance is on.' : 'Teacher-paced: choose Next or Finish when ready.'} The answer clock still runs; this does not pause or extend answer time.</p>
+  </section>;
 
   if (phase === 'setup' || !canControl) {
     return (
@@ -100,12 +122,13 @@ export default function HostPage() {
         <div className="mt-2 text-6xl font-black tracking-[0.2em] text-center py-6">{code}</div>
         <p className="text-center text-inksoft">
           {(() => {
-            const here = presence.size ? players.filter((p) => isPresent(presence, p.id)).length : players.length;
-            const gone = players.length - here;
-            return <>{here} player{here === 1 ? '' : 's'} in{gone > 0 && <span className="text-muted"> · {gone} disconnected</span>}</>;
+            if (!presence) return <>{players.length} joined · presence unavailable</>;
+            const here = players.filter((p) => isPresent(presence, p.id)).length;
+            return <>{players.length} joined · {here} seen recently · {players.length - here} without a recent heartbeat</>;
           })()}
         </p>
 
+        {teacherControls}
         <button onClick={() => controller.toggleTeams()}
           className={`mt-4 w-full rounded-xl px-4 py-2.5 text-sm font-semibold border ${teamMode ? 'bg-plum text-white border-plum' : 'bg-panel text-ink border-rule'}`}>
           👥 Team mode: {teamMode ? 'ON — read the teams out, then start' : 'OFF — tap for Red vs Blue'}
@@ -122,7 +145,7 @@ export default function HostPage() {
                   <div className="flex flex-wrap gap-1.5">
                     {mine.map((p) => (
                       <span key={p.id} className="flex items-center gap-1.5 rounded-full bg-white/70 pl-1 pr-2.5 py-0.5 text-sm">
-                        <Avatar seed={p.alias} size={20} className="rounded-full" />{p.alias}
+                        <Avatar seed={hideNames ? p.id : p.alias} size={20} className="rounded-full" />{hideNames ? 'Player' : p.alias}
                       </span>
                     ))}
                     {mine.length === 0 && <span className="text-xs text-muted">waiting…</span>}
@@ -134,10 +157,10 @@ export default function HostPage() {
         ) : (
           <div className="mt-4 flex flex-wrap gap-2 justify-center min-h-16">
             {players.map((p) => {
-              const away = presence.size > 0 && !isPresent(presence, p.id);
+              const away = presence !== null && !isPresent(presence, p.id);
               return (
                 <span key={p.id} className={`flex items-center gap-1.5 rounded-full bg-parchment-deep pl-1 pr-3 py-1 text-sm ${away ? 'opacity-40' : ''}`}>
-                  <Avatar seed={p.alias} size={22} className="rounded-full" />{p.alias}{away ? ' 📴' : ''}
+                  <Avatar seed={hideNames ? p.id : p.alias} size={22} className="rounded-full" />{hideNames ? 'Player' : p.alias}{away ? ' 📴' : ''}
                 </span>
               );
             })}
@@ -159,9 +182,10 @@ export default function HostPage() {
   if (phase === 'active' && q) {
     return (
       <Shell wide>
+        {teacherControls}
         <div className="flex items-center justify-between text-sm text-muted">
           <span>Question {q.index + 1}/{q.total}</span>
-          <span className="font-bold tabular-nums text-plum">🙋 {ac.answered}/{ac.total}{ac.total > 0 && ac.answered >= ac.total ? ' · all in!' : ''}</span>
+          <span role="status" className="font-bold tabular-nums text-plum">{count ? `${count.answered} answers · ${count.total} recently present` : 'Answer count unavailable'}</span>
           <span className={`font-bold tabular-nums ${timer.remaining <= 5 ? 'text-brick' : 'text-ink'}`}>{timer.remaining}s</span>
         </div>
         <div className="mt-1 h-1.5 rounded-full bg-parchment-deep overflow-hidden">
@@ -181,7 +205,7 @@ export default function HostPage() {
         <div className="mt-6">
           {teamMode && players.length > 0 && <div className="mb-4"><TeamBar players={players} teams={teams} /></div>}
           <div className="text-sm text-muted mb-2">Live scores</div>
-          <Scoreboard players={players} teams={teamMode ? teams : undefined} />
+          <Scoreboard players={players} teams={teamMode ? teams : undefined} hideNames={hideNames} />
         </div>
         <button disabled={busy} onClick={() => controller.advance()}
           className="mt-6 w-full rounded-xl bg-plum hover:bg-plumdeep text-white px-4 py-4 font-semibold disabled:opacity-40">
@@ -198,9 +222,19 @@ export default function HostPage() {
     <Shell>
       <p className="text-berrydeep font-semibold text-sm">FINAL</p>
       <H>Podium</H>
+      {teacherControls}
       {notice && <p role="status" className="mt-3 text-sm">{notice}</p>}
       {teamMode && players.length > 0 && <div className="mt-5"><TeamBar players={players} teams={teams} showWinner /></div>}
-      <div className="mt-6"><Scoreboard players={players} podium teams={teamMode ? teams : undefined} /></div>
+      <div className="mt-6"><Scoreboard players={players} podium teams={teamMode ? teams : undefined} hideNames={hideNames} /></div>
+      <section aria-label="Observed question summary" className="mt-6 rounded-xl border border-rule p-4">
+        <h2 className="font-semibold">Questions to revisit</h2>
+        <p className="mt-2 text-sm text-inksoft">Last counts observed on this projector, which can miss later answers or entire questions. This is not a final assessment or a diagnosis of misconceptions. The recently-present count is a different population from submitted answers, so missing answers cannot be calculated from it. Wrong choices and explanations are not supplied by this game.</p>
+        {observations.filter((row) => row.sessionId === sessionId).length === 0 ? <p className="mt-3 text-sm">No question counts were observed on this projector.</p> : <ol className="mt-3 space-y-3">{observations.filter((row) => row.sessionId === sessionId).map((row) => <li key={row.index}>
+          <p className="font-semibold">Question {row.index + 1}: {row.correct}/{row.answered} correct among observed answers</p>
+          <p className="text-sm">{row.total} recently present at that observation. {row.answered - row.correct > 0 ? 'Revisit the reasoning together.' : 'No incorrect answer was observed.'}</p>
+          <p className="mt-1 text-sm"><MathText text={row.stem} /></p>
+        </li>)}</ol>}
+      </section>
       <button onClick={() => controller.forget()} className="mt-8 block w-full rounded-xl bg-plum text-white px-4 py-4 text-center font-semibold">New game</button>
     </Shell>
   );
@@ -238,20 +272,21 @@ function TeamBar({ players, teams, showWinner }: { players: Player[]; teams: Pro
   );
 }
 
-function Scoreboard({ players, podium, teams }: { players: Player[]; podium?: boolean; teams?: ProjectorTeams }) {
+function Scoreboard({ players, podium, teams, hideNames = false }: { players: Player[]; podium?: boolean; teams?: ProjectorTeams; hideNames?: boolean }) {
   if (!players.length) return <p className="text-muted text-sm">No scores yet.</p>;
   const medal = ['🥇', '🥈', '🥉'];
   const tm = teams;
   return (
     <ol className="space-y-2">
-      {players.map((p, i) => (
-        <li key={p.id} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${podium && i < 3 ? 'bg-gold/20 border border-gold/60' : 'bg-panel'}`}>
-          <span className="w-6 text-center">{(podium && medal[i]) || `${i + 1}.`}</span>
-          <Avatar seed={p.alias} size={32} className="rounded-full shrink-0" />
-          <span className="font-medium flex-1 truncate">{tm?.[p.id] ? <span style={{ color: TEAMS[tm[p.id]].deep }}>{TEAMS[tm[p.id]].emoji} </span> : null}{p.alias}</span>
+      {players.map((p) => {
+        const rank = 1 + players.filter((other) => other.score > p.score).length;
+        return <li key={p.id} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${podium && rank <= 3 ? 'bg-gold/20 border border-gold/60' : 'bg-panel'}`}>
+          <span className="w-6 text-center">{(podium && medal[rank - 1]) || `${rank}.`}</span>
+          <Avatar seed={hideNames ? p.id : p.alias} size={32} className="rounded-full shrink-0" />
+          <span className="font-medium flex-1 truncate">{tm?.[p.id] ? <span style={{ color: TEAMS[tm[p.id]].deep }}>{TEAMS[tm[p.id]].emoji} </span> : null}{hideNames ? 'Player' : p.alias}</span>
           <span className="tabular-nums font-bold">{p.score}</span>
-        </li>
-      ))}
+        </li>;
+      })}
     </ol>
   );
 }

@@ -1,0 +1,121 @@
+✖ retained form changes during feedback are ignored without throwing (6.542908ms)
+✖ retained prior-question form cannot select or submit the current question (3.673142ms)
+✖ retained undo cannot restore a later reset backup (5.463829ms)
+✖ unsafe imported base counter is rejected and never overwritten by ordinary UI progress (2.072116ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 135.255591
+
+✖ failing tests:
+
+test at ../../../../../../tmp/lab-tycoon-v1-negative-zzk8aI/tests/app.test.mjs:33:1
+✖ retained form changes during feedback are ignored without throwing (6.542908ms)
+  AssertionError [ERR_ASSERTION]: Got unwanted exception.
+  Actual message: "Cannot set properties of null (setting 'disabled')"
+      at TestContext.<anonymous> (file:///tmp/lab-tycoon-v1-negative-zzk8aI/tests/app.test.mjs:35:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: TypeError: Cannot set properties of null (setting 'disabled')
+        at Object.change (evalmachine.<anonymous>:285:54)
+        at El.fire (file:///tmp/lab-tycoon-v1-negative-zzk8aI/tests/app.test.mjs:13:308)
+        at file:///tmp/lab-tycoon-v1-negative-zzk8aI/tests/app.test.mjs:35:31
+        at getActual (node:assert:611:5)
+        at strict.doesNotThrow (node:assert:779:32)
+        at TestContext.<anonymous> (file:///tmp/lab-tycoon-v1-negative-zzk8aI/tests/app.test.mjs:35:9)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1382:25)
+        at Test.start (node:internal/test_runner/test:1242:17)
+        at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17),
+    expected: undefined,
+    operator: 'doesNotThrow',
+    diff: 'simple'
+  }
+
+test at ../../../../../../tmp/lab-tycoon-v1-negative-zzk8aI/tests/app.test.mjs:38:1
+✖ retained prior-question form cannot select or submit the current question (3.673142ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///tmp/lab-tycoon-v1-negative-zzk8aI/tests/app.test.mjs:42:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../../../tmp/lab-tycoon-v1-negative-zzk8aI/tests/app.test.mjs:54:1
+✖ retained undo cannot restore a later reset backup (5.463829ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '{"version":1,"contentRevision":"equilibrium-sample-2026-10-04-v1","baseRevision":14,"events":[{"type":"START","expectedRevision":14},{"type":"SUBMIT","expectedRevision":15,"choice":0,"reason":1},{"type":"REVIEW","expectedRevision":16},{"type":"NEXT","expectedRevision":17},{"type":"START","expectedRevision":18},{"type":"SUBMIT","expectedRevision":19,"choice":2,"reason":2},{"type":"REVIEW","expectedRevision":20}]}'
+  - '{"version":1,"contentRevision":"equilibrium-sample-2026-10-04-v1","baseRevision":13,"events":[]}'
+  
+      at TestContext.<anonymous> (file:///tmp/lab-tycoon-v1-negative-zzk8aI/tests/app.test.mjs:59:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at node:internal/test_runner/test:1285:31
+      at node:internal/process/task_queues:151:7
+      at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+      at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '{"version":1,"contentRevision":"equilibrium-sample-2026-10-04-v1","baseRevision":14,"events":[{"type":"START","expectedRevision":14},{"type":"SUBMIT","expectedRevision":15,"choice":0,"reason":1},{"type":"REVIEW","expectedRevision":16},{"type":"NEXT","expectedRevision":17},{"type":"START","expectedRevision":18},{"type":"SUBMIT","expectedRevision":19,"choice":2,"reason":2},{"type":"REVIEW","expectedRevision":20}]}',
+    expected: '{"version":1,"contentRevision":"equilibrium-sample-2026-10-04-v1","baseRevision":13,"events":[]}',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../../../tmp/lab-tycoon-v1-negative-zzk8aI/tests/app.test.mjs:68:1
+✖ unsafe imported base counter is rejected and never overwritten by ordinary UI progress (2.072116ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /could not be read/. Input:
+  
+  '\n' +
+    '    <div class="offline-banner">OFFLINE PROTOTYPE / SAMPLE CONTENT <span>Not a live classroom game</span></div>\n' +
+    '    <header class="topbar"><div class="brand"><span class="brand-mark" aria-hidden="true">L<span>G</span></span><div>HSC LEGENDS<small>Lab Tycoon · concept study</small></div></div><div class="top-actions"><button id="text-size" type="button" aria-pressed="false">Aa <span>Larger text</span></button><button id="open-reset" type="button">Reset run</button></div></header>\n' +
+    '    <main id="main"><section class="intro"><div><p class="eyebrow">CHEMISTRY / EQUILIBRIUM LAB</p><h1>Small discoveries.<br><span>A growing lab.</span></h1><p class="intro-copy">Think it through. Explain your choice.<br>Turn what you learn into a better-equipped bench.</p><p class="scope">Year 12 Chemistry · Module 5 · Equilibrium fundamentals</p></div><div class="overview card"><span class="eyebrow">YOUR RESEARCH GRANT</span><strong class="balance">0<small>credits available</small></strong><p><b>0</b> earned · <b>0</b> invested</p><div class="progress-label"><label for="run-progress">Challenges reviewed</label><b>0 / 12</b></div><progress id="run-progress" max="12" value="0">0 of 12</progress><span class="small">No timer. No speed bonus. One local run.</span></div></section>\n' +
+    '    <div class="workspace"><section class="challenge card" aria-labelledby="challenge-title"><nav class="steps" aria-label="Challenge steps"><span aria-current="step" class="current">1<span>Learn</span></span><span >2<span>Answer + reason</span></span><span >3<span>Explain</span></span><span >4<span>Upgrade</span></span></nav><p class="eyebrow">CHALLENGE 01 / 12 · Dynamic equilibrium</p><h2 id="challenge-title" tabindex="-1">A busy balance</h2><div class="learn-note"><span class="label">BEFORE YOU INVESTIGATE</span><p>A reversible reaction can keep changing at particle level while the bulk mixture looks unchanged. Compare rates, not just amounts.</p></div><div class="equation">reactants ⇌ products</div><p class="small">Read at your pace. The note stays available when you answer.</p><button type="button" data-action="START" data-revision="9007199254740991" class="primary">Open the challenge <span aria-hidden="true">→</span></button></section>\n' +
+    '    <aside class="bench card" aria-labelledby="bench-title"><div class="section-heading"><div><p class="eyebrow">YOUR BENCH</p><h2 id="bench-title">Build with purpose</h2></div><span class="counter">0 / 4</span></div><p class="small">Choose equipment after reviewing a challenge. Upgrades add study cards and change your bench. They never multiply scores.</p><div class="equipment-grid"><div class="equipment "><svg viewBox="0 0 120 100" aria-hidden="true" focusable="false"><path d="M15 84h92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><rect x="34" y="19" width="52" height="62" rx="7" fill="#f4e2cb" stroke="currentColor" stroke-width="4"/><path d="M44 19v62M54 37h21M54 48h21M54 59h15" stroke="currentColor" stroke-width="3"/></svg><strong>Field notebook</strong><small>6 credits</small></div><div class="equipment "><svg viewBox="0 0 120 100" aria-hidden="true" focusable="false"><path d="M15 84h92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><rect x="22" y="47" width="76" height="34" rx="7" fill="#cde0d1" stroke="currentColor" stroke-width="4"/><path d="M36 47V25h48v22M32 60h56M54 69h12" fill="none" stroke="currentColor" stroke-width="4"/></svg><strong>Temperature station</strong><small>12 credits</small></div><div class="equipment "><svg viewBox="0 0 120 100" aria-hidden="true" focusable="false"><path d="M15 84h92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><rect x="43" y="17" width="39" height="64" rx="10" fill="#f4e2cb" stroke="currentColor" stroke-width="4"/><rect x="51" y="30" width="23" height="19" rx="3" fill="#6d5b8a"/><path d="M51 64h23" stroke="currentColor" stroke-width="4"/></svg><strong>Gas sensor</strong><small>18 credits</small></div><div class="equipment "><svg viewBox="0 0 120 100" aria-hidden="true" focusable="false"><path d="M15 84h92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><rect x="20" y="24" width="80" height="49" rx="8" fill="#ddd3e8" stroke="currentColor" stroke-width="4"/><path d="M58 74v9M39 84h39M31 53l13-14 13 21 14-19 16 10" fill="none" stroke="currentColor" stroke-width="4"/></svg><strong>Analysis console</strong><small>24 credits</small></div></div><p class="bench-note">First goal: 6 credits for your field notebook.</p><div class="no-network"><span aria-hidden="true">◉</span> Solo, offline, local only</div></aside></div>\n' +
+    '    <section class="rules card"><details><summary>How credits work <span>Maximum 120 per run</span></summary><ul><li>First attempt: 4 for a correct answer + 4 for a correct reason.</li><li>One optional retry: 2 for each previously incorrect part you now correct. Already-earned parts never pay again.</li><li>After feedback: 2 for choosing “Finish review”, once per challenge. This rewards completion of the review step; it cannot measure whether you read it.</li><li>Maximum 10 per challenge. No timer, passive income, random rewards, streak multipliers or real-money value.</li><li>Equipment is optional and cosmetic/study support. All learning notes, feedback and text-size controls are free.</li></ul><p>Local practice credits are not marks, mastery ratings, HSC predictions or account XP.</p></details></section>\n' +
+    '    <p class="storage-status" role="status">Your local checkpoint is restored.</p>\n' +
+    '    <footer><b>Sample content · selected Year 12 Chemistry Module 5 concepts.</b><p>12 original practice challenges. Not official NESA questions or full syllabus coverage. Conceptual chemistry only; no real experiment instructions. No names, student records, accounts, database, analytics or network calls.</p><p>Content and mechanics notes are included in README.md. Visual/browser acceptance is still unrun.</p></footer></main>\n' +
+    '    <dialog id="reset-dialog" aria-labelledby="reset-title"><h2 id="reset-title">Start a new local run?</h2><p>This resets this prototype’s answers, credits and equipment in this browser. It does not affect HSC Legends accounts.</p><p>The previous run is kept for “Undo last reset”, in this tab and in browser storage when available. A second reset replaces that backup.</p><div class="button-row"><button type="button" id="cancel-reset">Keep this run</button><button type="button" id="confirm-reset" class="primary">Reset local run</button></div></dialog>'
+  
+      at TestContext.<anonymous> (file:///tmp/lab-tycoon-v1-negative-zzk8aI/tests/app.test.mjs:70:30)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at node:internal/test_runner/test:1285:31
+      at node:internal/process/task_queues:151:7
+      at AsyncResource.runInAsyncScope (node:async_hooks:227:14)
+      at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '\n    <div class="offline-banner">OFFLINE PROTOTYPE / SAMPLE CONTENT <span>Not a live classroom game</span></div>\n    <header class="topbar"><div class="brand"><span class="brand-mark" aria-hidden="true">L<span>G</span></span><div>HSC LEGENDS<small>Lab Tycoon · concept study</small></div></div><div class="top-actions"><button id="text-size" type="button" aria-pressed="false">Aa <span>Larger text</span></button><button id="open-reset" type="button">Reset run</button></div></header>\n    <main id="main"><section class="intro"><div><p class="eyebrow">CHEMISTRY / EQUILIBRIUM LAB</p><h1>Small discoveries.<br><span>A growing lab.</span></h1><p class="intro-copy">Think it through. Explain your choice.<br>Turn what you learn into a better-equipped bench.</p><p class="scope">Year 12 Chemistry · Module 5 · Equilibrium fundamentals</p></div><div class="overview card"><span class="eyebrow">YOUR RESEARCH GRANT</span><strong class="balance">0<small>credits available</small></strong><p><b>0</b> earned · <b>0</b> invested</p><div class="progress-label"><label for="run-progress">Challenges reviewed</label><b>0 / 12</b></div><progress id="run-progress" max="12" value="0">0 of 12</progress><span class="small">No timer. No speed bonus. One local run.</span></div></section>\n    <div class="workspace"><section class="challenge card" aria-labelledby="challenge-title"><nav class="steps" aria-label="Challenge steps"><span aria-current="step" class="current">1<span>Learn</span></span><span >2<span>Answer + reason</span></span><span >3<span>Explain</span></span><span >4<span>Upgrade</span></span></nav><p class="eyebrow">CHALLENGE 01 / 12 · Dynamic equilibrium</p><h2 id="challenge-title" tabindex="-1">A busy balance</h2><div class="learn-note"><span class="label">BEFORE YOU INVESTIGATE</span><p>A reversible reaction can keep changing at particle level while the bulk mixture looks unchanged. Compare rates, not just amounts.</p></div><div class="equation">reactants ⇌ products</div><p class="small">Read at your pace. The note stays available when you answer.</p><button type="button" data-action="START" data-revision="9007199254740991" class="primary">Open the challenge <span aria-hidden="true">→</span></button></section>\n    <aside class="bench card" aria-labelledby="bench-title"><div class="section-heading"><div><p class="eyebrow">YOUR BENCH</p><h2 id="bench-title">Build with purpose</h2></div><span class="counter">0 / 4</span></div><p class="small">Choose equipment after reviewing a challenge. Upgrades add study cards and change your bench. They never multiply scores.</p><div class="equipment-grid"><div class="equipment "><svg viewBox="0 0 120 100" aria-hidden="true" focusable="false"><path d="M15 84h92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><rect x="34" y="19" width="52" height="62" rx="7" fill="#f4e2cb" stroke="currentColor" stroke-width="4"/><path d="M44 19v62M54 37h21M54 48h21M54 59h15" stroke="currentColor" stroke-width="3"/></svg><strong>Field notebook</strong><small>6 credits</small></div><div class="equipment "><svg viewBox="0 0 120 100" aria-hidden="true" focusable="false"><path d="M15 84h92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><rect x="22" y="47" width="76" height="34" rx="7" fill="#cde0d1" stroke="currentColor" stroke-width="4"/><path d="M36 47V25h48v22M32 60h56M54 69h12" fill="none" stroke="currentColor" stroke-width="4"/></svg><strong>Temperature station</strong><small>12 credits</small></div><div class="equipment "><svg viewBox="0 0 120 100" aria-hidden="true" focusable="false"><path d="M15 84h92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><rect x="43" y="17" width="39" height="64" rx="10" fill="#f4e2cb" stroke="currentColor" stroke-width="4"/><rect x="51" y="30" width="23" height="19" rx="3" fill="#6d5b8a"/><path d="M51 64h23" stroke="currentColor" stroke-width="4"/></svg><strong>Gas sensor</strong><small>18 credits</small></div><div class="equipment "><svg viewBox="0 0 120 100" aria-hidden="true" focusable="false"><path d="M15 84h92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><rect x="20" y="24" width="80" height="49" rx="8" fill="#ddd3e8" stroke="currentColor" stroke-width="4"/><path d="M58 74v9M39 84h39M31 53l13-14 13 21 14-19 16 10" fill="none" stroke="currentColor" stroke-width="4"/></svg><strong>Analysis console</strong><small>24 credits</small></div></div><p class="bench-note">First goal: 6 credits for your field notebook.</p><div class="no-network"><span aria-hidden="true">◉</span> Solo, offline, local only</div></aside></div>\n    <section class="rules card"><details><summary>How credits work <span>Maximum 120 per run</span></summary><ul><li>First attempt: 4 for a correct answer + 4 for a correct reason.</li><li>One optional retry: 2 for each previously incorrect part you now correct. Already-earned parts never pay again.</li><li>After feedback: 2 for choosing “Finish review”, once per challenge. This rewards completion of the review step; it cannot measure whether you read it.</li><li>Maximum 10 per challenge. No timer, passive income, random rewards, streak multipliers or real-money value.</li><li>Equipment is optional and cosmetic/study support. All learning notes, feedback and text-size controls are free.</li></ul><p>Local practice credits are not marks, mastery ratings, HSC predictions or account XP.</p></details></section>\n    <p class="storage-status" role="status">Your local checkpoint is restored.</p>\n    <footer><b>Sample content · selected Year 12 Chemistry Module 5 concepts.</b><p>12 original practice challenges. Not official NESA questions or full syllabus coverage. Conceptual chemistry only; no real experiment instructions. No names, student records, accounts, database, analytics or network calls.</p><p>Content and mechanics notes are included in README.md. Visual/browser acceptance is still unrun.</p></footer></main>\n    <dialog id="reset-dialog" aria-labelledby="reset-title"><h2 id="reset-title">Start a new local run?</h2><p>This resets this prototype’s answers, credits and equipment in this browser. It does not affect HSC Legends accounts.</p><p>The previous run is kept for “Undo last reset”, in this tab and in browser storage when available. A second reset replaces that backup.</p><div class="button-row"><button type="button" id="cancel-reset">Keep this run</button><button type="button" id="confirm-reset" class="primary">Reset local run</button></div></dialog>',
+    expected: /could not be read/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+Negative-control exit code: 1 (expected nonzero)
