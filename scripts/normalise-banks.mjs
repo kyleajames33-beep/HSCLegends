@@ -3,13 +3,15 @@
 // cloned Teaching-APP checkout and emits one normalised questions.json.
 //
 // Usage: node scripts/normalise-banks.mjs [path-to-Teaching-APP] [out-file]
-// Strategy: execute each file in a sandboxed fake-`window` context (node:vm).
+// Trusted-checkout input only: execute each file in a fake-window node:vm context.
+// node:vm is not a security sandbox. Never use untrusted uploads as input.
 // This parses BOTH the JSON-style compact files and the JS-style files
 // (single quotes, comments, trailing commas) without bespoke parsing.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import { assessQuestion, diagnosticValue } from './lib/question-integrity.mjs';
 
 const REPO = process.argv[2] || '/workspaces/Teaching-APP';
 const OUT = process.argv[3] || path.join(process.cwd(), 'out', 'questions.json');
@@ -53,7 +55,7 @@ const kebab = (s) =>
 
 // Recursively collect question-bank-data.js files under subjects/.
 function findBanks(dir, acc = []) {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
     const full = path.join(dir, e.name);
     if (e.isDirectory()) findBanks(full, acc);
     else if (e.name === 'question-bank-data.js') acc.push(full);
@@ -67,8 +69,8 @@ function classify(relPath) {
   const after = relPath.replace(/^subjects\//, '');
   const match = HSC_SUBJECTS.find((s) => after.startsWith(s.dir + '/'));
   if (!match) return null;
-  const yearM = relPath.match(/year(\d+)/);
-  const modM = relPath.match(/module(\d+)/);
+  const yearM = relPath.match(/(?:^|\/)year(\d+)(?:\/|$)/);
+  const modM = relPath.match(/(?:^|\/)module(\d+)(?:\/|$)/);
   if (!yearM || !modM) return null;
   const year = Number(yearM[1]);
   if (year !== 11 && year !== 12) return null; // HSC only
@@ -82,48 +84,53 @@ function classify(relPath) {
 function loadFile(full) {
   let code = fs.readFileSync(full, 'utf8');
   for (const r of REPAIRS) if (full.endsWith(r.match)) code = r.fix(code);
-  const sandbox = { window: { HSCQuestionBankData: {} }, __CAP__: {} };
+  let runtimeBank = {};
+  let runtimeBankAssigned = false;
+  const fakeWindow = {};
+  Object.defineProperty(fakeWindow, 'HSCQuestionBankData', {
+    enumerable: true,
+    get: () => runtimeBank,
+    set: (value) => { runtimeBankAssigned = true; runtimeBank = value; },
+  });
+  const sandbox = { window: fakeWindow, __CAP__: {} };
   vm.createContext(sandbox);
   const capture =
     "\n;__CAP__.win = (typeof window!=='undefined' && window.HSCQuestionBankData) || null;" +
+    "\n__CAP__.hasLegacy = (typeof lessonQuestionBanks!=='undefined');" +
     "\n__CAP__.lqb = (typeof lessonQuestionBanks!=='undefined') ? lessonQuestionBanks : null;";
   try {
     new vm.Script(code + capture, { filename: full }).runInContext(sandbox, { timeout: 5000 });
   } catch (err) {
     return { error: err.message, data: {} };
   }
-  // Merge both containers, keyed by lessonId.
-  const data = { ...(sandbox.__CAP__.win || {}), ...(sandbox.__CAP__.lqb || {}) };
-  return { error: null, data };
+  // An explicitly published (even empty) runtime bank is authoritative, including
+  // lessons it omits. A populated directly-mutated bank is also authoritative.
+  // Merging legacy data back in can resurrect questions filtered by the source.
+  const win = sandbox.__CAP__.win;
+  const legacy = sandbox.__CAP__.hasLegacy ? sandbox.__CAP__.lqb : {};
+  const hasRuntimeBank = runtimeBankAssigned || (win && Object.keys(win).length > 0);
+  const data = hasRuntimeBank ? win : legacy;
+  const selections = [];
+  if (hasRuntimeBank && win && typeof win === 'object' && !Array.isArray(win) && legacy && typeof legacy === 'object' && !Array.isArray(legacy)) {
+    for (const [lessonId, lesson] of Object.entries(legacy)) {
+      const rawQuestions = Array.isArray(lesson) ? lesson : lesson?.questions;
+      if (!Array.isArray(rawQuestions)) continue;
+      const served = Array.isArray(win[lessonId]) ? win[lessonId] : win[lessonId]?.questions || [];
+      const servedIds = new Set(Array.isArray(served) ? served.map((q) => q?.id) : []);
+      for (const q of rawQuestions) {
+        if (q?.id != null && servedIds.has(q.id)) continue;
+        const a = assessQuestion(q);
+        selections.push({ lessonId, id: diagnosticValue(q?.id ?? null), reason: 'not-exposed-by-source-runtime-bank',
+          question: diagnosticValue({ stem: a.stem, options: a.options, correctIndex: a.correctIndex, explanation: a.explanation }),
+          metadata: a.metadata, explanationStatus: a.explanationStatus, contentReview: a.contentReview });
+      }
+    }
+  }
+  return { error: null, data, selection: { container: hasRuntimeBank ? 'window.HSCQuestionBankData' : 'lessonQuestionBanks', omittedLegacyQuestions: selections } };
 }
 
 function isVariant(q) {
   return q.generated === true || /-v\d*$/.test(String(q.id || ''));
-}
-
-// Coerce one raw question (any HSC schema) into {stem, options[], correctIndex}.
-//  A:  {prompt,   options:[...],       correctIndex}
-//  A': {text,     options:{A,B,C,D},   correctAnswer:'C'}
-//  A": {question, options:[...],       answer: 1}
-function coerce(q) {
-  const stem = q.prompt ?? q.text ?? q.question ?? q.stem ?? '';
-  let options = q.options;
-  let keys = null;
-  if (options && !Array.isArray(options) && typeof options === 'object') {
-    keys = Object.keys(options).sort(); // A,B,C,D
-    options = keys.map((k) => options[k]);
-  }
-  let correctIndex;
-  if (typeof q.correctIndex === 'number') correctIndex = q.correctIndex;
-  else if (typeof q.correct === 'number') correctIndex = q.correct; // review.json (Schema D)
-  else if (typeof q.answer === 'number') correctIndex = q.answer;
-  else if (typeof q.correctAnswer === 'string') {
-    const L = q.correctAnswer.trim().toUpperCase();
-    if (keys) correctIndex = keys.indexOf(L);
-    else if (/^[A-Z]$/.test(L)) correctIndex = L.charCodeAt(0) - 65;
-    else correctIndex = Number(q.correctAnswer);
-  }
-  return { stem, options, correctIndex };
 }
 
 // Recover LaTeX mangled by lossy JSON escaping in review.json:
@@ -150,24 +157,31 @@ const invalid = [];
 const fileErrors = [];
 const seenIds = new Set();
 const dupes = [];
+const skippedFiles = [];
+const sourceSelections = [];
+const auditQuestions = [];
 const stats = {}; // key: `${subject} y${year}` -> {original, variant}
 let recovered = 0; // review questions that needed LaTeX recovery
 
 // Shared ingest for both sources. `raw` is one source question object.
 function ingest(raw, meta, lessonId, rel, source, idx) {
-  const qid = raw.id && String(raw.id).trim() ? String(raw.id) : `${lessonId}-${source}-${idx + 1}`;
-  let { stem, options, correctIndex } = coerce(raw);
-
-  const reasons = [];
-  if (!stem || !String(stem).trim()) reasons.push('empty stem');
-  if (!Array.isArray(options) || options.length < 2) reasons.push('bad options');
-  if (typeof correctIndex !== 'number' || !Array.isArray(options) || correctIndex < 0 || correctIndex >= options.length)
-    reasons.push('correctIndex out of range');
+  const sourceId = typeof raw?.id === 'string' || (typeof raw?.id === 'number' && Number.isFinite(raw.id)) ? String(raw.id).trim() : '';
+  const qid = sourceId || `${lessonId}-${source}-${idx + 1}`;
+  const assessment = assessQuestion(raw);
+  let { stem, options, correctIndex } = assessment;
+  const reasons = assessment.reasons;
+  const audit = { id: qid, file: rel, lessonId, source, sourceIndex: idx,
+    explanationStatus: assessment.explanationStatus, contentReview: assessment.contentReview,
+    metadata: assessment.metadata, reasons };
+  auditQuestions.push(audit);
   if (reasons.length) {
+    // Quarantined items retain available instructional data for offline review.
+    audit.question = diagnosticValue({ stem, options, correctIndex, explanation: assessment.explanation });
     invalid.push({ id: qid, file: rel, reasons });
     return;
   }
   if (seenIds.has(qid)) {
+    reasons.push('duplicate-id');
     dupes.push(qid);
     return;
   }
@@ -175,7 +189,7 @@ function ingest(raw, meta, lessonId, rel, source, idx) {
 
   // LaTeX recovery applies to ANY source — Schema A" (Ext1 Y12) and review.json
   // were both authored with lossy single-backslash escapes. No-op on clean text.
-  let explanation = raw.explanation ? String(raw.explanation) : '';
+  let explanation = assessment.explanation;
   if (hasCtrl(stem) || options.some(hasCtrl) || hasCtrl(explanation)) recovered++;
   stem = recoverLatex(stem);
   options = options.map(recoverLatex);
@@ -202,7 +216,10 @@ function ingest(raw, meta, lessonId, rel, source, idx) {
     bloom: VALID_BLOOM.has(raw.bloom) ? raw.bloom : 'understand',
     quality,
     source,
-    syllabusPoint: null,
+    syllabusPoint: assessment.metadata.syllabusPoint ?? null,
+    media: assessment.metadata.media ?? null,
+    explanationStatus: assessment.explanationStatus,
+    contentReview: assessment.contentReview,
   });
 
   const k = `${meta.subject} y${meta.year}`;
@@ -212,24 +229,37 @@ function ingest(raw, meta, lessonId, rel, source, idx) {
 
 // Pass 1 — question-bank-data.js (Schemas A / A' / A")
 for (const full of findBanks(path.join(REPO, 'subjects'))) {
-  const rel = path.relative(REPO, full);
+  const rel = path.relative(REPO, full).split(path.sep).join('/');
   const meta = classify(rel);
-  if (!meta) continue;
-  const { error, data } = loadFile(full);
+  if (!meta) {
+    skippedFiles.push({ file: rel, reason: 'outside-supported-subject-year-module-layout',
+      hscLayoutNeedsReview: HSC_SUBJECTS.some((s) => rel.startsWith(`subjects/${s.dir}/`)) && /(?:^|\/)year(?:11|12)(?:\/|$)/.test(rel) });
+    continue;
+  }
+  const { error, data, selection } = loadFile(full);
   if (error) {
     fileErrors.push({ file: rel, error });
     continue;
   }
-  for (const lessonId of Object.keys(data)) {
+  sourceSelections.push({ file: rel, ...selection });
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    fileErrors.push({ file: rel, error: 'Question bank must be a lesson-keyed object' });
+    continue;
+  }
+  for (const lessonId of Object.keys(data).sort()) {
     const lesson = data[lessonId];
-    const questions = Array.isArray(lesson) ? lesson : (lesson && lesson.questions) || [];
+    const questions = Array.isArray(lesson) ? lesson : lesson?.questions;
+    if (!Array.isArray(questions)) {
+      fileErrors.push({ file: rel, error: `Question list is not an array: ${lessonId}` });
+      continue;
+    }
     questions.forEach((q, idx) => ingest(q, meta, lessonId, rel, 'question-bank', idx));
   }
 }
 
 // Pass 2 — *.review.json (Schema D: per-lesson review questions)
 function findReviews(dir, acc = []) {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
     const full = path.join(dir, e.name);
     if (e.isDirectory()) findReviews(full, acc);
     else if (e.name.endsWith('.review.json')) acc.push(full);
@@ -237,9 +267,13 @@ function findReviews(dir, acc = []) {
   return acc;
 }
 for (const full of findReviews(path.join(REPO, 'subjects'))) {
-  const rel = path.relative(REPO, full);
+  const rel = path.relative(REPO, full).split(path.sep).join('/');
   const meta = classify(rel);
-  if (!meta) continue;
+  if (!meta) {
+    skippedFiles.push({ file: rel, reason: 'outside-supported-subject-year-module-layout',
+      hscLayoutNeedsReview: HSC_SUBJECTS.some((s) => rel.startsWith(`subjects/${s.dir}/`)) && /(?:^|\/)year(?:11|12)(?:\/|$)/.test(rel) });
+    continue;
+  }
   let data;
   try {
     data = JSON.parse(fs.readFileSync(full, 'utf8'));
@@ -247,13 +281,34 @@ for (const full of findReviews(path.join(REPO, 'subjects'))) {
     fileErrors.push({ file: rel, error: err.message });
     continue;
   }
+  if (!data || !Array.isArray(data.questions)) {
+    fileErrors.push({ file: rel, error: 'Review questions must be an array' });
+    continue;
+  }
   const lessonId = data.lessonId || rel;
-  const questions = (data.questions || []).filter((q) => !q.type || q.type === 'mc');
-  questions.forEach((q, idx) => ingest(q, meta, lessonId, rel, 'review', idx));
+  data.questions.forEach((q, idx) => {
+    if (q?.type && q.type !== 'mc') return;
+    ingest(q, meta, lessonId, rel, 'review', idx);
+  });
 }
 
+const auditPath = `${OUT}.audit.json`;
+const summary = { emitted: out.length, quarantined: invalid.length, duplicateIds: dupes.length,
+  fileErrors: fileErrors.length, skippedFiles: skippedFiles.length,
+  unsupportedHscFiles: skippedFiles.filter((file) => file.hscLayoutNeedsReview).length,
+  omittedBySource: sourceSelections.reduce((sum, file) => sum + file.omittedLegacyQuestions.length, 0),
+  explanationPresent: out.filter((q) => q.explanationStatus === 'present').length,
+  explanationMissing: out.filter((q) => q.explanationStatus === 'missing').length,
+  explanationPlaceholder: out.filter((q) => q.explanationStatus === 'placeholder').length };
+const auditJSON = JSON.stringify({ schemaVersion: 1,
+  scope: 'Only the supplied checkout files; not a live database or scientific review',
+  summary, invalid, duplicateIds: dupes, fileErrors, skippedFiles, sourceSelections, questions: auditQuestions }, null, 2);
+const questionsJSON = JSON.stringify(out);
+// Serialize both before writing either. Invalid source data cannot leave an
+// apparently successful new canonical file with no diagnostic artifact.
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
-fs.writeFileSync(OUT, JSON.stringify(out, null, 0));
+fs.writeFileSync(auditPath, auditJSON);
+fs.writeFileSync(OUT, questionsJSON);
 
 // --- Report ---
 const totalOrig = out.filter((q) => q.quality === 'original').length;
@@ -264,7 +319,11 @@ console.log('\n=== NORMALISE REPORT ===');
 console.log(`Questions written:   ${out.length}  (original ${totalOrig} / variant ${totalVar})`);
 console.log(`  by source:         question-bank ${fromQB} / review.json ${fromReview}`);
 console.log(`  LaTeX recovered:   ${recovered} review questions had mangled escapes repaired`);
-console.log(`Invalid skipped:     ${invalid.length}  (incl. short-answer / non-MC)`);
+console.log(`Source-filtered:     ${summary.omittedBySource} legacy entries not exposed by their runtime bank`);
+console.log(`Quarantined:         ${invalid.length}  (structural, scaffold, excluded or media-dependent)`);
+console.log(`Files outside scope: ${skippedFiles.length}  (see audit; not silently counted as covered)`);
+console.log(`Explanation status:  ${summary.explanationPresent} present / ${summary.explanationMissing} missing / ${summary.explanationPlaceholder} placeholder`);
+console.log('Content review:      NOT ASSESSED. Explanation presence does not establish correctness.');
 console.log(`Duplicate ids:       ${dupes.length}`);
 console.log(`File load errors:    ${fileErrors.length}`);
 console.log('\nPer subject/year (original / variant):');
@@ -279,3 +338,6 @@ if (invalid.length) {
   console.log(`\nFirst 10 invalid: ${invalid.slice(0, 10).map((i) => i.id || '(no id)').join(', ')}`);
 }
 console.log(`\nWrote ${OUT}`);
+console.log(`Audit: ${auditPath}`);
+// A partial run still leaves diagnostic output, but cannot claim a clean import.
+if (fileErrors.length || summary.unsupportedHscFiles || invalid.length || dupes.length || !out.length) process.exitCode = 1;
