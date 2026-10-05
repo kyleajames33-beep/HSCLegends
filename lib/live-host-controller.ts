@@ -54,8 +54,10 @@ export class LiveHostController {
       // Preserve the existing successful-create contract. The retained RPC
       // definition does not establish a question/status row before start.
       this.update({ code: record.code, sessionId: record.sessionId, phase: 'lobby', q: null, players: [], teams: {}, teamMode: false, ready: true });
+      // Listen before taking the roster snapshot, so arrivals during that read
+      // trigger a newer refresh instead of falling into an unsubscribed gap.
+      this.listen(record, epoch, owner);
       await this.refreshCreatedLobbyPlayers(record, epoch, owner);
-      if (this.current(epoch, owner)) this.listen(record, epoch, owner);
     } catch (e) { this.fail(e, epoch, owner); }
     finally { if (this.current(epoch, owner)) this.update({ busy: false }); }
   }

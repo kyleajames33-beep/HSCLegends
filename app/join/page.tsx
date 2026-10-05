@@ -185,10 +185,17 @@ export default function JoinPage() {
     if (!currentRequest(epoch, owner)) return;
     const version = ++loadVersion.current;
     let lq: LiveQuestion;
-    try { lq = await getLiveQuestion(sb, sid); }
-    catch (e) { if (currentRequest(epoch, owner) && version === loadVersion.current) throw e; else return; }
+    try {
+      lq = await getLiveQuestion(sb, sid);
+      if (!lq) throw new Error('Game state is unavailable. Your saved game is kept; try rejoining.');
+    } catch (e) {
+      if (!currentRequest(epoch, owner) || version !== loadVersion.current) return;
+      // A newer failed read supersedes the connection's initial read, including
+      // its cleanup. Release that busy state without unlocking a current answer.
+      if (!answerInFlight.current) setBusy(false);
+      throw e;
+    }
     if (!currentRequest(epoch, owner) || version !== loadVersion.current) return;
-    if (!lq) throw new Error('Game state is unavailable. Your saved game is kept; try rejoining.');
     if (lq.status !== 'active' || activeQuestion.current !== lq.index) {
       activeQuestion.current = lq.status === 'active' ? lq.index : -1;
       answerInFlight.current = ''; setBusy(false);
