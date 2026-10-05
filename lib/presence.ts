@@ -58,7 +58,9 @@ export function clearArenaSession(mode: ArenaMode) {
 
 // Presence list for a room — host/projector UIs grey out disconnected players.
 export async function arenaPresences(sb: SupabaseClient, roomId: string): Promise<Map<string, number>> {
-  const { data } = await sb.rpc('arena_presences', { p_room: roomId });
+  const { data, error } = await sb.rpc('arena_presences', { p_room: roomId });
+  if (error) throw new Error(error.message);
+  if (!Array.isArray(data)) throw new Error('Presence is unavailable.');
   const m = new Map<string, number>();
   for (const r of (data ?? []) as { player_id: string; last_seen: string }[]) {
     m.set(r.player_id, new Date(r.last_seen).getTime());

@@ -1,0 +1,11 @@
+{
+  "name": "hsc-legends-offline-equilibrium-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node build.mjs && node --test tests/*.test.mjs",
+    "check": "npm test"
+  }
+}

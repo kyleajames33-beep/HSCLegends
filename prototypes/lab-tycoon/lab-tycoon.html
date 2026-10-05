@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'"><meta name="color-scheme" content="light"><title>Equilibrium Lab · HSC Legends offline prototype</title><style>:root{--parchment:#f9efe1;--paper:#fffdf9;--ink:#2d3142;--muted:#5b5d75;--rule:#e8d4ba;--plum:#6d5b8a;--plum-deep:#4e4068;--leaf:#42664e;--gold:#d6a85f;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--parchment);font-size:16px;line-height:1.5}*{box-sizing:border-box}body{margin:0}button,input,summary{font:inherit}button,summary,label.option{touch-action:manipulation}button{border:1px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:12px;padding:12px 17px;font-weight:750;cursor:pointer;min-height:46px}button:disabled{cursor:not-allowed;color:#645c6b;background:#eee7e0;box-shadow:none}button:not(:disabled):hover{border-color:var(--plum)}button.primary{background:var(--plum);color:white;border-color:var(--plum);box-shadow:0 4px 0 var(--plum-deep);margin:8px 0 4px}button.primary:active{transform:translateY(2px);box-shadow:0 2px 0 var(--plum-deep)}button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid #276f9a;outline-offset:4px}h1,h2,h3,p{margin-top:0}h1,h2,h3{line-height:1.17;letter-spacing:-.035em}h1{font-size:clamp(2.7rem,4.5vw,4.5rem);font-weight:850;margin-bottom:20px}h1 span{color:var(--plum)}h2{font-size:1.85rem;margin-bottom:24px}h3{font-size:1.12rem;line-height:1.5;letter-spacing:-.01em}h2:focus{outline:none}p{margin-bottom:16px}.offline-banner{background:#2d3142;color:#fff;padding:10px 24px;text-align:center;font-size:.76rem;letter-spacing:.09em;font-weight:800}.offline-banner span{font-weight:500;letter-spacing:0;margin-left:18px;color:#f4e2cb}.topbar{max-width:1280px;margin:auto;padding:27px 32px;display:flex;justify-content:space-between;align-items:center;gap:20px}.brand{display:flex;align-items:center;gap:12px;font-weight:850;font-size:.94rem;letter-spacing:.075em}.brand small{display:block;font-size:.72rem;font-weight:550;color:var(--muted);letter-spacing:0}.brand-mark{display:grid;place-items:center;border:2px solid var(--ink);width:44px;height:44px;background:var(--gold);box-shadow:3px 3px 0 var(--ink);border-radius:12px;position:relative;font-size:1.4rem;line-height:1}.brand-mark span{font-size:.63rem;position:absolute;right:7px;bottom:6px}.top-actions{display:flex;gap:8px}.top-actions button{font-size:.8rem;background:transparent}main{max-width:1216px;margin:auto;padding:25px 32px 36px}.intro{display:grid;grid-template-columns:1.5fr 1fr;gap:56px;align-items:center;margin-bottom:38px}.eyebrow{font-size:.7rem;font-weight:850;letter-spacing:.12em;color:var(--muted);margin-bottom:14px}.intro-copy{font-size:1.05rem;color:var(--muted);line-height:1.7}.scope{font-size:.73rem;font-weight:700;display:inline-block;border:1px solid #d4c7b7;border-radius:20px;padding:7px 12px;margin-bottom:0}.card{background:var(--paper);border:1px solid var(--rule);border-radius:22px;box-shadow:0 5px 0 var(--rule)}.overview{padding:28px 30px;border-top:5px solid var(--plum)}.balance{font-size:3.1rem;line-height:1.1;display:flex;gap:13px;align-items:end;margin:14px 0;color:var(--plum-deep)}.balance small{font-size:.83rem;color:var(--muted);font-weight:600;padding-bottom:5px}.overview p{font-size:.87rem}.progress-label{display:flex;justify-content:space-between;font-size:.74rem;gap:10px;margin-top:22px}progress{appearance:none;width:100%;height:8px;border:0;border-radius:99px;overflow:hidden;display:block;margin:9px 0 12px;background:var(--rule)}progress::-webkit-progress-bar{background:var(--rule)}progress::-webkit-progress-value{background:var(--plum)}progress::-moz-progress-bar{background:var(--plum)}.small{font-size:.8rem;color:var(--muted);line-height:1.65}.workspace{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(285px,1fr);gap:24px;align-items:start}.challenge{padding:28px 30px;min-height:570px}.steps{display:flex;justify-content:space-between;gap:6px;border-bottom:1px solid var(--rule);padding-bottom:21px;margin-bottom:27px;font-size:.65rem;font-weight:750;color:var(--muted)}.steps>span{display:flex;gap:6px;align-items:center}.steps .current{color:var(--plum-deep);background:#eee5f5;border-radius:8px;margin:-7px;padding:7px}.learn-note{background:#f4ece0;border-left:4px solid var(--gold);padding:20px;border-radius:0 13px 13px 0;margin:0 0 23px}.label{font-size:.65rem;font-weight:850;letter-spacing:.09em;color:var(--plum-deep)}.learn-note p{font-size:1.02rem;margin:10px 0 0;line-height:1.7}.equation{font-size:1.04rem;letter-spacing:.025em;border:1px dashed #cdbda7;border-radius:12px;padding:18px;margin:20px 0;font-weight:700;background:#fffaf0;text-align:center;overflow-wrap:anywhere}.bench{padding:26px}.section-heading{display:flex;justify-content:space-between;gap:10px;align-items:center}.section-heading h2{font-size:1.28rem;margin-bottom:16px}.section-heading .eyebrow{margin-bottom:7px}.counter{background:#f4e2cb;border-radius:10px;padding:7px;font-size:.7rem;white-space:nowrap;font-weight:800}.equipment-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:22px 0}.equipment{border:1px dashed #baae9e;border-radius:15px;padding:10px 8px 13px;text-align:center;background:#f5f0e9;color:#776d77}.equipment svg{display:block;width:100%;height:88px;margin:0 auto 7px}.equipment strong{font-size:.68rem;display:block}.equipment small{font-size:.63rem}.equipment.owned{background:#eee6f5;border-style:solid;border-color:#a28cb7;color:var(--plum-deep)}.bench-note{font-size:.77rem;text-align:center;color:var(--muted);padding:12px;background:#f7f0e8;border-radius:10px}.no-network{border-top:1px solid var(--rule);padding-top:17px;font-size:.7rem;color:var(--leaf);font-weight:750}.no-network span{margin-right:6px}.rules{padding:19px 26px;margin-top:25px;font-size:.81rem}.rules summary{font-weight:750;cursor:pointer;min-height:28px}.rules summary span{float:right;font-size:.7rem;font-weight:550;color:var(--muted);margin-top:2px}.rules li{margin-bottom:9px}.rules ul{padding-left:21px;margin-top:20px}.rules p{margin-bottom:0;color:var(--muted)}.storage-status{font-size:.73rem;color:var(--muted);margin:22px 0 8px}.undo{font-size:.75rem;padding:8px 12px}footer{border-top:1px solid #d8c5ab;padding-top:22px;margin-top:28px;font-size:.68rem;color:var(--muted);max-width:800px}footer p{margin:8px 0}.hint{font-size:.8rem;background:#f4ece0;border-radius:10px;padding:13px;margin-bottom:15px}.hint summary{cursor:pointer;font-weight:750}.hint p{margin:12px 0 0}fieldset{border:0;margin:23px 0;padding:0;min-width:0}legend{font-size:.8rem;font-weight:800;padding:0;margin-bottom:12px}.option{position:relative;display:flex;align-items:center;gap:10px;border:1px solid #d5c7b5;padding:13px 12px;border-radius:12px;margin-bottom:8px;font-size:.82rem;cursor:pointer;min-height:52px;background:white}.option input{margin:0;accent-color:var(--plum);width:18px;height:18px;flex-shrink:0}.option:has(input:checked){border:2px solid var(--plum);padding:12px 11px;background:#f2ebf7}.option-marker{font-size:.66rem;font-weight:800;color:var(--muted)}.reason-field{border-top:1px solid var(--rule);padding-top:17px}.reason-field legend{padding-top:18px}.retry-banner{background:#f8ead0;border-radius:9px;padding:13px;font-size:.8rem}.feedback-title{display:flex;gap:12px;align-items:center;justify-content:space-between;font-size:.75rem;margin:20px 0}.result-pill{background:#ece5f3;color:var(--plum-deep);padding:7px 9px;border-radius:8px;font-weight:800}.result-row{border-bottom:1px solid var(--rule);padding:14px 0;font-size:.82rem}.result-row>span{font-size:.68rem;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.04em}.result-row p{margin:6px 0}.result-row strong{display:block;color:var(--leaf)}.explanation{background:#edf3e9;border-radius:13px;padding:18px;margin:21px 0}.explanation p{font-size:.9rem;margin:9px 0 0;line-height:1.7}.receipt{font-size:.76rem;color:var(--muted)}.button-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.button-row button{font-size:.8rem}.review-receipt{border:1px solid #b7c8b2;background:#edf3e9;border-radius:13px;padding:20px;margin:22px 0}.review-receipt h3{font-size:1.4rem;color:var(--leaf);margin:6px 0}.review-receipt p{font-size:.76rem;margin:5px 0 0}.shop{display:grid;gap:10px;margin:20px 0}.shop-item{display:grid;grid-template-columns:1fr auto;gap:5px 12px;border:1px solid var(--rule);border-radius:12px;padding:15px;align-items:center}.shop-item b{font-size:.84rem}.shop-item p{font-size:.73rem;color:var(--muted);margin:4px 0}.shop-item button{font-size:.71rem;padding:10px;min-width:92px}.shop-item>small{grid-column:1/-1;color:var(--muted);font-size:.68rem}.study-cards details,.notebook details{border-top:1px solid var(--rule);padding:13px 0;font-size:.77rem}.study-cards summary,.notebook summary{cursor:pointer;font-weight:750}.study-cards p,.notebook p{margin:10px 0 0}.notebook summary span{float:right;color:var(--plum-deep)}.complete-lede{font-size:.94rem;line-height:1.7}dialog{border:1px solid var(--rule);background:var(--paper);border-radius:20px;color:var(--ink);max-width:500px;width:calc(100% - 32px);padding:28px;box-shadow:0 15px 70px #2d314260}dialog::backdrop{background:#2d314285}dialog p{font-size:.9rem}.large-text{font-size:20px}@media(max-width:930px){.intro{gap:28px}.workspace{grid-template-columns:minmax(0,1.5fr) minmax(245px,1fr)}.challenge{padding:24px}.steps>span{display:block}.steps>span>span{display:block}.bench{padding:20px}.balance{font-size:2.7rem}}@media(max-width:700px){.offline-banner{font-size:.61rem;padding:9px}.offline-banner span{display:block;margin:3px 0 0;font-size:.67rem}.topbar{padding:22px 20px}.brand{font-size:.7rem}.brand small{font-size:.62rem}.top-actions button{padding:8px;font-size:.67rem}.top-actions #text-size span{display:none}main{padding:16px 18px 28px}.intro{grid-template-columns:1fr;gap:22px;margin-bottom:26px}h1{font-size:2.9rem}.intro-copy{font-size:.91rem}.overview{padding:20px}.overview .balance{margin:10px 0}.progress-label{margin-top:14px}.workspace{grid-template-columns:1fr}.challenge{padding:23px 20px;min-height:0}.bench{padding:22px}.equipment-grid{grid-template-columns:repeat(4,1fr);gap:7px}.equipment svg{height:65px}.equipment strong{font-size:.59rem}.equipment small{font-size:.56rem}.rules{padding:17px 20px}.rules summary span{float:none;display:block;margin:8px 0 0}.steps>span{display:flex;font-size:.58rem;gap:4px}.steps>span>span{display:inline}.scope{font-size:.64rem}.shop-item{padding:12px}.feedback-title{align-items:flex-start}.button-row button{width:100%}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}button.primary:active{transform:none}}@media print{.top-actions,button,.steps{display:none}.offline-banner{color:black;background:white}.card{box-shadow:none;break-inside:avoid}.workspace{display:block}.bench{margin-top:20px}body{background:white}}
+</style></head><body><div id="app"></div><noscript>This offline sample needs JavaScript to run. It does not use accounts or network connections.</noscript><script>(()=>{
+'use strict';
+// Original sample items. Scope: selected equilibrium fundamentals in NSW Chemistry
+// Stage 6 (2017), Year 12 Module 5. Not an official paper or complete module bank.
+const CONTENT_REVISION = 'equilibrium-sample-2026-10-04-v1';
+const SCOPE = 'Year 12 Chemistry · Module 5 · Equilibrium fundamentals';
+const QUESTIONS = [
+  {
+    id: 'dynamic', title: 'A busy balance', topic: 'Dynamic equilibrium',
+    learn: 'A reversible reaction can keep changing at particle level while the bulk mixture looks unchanged. Compare rates, not just amounts.',
+    equation: 'reactants ⇌ products',
+    stem: 'A sealed reacting mixture has reached dynamic equilibrium at constant temperature. Which statement must be true?',
+    answers: ['The forward and reverse reaction rates are equal.', 'The reactant and product concentrations are equal.', 'Both reactions have stopped.', 'All reactants have become products.'], answer: 0,
+    reasons: ['Equal concentrations are necessary for equal rates.', 'Particles still react in both directions, with no net change in composition.', 'A sealed vessel prevents every chemical reaction.'], reason: 1,
+    explanation: 'Dynamic means both reactions continue. Equal opposing rates keep each concentration steady; the concentrations need not equal one another. Stopping and complete conversion are different ideas.',
+  },
+  {
+    id: 'closed', title: 'Keep the system together', topic: 'Closed systems',
+    learn: 'Matter escaping can keep changing a mixture. A closed system prevents that exchange; it can still exchange energy with its surroundings.',
+    equation: 'N₂O₄(g) ⇌ 2NO₂(g)',
+    stem: 'Which setup best allows this gas mixture to establish equilibrium at a controlled temperature, given enough time?',
+    answers: ['An open flask with gas continuously escaping.', 'A vessel from which NO₂ is continuously removed.', 'A sealed vessel maintained at constant temperature.', 'A sealed vessel must be at equilibrium immediately.'], answer: 2,
+    reasons: ['Sealing guarantees instant equality of concentrations.', 'A constant temperature stops all molecular collisions.', 'Retaining the gases allows both directions to continue without ongoing material loss.'], reason: 2,
+    explanation: 'A sealed, temperature-controlled vessel retains the reacting gases. The system still needs time to equilibrate. Open loss or continuous product removal disturbs the composition; sealing alone does not establish equilibrium instantly.',
+  },
+  {
+    id: 'add-reactant', title: 'A fresh supply', topic: 'Concentration changes',
+    learn: 'After a concentration disturbance, consider which net reaction consumes some of the added species. Temperature and volume stay fixed in this challenge.',
+    equation: 'H₂(g) + I₂(g) ⇌ 2HI(g)',
+    stem: 'H₂ is added to an equilibrium mixture at constant temperature and volume. Which net reaction occurs as equilibrium is re-established?',
+    answers: ['A net reverse reaction forms more H₂.', 'A net forward reaction forms more HI.', 'No change, because equilibrium can never be disturbed.', 'The equilibrium constant increases.'], answer: 1,
+    reasons: ['The forward reaction consumes some of the added H₂.', 'Adding any gas always favours the side with fewer molecules.', 'The system removes every added H₂ molecule.'], reason: 0,
+    explanation: 'Adding H₂ lowers Qc for this equation below Kc. A net forward reaction consumes some H₂ and I₂ and forms HI until Qc = Kc again. The added H₂ is not necessarily used up; Kc is unchanged at this temperature.',
+  },
+  {
+    id: 'compression', title: 'Room to react', topic: 'Gas pressure and volume',
+    learn: 'For an ideal-gas equilibrium, a volume decrease at constant temperature favours the side with fewer moles of gas, when the two sides differ.',
+    equation: '2SO₂(g) + O₂(g) ⇌ 2SO₃(g)',
+    stem: 'The vessel is compressed at constant temperature. In which direction does the equilibrium composition shift?',
+    answers: ['Left, towards three moles of gas.', 'Neither way, because temperature is fixed.', 'It depends only on which side has heavier molecules.', 'Right, towards two moles of gas.'], answer: 3,
+    reasons: ['Compression changes the balanced coefficients.', 'The forward reaction reduces the total number of gas particles.', 'Pressure only affects reaction speed and never composition.'], reason: 1,
+    explanation: 'The left side has three gas moles per reaction as written; the right has two. Compression favours net forward reaction. A fixed temperature keeps Kc unchanged, but the equilibrium composition can still change.',
+  },
+  {
+    id: 'equal-gas', title: 'A useful exception', topic: 'Equal gas-mole totals',
+    learn: 'Count all gas coefficients on each side before predicting a pressure effect. Assume ideal gases here.',
+    equation: 'H₂(g) + I₂(g) ⇌ 2HI(g)',
+    stem: 'An equilibrium mixture is compressed at constant temperature. What happens to its equilibrium mole proportions?',
+    answers: ['They remain unchanged.', 'They shift entirely to HI.', 'They shift towards H₂ and I₂.', 'They become equal for all three gases.'], answer: 0,
+    reasons: ['Compression has no effect on any gas concentration.', 'The gas molecules stop colliding after compression.', 'Both sides have two gas moles, so uniform compression leaves Qc unchanged.'], reason: 2,
+    explanation: 'All concentrations rise immediately, but [HI]² and [H₂][I₂] scale by the same factor. Qc remains Kc, so there is no net composition shift under the ideal-gas model. Unchanged mole proportions do not mean unchanged concentrations.',
+  },
+  {
+    id: 'temperature', title: 'Warm the model', topic: 'Temperature changes',
+    learn: 'Identify the endothermic direction before predicting a temperature effect. This is a conceptual model, not an instruction to heat real chemicals.',
+    equation: 'N₂O₄(g) ⇌ 2NO₂(g)    ΔH > 0 (forward)',
+    stem: 'This equilibrium mixture is heated. Which prediction is correct for the equilibrium position and Kc?',
+    answers: ['It shifts left and Kc decreases.', 'It shifts right and Kc increases.', 'It shifts right while Kc must stay constant.', 'It does not shift because the vessel is sealed.'], answer: 1,
+    reasons: ['Heating favours every forward reaction, regardless of ΔH.', 'A sealed system cannot exchange energy.', 'Higher temperature favours the endothermic direction, which is forward here.'], reason: 2,
+    explanation: 'The forward reaction is endothermic, so heating favours NO₂ formation and increases Kc. Temperature can change Kc; concentration, volume and a catalyst at the same temperature do not.',
+  },
+  {
+    id: 'catalyst', title: 'Faster, same destination', topic: 'Catalysts',
+    learn: 'A catalyst changes the pathway and helps both reaction directions. Keep the distinction between rate and equilibrium composition in mind.',
+    equation: 'reversible reaction + suitable catalyst',
+    stem: 'A suitable catalyst is added to a mixture already at equilibrium, with temperature unchanged. What is the expected effect?',
+    answers: ['Kc becomes larger.', 'Only the forward reaction becomes faster.', 'The equilibrium composition stays the same.', 'The reaction goes to completion.'], answer: 2,
+    reasons: ['Both directions are accelerated without changing Kc.', 'A catalyst permanently supplies extra product.', 'The reverse reaction is completely blocked.'], reason: 0,
+    explanation: 'A catalyst accelerates both opposing reactions. It can shorten the time to reach equilibrium from a non-equilibrium mixture, but it does not alter Kc or the equilibrium composition at fixed temperature.',
+  },
+  {
+    id: 'expression', title: 'Write the balance', topic: 'Equilibrium expressions',
+    learn: 'In the concentration expression, use products over reactants and raise each concentration to its balanced coefficient. Square brackets mean concentration.',
+    equation: 'N₂(g) + 3H₂(g) ⇌ 2NH₃(g)',
+    stem: 'Which is the correct Kc expression for this equation?',
+    answers: ['[N₂][H₂]³ / [NH₃]²', '[NH₃] / ([N₂][H₂])', '2[NH₃] / (3[N₂][H₂])', '[NH₃]² / ([N₂][H₂]³)'], answer: 3,
+    reasons: ['Coefficients multiply concentrations outside brackets.', 'Balanced coefficients become powers in the products-over-reactants expression.', 'Every species always has power one.'], reason: 1,
+    explanation: 'NH₃ is the product and has coefficient 2, so [NH₃]² is the numerator. N₂ has coefficient 1 and H₂ has coefficient 3, giving [N₂][H₂]³ in the denominator. Coefficients are powers, not prefactors.',
+  },
+  {
+    id: 'calculate', title: 'A small calculation', topic: 'Calculating Kc',
+    learn: 'Use equilibrium concentrations, not starting concentrations. For this equation the concentration units cancel in the ratio.',
+    equation: 'H₂(g) + I₂(g) ⇌ 2HI(g)',
+    stem: 'At equilibrium, [HI] = 0.40 mol L⁻¹, [H₂] = 0.20 mol L⁻¹ and [I₂] = 0.20 mol L⁻¹. What is Kc?',
+    answers: ['4.0', '1.0', '0.25', '10'], answer: 0,
+    reasons: ['Use 0.40 ÷ (0.20 × 0.20).', 'Use (0.20 × 0.20) ÷ 0.40².', 'Use 0.40² ÷ (0.20 × 0.20).'], reason: 2,
+    explanation: 'Kc = [HI]² / ([H₂][I₂]) = 0.16 / 0.04 = 4.0. The 10 distractor leaves HI unsquared, while 0.25 reverses the ratio. This calculation says nothing about how quickly equilibrium was reached.',
+  },
+  {
+    id: 'quotient', title: 'Which way next?', topic: 'Comparing Qc and Kc',
+    learn: 'Qc uses the current mixture and Kc describes equilibrium at that temperature. Comparing them predicts the net reaction direction.',
+    equation: 'A(g) ⇌ B(g)    Qc = [B]/[A]',
+    stem: 'For this model reaction at a fixed temperature, Qc = 0.50 and Kc = 2.0. What happens as equilibrium is approached?',
+    answers: ['A net reverse reaction makes more A.', 'A net forward reaction makes more B.', 'No net reaction, because Qc is positive.', 'Kc falls until it equals the initial Qc.'], answer: 1,
+    reasons: ['Qc < Kc, so the product-to-reactant ratio must rise.', 'A smaller Qc means the mixture already contains too much product.', 'Kc changes whenever concentrations change.'], reason: 0,
+    explanation: 'Qc is smaller than Kc, so there is too little B relative to A for equilibrium at this temperature. Net forward reaction raises [B]/[A] until Qc reaches 2.0. Kc does not move to meet the initial Qc.',
+  },
+  {
+    id: 'solid', title: 'The solid stays out', topic: 'Heterogeneous equilibrium',
+    learn: 'Pure solids have effectively constant activity and are omitted from this school-level equilibrium expression. Both solid phases must remain present.',
+    equation: 'CaCO₃(s) ⇌ CaO(s) + CO₂(g)',
+    stem: 'At fixed temperature and volume, more pure CaCO₃ is added to a mixture at equilibrium while both solids remain present. What happens to equilibrium CO₂ concentration?',
+    answers: ['It doubles for every doubling of solid mass.', 'It falls to zero.', 'It remains unchanged.', 'It must rise because a reactant was added.'], answer: 2,
+    reasons: ['Pure solids are included using their masses in Kc.', 'For this system, the simplified expression is Kc = [CO₂].', 'The solid cannot take part in the reaction.'], reason: 1,
+    explanation: 'With both pure solid phases present, the simplified Kc expression contains only [CO₂]. At unchanged temperature, Kc is fixed, so adding more pure solid does not change the equilibrium gas concentration. Solids do react; omission does not mean inactivity.',
+  },
+  {
+    id: 'constant', title: 'The final control', topic: 'What changes Kc?',
+    learn: 'A new equilibrium composition does not always mean a new equilibrium constant. Keep the reaction equation unchanged for this comparison.',
+    equation: 'same reaction equation · equilibrium constant Kc',
+    stem: 'For the same reaction as written, which change can alter Kc?',
+    answers: ['Adding more reactant at fixed temperature.', 'Compressing an ideal-gas mixture at fixed temperature.', 'Adding a suitable catalyst at fixed temperature.', 'Changing the temperature.'], answer: 3,
+    reasons: ['Any change that shifts composition changes Kc.', 'Kc is a measure of reaction speed.', 'Kc depends on temperature for a specified reaction.'], reason: 2,
+    explanation: 'Changing temperature can change Kc for the same reaction. Concentration or pressure changes may alter equilibrium composition while preserving Kc at that temperature. A catalyst affects rate rather than Kc. Reversing or rescaling the equation would also change the expression, but is excluded here.',
+  },
+];
+const UPGRADES = [
+  {id:'notebook', name:'Field notebook', cost:6, mark:'01', description:'Add a permanent concept card to your bench.', note:'Rates can be equal while concentrations are different. Read the quantity named in the question.'},
+  {id:'bath', name:'Temperature station', cost:12, mark:'02', description:'Equip a model temperature-control station.', note:'A temperature change can alter Kc. A concentration change at fixed temperature does not.'},
+  {id:'sensor', name:'Gas sensor', cost:18, mark:'03', description:'Add a gas-ratio display to your bench.', note:'For compression questions, count only gas coefficients. Equal gas-mole totals give no ideal-gas shift.'},
+  {id:'console', name:'Analysis console', cost:24, mark:'04', description:'Complete your bench with an equation console.', note:'Write the balanced equation first, then use products over reactants with coefficients as powers.'},
+];
+
+const CHECKPOINT_KEY = 'hsclegends.offline-equilibrium.v1';
+const UNDO_KEY = CHECKPOINT_KEY + '.undo';
+const MAX_EARNED = QUESTIONS.length * 10;
+// Far below the IEEE-754 safe-integer limit, with room for a whole run.
+const MAX_BASE_REVISION = 1_000_000_000;
+const MAX_EVENTS = 100;
+const validBase = value => Number.isSafeInteger(value) && value >= 0 && value <= MAX_BASE_REVISION;
+function validClock(state) {
+  return !!state && validBase(state.baseRevision) && Array.isArray(state.events) && state.events.length <= MAX_EVENTS && Number.isSafeInteger(state.revision) && state.revision === state.baseRevision + state.events.length;
+}
+const EVENT_TYPES = ['START', 'SUBMIT', 'RETRY', 'REVIEW', 'BUY', 'NEXT'];
+function createState(baseRevision = 0) {
+  if(!validBase(baseRevision)) throw new RangeError('Invalid base revision.');
+  return {baseRevision, revision:baseRevision, index:0, phase:'learn', records:QUESTIONS.map(() => ({attempts:[], reviewed:false})), owned:[], events:[]};
+}
+function rewards(record, question) {
+  const first = record.attempts[0];
+  const second = record.attempts[1];
+  const answer = first?.choice === question.answer ? 4 : second?.choice === question.answer ? 2 : 0;
+  const reasoning = first?.reason === question.reason ? 4 : second?.reason === question.reason ? 2 : 0;
+  return {answer, reasoning, review:record.reviewed ? 2 : 0, total:answer + reasoning + (record.reviewed ? 2 : 0)};
+}
+function economy(state) {
+  const earned = state.records.reduce((sum,r,i) => sum + rewards(r,QUESTIONS[i]).total,0);
+  const spent = state.owned.reduce((sum,id) => sum + UPGRADES.find(u => u.id === id).cost,0);
+  return {earned, spent, available:earned-spent};
+}
+function canRetry(state) {
+  const r = state.records[state.index], q = QUESTIONS[state.index];
+  return state.phase === 'feedback' && r.attempts.length === 1 && (r.attempts[0].choice !== q.answer || r.attempts[0].reason !== q.reason);
+}
+function canBuy(state,id) {
+  const u = UPGRADES.find(item => item.id === id);
+  return state.phase === 'shop' && !!u && !state.owned.includes(id) && economy(state).available >= u.cost;
+}
+// Every UI action carries the revision from the render that created it. Retained
+// handlers and duplicate clicks are rejected by the same pure transition logic.
+function transition(state, action) {
+  if (!validClock(state) || !action || action.expectedRevision !== state.revision) return state;
+  if (action.type === 'RESET') return validBase(state.revision + 1) ? createState(state.revision + 1) : state;
+  if(state.events.length >= MAX_EVENTS) return state;
+  if (!EVENT_TYPES.includes(action.type)) return state;
+  const q = QUESTIONS[state.index], r = state.records[state.index];
+  let valid = false;
+  switch(action.type) {
+    case 'START': valid = state.phase === 'learn'; break;
+    case 'SUBMIT': valid = state.phase === 'answer' && r.attempts.length < 2 && Number.isInteger(action.choice) && action.choice >= 0 && action.choice < q.answers.length && Number.isInteger(action.reason) && action.reason >= 0 && action.reason < q.reasons.length; break;
+    case 'RETRY': valid = canRetry(state); break;
+    case 'REVIEW': valid = state.phase === 'feedback' && !r.reviewed; break;
+    case 'BUY': valid = canBuy(state,action.id); break;
+    case 'NEXT': valid = state.phase === 'shop'; break;
+  }
+  if (!valid) return state;
+  const next = structuredClone(state);
+  const nr = next.records[next.index];
+  switch(action.type) {
+    case 'START': next.phase = 'answer'; break;
+    case 'SUBMIT': nr.attempts.push({choice:action.choice,reason:action.reason}); next.phase = 'feedback'; break;
+    case 'RETRY': next.phase = 'answer'; break;
+    case 'REVIEW': nr.reviewed = true; next.phase = 'shop'; break;
+    case 'BUY': next.owned.push(action.id); break;
+    case 'NEXT': if(next.index === QUESTIONS.length - 1) next.phase = 'complete'; else {next.index++; next.phase='learn';} break;
+  }
+  const clean = {type:action.type, expectedRevision:state.revision};
+  if(action.type === 'SUBMIT') {clean.choice=action.choice;clean.reason=action.reason;}
+  if(action.type === 'BUY') clean.id=action.id;
+  next.events.push(clean);
+  next.revision++;
+  return next;
+}
+function encodeCheckpoint(state) {
+  return JSON.stringify({version:1, contentRevision:CONTENT_REVISION, baseRevision:state.baseRevision, events:state.events});
+}
+// Replay accepted actions instead of trusting stored currency or progress fields.
+// This is corruption protection, not an anti-cheat or authentication boundary.
+function decodeCheckpoint(raw) {
+  try {
+    if(typeof raw !== 'string' || raw.length > 50000) throw new Error('Invalid checkpoint.');
+    const data = JSON.parse(raw);
+    if(data.version !== 1 || data.contentRevision !== CONTENT_REVISION || !validBase(data.baseRevision) || !Array.isArray(data.events) || data.events.length > MAX_EVENTS) throw new Error('Unsupported checkpoint.');
+    let state = createState(data.baseRevision);
+    for(const action of data.events) {
+      if(!action || !EVENT_TYPES.includes(action.type)) throw new Error('Invalid event.');
+      const next = transition(state,action);
+      if(next === state) throw new Error('Invalid event sequence.');
+      state=next;
+    }
+    return {state, error:null};
+  } catch { return {state:null, error:'This local checkpoint could not be read. It has not been overwritten.'}; }
+}
+function readCheckpoint(storage,key=CHECKPOINT_KEY) {
+  try {const raw=storage.getItem(key);return raw === null ? {state:null,error:null} : decodeCheckpoint(raw);} catch {return {state:null,error:'Browser storage is unavailable. This run stays in memory only.'};}
+}
+function saveCheckpoint(storage,state,key=CHECKPOINT_KEY) {
+  try {storage.setItem(key,encodeCheckpoint(state));return null;} catch {return 'Local save failed. Keep this tab open; progress is in memory only.';}
+}
+// Rebase a recoverable reset so old pre-reset callbacks never regain ownership.
+function restoreProgress(current, saved) {
+  if(!validClock(current) || !validBase(current.revision + 1)) return current;
+  let checked;
+  try {checked=decodeCheckpoint(encodeCheckpoint(saved)).state;} catch {return current;}
+  if(!checked) return current;
+  let restored=createState(current.revision + 1);
+  for(const event of checked.events) {
+    const next=transition(restored,{...event,expectedRevision:restored.revision});
+    if(next===restored) return current;
+    restored=next;
+  }
+  return restored;
+}
+
+const app = document.getElementById('app');
+const esc = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let storage;
+try {storage=window.localStorage;} catch {storage=null;}
+const loaded=readCheckpoint(storage);
+let state=loaded.state || createState();
+let undoState=readCheckpoint(storage,UNDO_KEY).state;
+let notice=loaded.error || (loaded.state ? 'Your local checkpoint is restored.' : 'No account needed. Your checkpoint stays in this browser.');
+let blockSaving=!!loaded.error;
+let largeText=false;
+let lastRaw=null;
+try {lastRaw=storage.getItem(CHECKPOINT_KEY);} catch { /* Memory-only mode is already disclosed. */ }
+const button=(label,type,extra='')=>`<button type="button" data-action="${type}" data-revision="${state.revision}" ${extra}>${label}</button>`;
+const glyph=(kind)=>`<svg viewBox="0 0 120 100" aria-hidden="true" focusable="false"><path d="M15 84h92" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>${kind==='notebook'?'<rect x="34" y="19" width="52" height="62" rx="7" fill="#f4e2cb" stroke="currentColor" stroke-width="4"/><path d="M44 19v62M54 37h21M54 48h21M54 59h15" stroke="currentColor" stroke-width="3"/>':kind==='bath'?'<rect x="22" y="47" width="76" height="34" rx="7" fill="#cde0d1" stroke="currentColor" stroke-width="4"/><path d="M36 47V25h48v22M32 60h56M54 69h12" fill="none" stroke="currentColor" stroke-width="4"/>':kind==='sensor'?'<rect x="43" y="17" width="39" height="64" rx="10" fill="#f4e2cb" stroke="currentColor" stroke-width="4"/><rect x="51" y="30" width="23" height="19" rx="3" fill="#6d5b8a"/><path d="M51 64h23" stroke="currentColor" stroke-width="4"/>':'<rect x="20" y="24" width="80" height="49" rx="8" fill="#ddd3e8" stroke="currentColor" stroke-width="4"/><path d="M58 74v9M39 84h39M31 53l13-14 13 21 14-19 16 10" fill="none" stroke="currentColor" stroke-width="4"/>'}</svg>`;
+function persist() {
+  if(blockSaving) return;
+  try {
+    if(storage.getItem(CHECKPOINT_KEY)!==lastRaw) {blockSaving=true;notice='Another tab changed the local checkpoint. This tab is now memory-only. Reload to use the newer saved run, or reset explicitly.';return;}
+  } catch {blockSaving=true;notice='Browser storage is unavailable. This run stays in memory only.';return;}
+  const error=saveCheckpoint(storage,state);
+  if(error) {notice=error;blockSaving=true;} else {lastRaw=encodeCheckpoint(state);notice='Checkpoint saved in this browser only.';}
+}
+function dispatch(action) {
+  const next=transition(state,action);
+  if(next===state) return;
+  state=next;persist();render(true);
+}
+function render(focus=false) {
+  const q=QUESTIONS[state.index], record=state.records[state.index], money=economy(state);
+  const reviewed=state.records.filter(r=>r.reviewed).length;
+  const stage=['learn','answer','feedback','shop'].indexOf(state.phase);
+  app.innerHTML=`
+    <div class="offline-banner">OFFLINE PROTOTYPE / SAMPLE CONTENT <span>Not a live classroom game</span></div>
+    <header class="topbar"><div class="brand"><span class="brand-mark" aria-hidden="true">L<span>G</span></span><div>HSC LEGENDS<small>Lab Tycoon · concept study</small></div></div><div class="top-actions"><button id="text-size" type="button" aria-pressed="${largeText}">Aa <span>Larger text</span></button><button id="open-reset" type="button">Reset run</button></div></header>
+    <main id="main"><section class="intro"><div><p class="eyebrow">CHEMISTRY / EQUILIBRIUM LAB</p><h1>Small discoveries.<br><span>A growing lab.</span></h1><p class="intro-copy">Think it through. Explain your choice.<br>Turn what you learn into a better-equipped bench.</p><p class="scope">${esc(SCOPE)}</p></div><div class="overview card"><span class="eyebrow">YOUR RESEARCH GRANT</span><strong class="balance">${money.available}<small>credits available</small></strong><p><b>${money.earned}</b> earned · <b>${money.spent}</b> invested</p><div class="progress-label"><label for="run-progress">Challenges reviewed</label><b>${reviewed} / ${QUESTIONS.length}</b></div><progress id="run-progress" max="${QUESTIONS.length}" value="${reviewed}">${reviewed} of ${QUESTIONS.length}</progress><span class="small">No timer. No speed bonus. One local run.</span></div></section>
+    <div class="workspace"><section class="challenge card" aria-labelledby="challenge-title"><nav class="steps" aria-label="Challenge steps">${['Learn','Answer + reason','Explain','Upgrade'].map((s,i)=>`<span ${i===stage?'aria-current="step" class="current"':''}>${i+1}<span>${s}</span></span>`).join('')}</nav>${state.phase==='complete'?completeView():challengeView(q,record)}</section>
+    <aside class="bench card" aria-labelledby="bench-title"><div class="section-heading"><div><p class="eyebrow">YOUR BENCH</p><h2 id="bench-title">Build with purpose</h2></div><span class="counter">${state.owned.length} / 4</span></div><p class="small">Choose equipment after reviewing a challenge. Upgrades add study cards and change your bench. They never multiply scores.</p><div class="equipment-grid">${UPGRADES.map(u=>`<div class="equipment ${state.owned.includes(u.id)?'owned':''}">${glyph(u.id)}<strong>${esc(u.name)}</strong><small>${state.owned.includes(u.id)?'Installed':`${u.cost} credits`}</small></div>`).join('')}</div>${state.owned.length?`<div class="study-cards">${UPGRADES.filter(u=>state.owned.includes(u.id)).map(u=>`<details><summary>${esc(u.name)} note</summary><p>${esc(u.note)}</p></details>`).join('')}</div>`:'<p class="bench-note">First goal: 6 credits for your field notebook.</p>'}<div class="no-network"><span aria-hidden="true">◉</span> Solo, offline, local only</div></aside></div>
+    <section class="rules card"><details><summary>How credits work <span>Maximum ${MAX_EARNED} per run</span></summary><ul><li>First attempt: 4 for a correct answer + 4 for a correct reason.</li><li>One optional retry: 2 for each previously incorrect part you now correct. Already-earned parts never pay again.</li><li>After feedback: 2 for choosing “Finish review”, once per challenge. This rewards completion of the review step; it cannot measure whether you read it.</li><li>Maximum 10 per challenge. No timer, passive income, random rewards, streak multipliers or real-money value.</li><li>Equipment is optional and cosmetic/study support. All learning notes, feedback and text-size controls are free.</li></ul><p>Local practice credits are not marks, mastery ratings, HSC predictions or account XP.</p></details></section>
+    <p class="storage-status" role="status">${esc(notice)}</p>${undoState?'<button class="undo" type="button" id="undo-reset">Undo last reset</button>':''}
+    <footer><b>Sample content · selected Year 12 Chemistry Module 5 concepts.</b><p>12 original practice challenges. Not official NESA questions or full syllabus coverage. Conceptual chemistry only; no real experiment instructions. No names, student records, accounts, database, analytics or network calls.</p><p>Content and mechanics notes are included in README.md. Visual/browser acceptance is still unrun.</p></footer></main>
+    <dialog id="reset-dialog" aria-labelledby="reset-title"><h2 id="reset-title">Start a new local run?</h2><p>This resets this prototype’s answers, credits and equipment in this browser. It does not affect HSC Legends accounts.</p><p>The previous run is kept for “Undo last reset”, in this tab and in browser storage when available. A second reset replaces that backup.</p><div class="button-row"><button type="button" id="cancel-reset">Keep this run</button><button type="button" id="confirm-reset" class="primary">Reset local run</button></div></dialog>`;
+  wire();
+  if(focus) document.getElementById('challenge-title')?.focus();
+}
+function heading(q) {return `<p class="eyebrow">CHALLENGE ${String(state.index+1).padStart(2,'0')} / 12 · ${esc(q.topic)}</p><h2 id="challenge-title" tabindex="-1">${esc(q.title)}</h2>`;}
+function challengeView(q,r) {
+  let html=heading(q);
+  if(state.phase==='learn') return html+`<div class="learn-note"><span class="label">BEFORE YOU INVESTIGATE</span><p>${esc(q.learn)}</p></div><div class="equation">${esc(q.equation)}</div><p class="small">Read at your pace. The note stays available when you answer.</p>${button('Open the challenge <span aria-hidden="true">→</span>','START','class="primary"')}`;
+  if(state.phase==='answer') return html+`<details class="hint"><summary>Learning note · always free</summary><p>${esc(q.learn)}</p></details><div class="equation">${esc(q.equation)}</div><h3>${esc(q.stem)}</h3>${r.attempts.length?'<p class="retry-banner">Retry · only newly corrected parts earn 2 credits each. Feedback is already available below the learning note.</p><details class="hint"><summary>Revisit the explanation</summary><p>'+esc(q.explanation)+'</p></details>':''}<form id="answer-form" data-revision="${state.revision}"><fieldset><legend>1. Choose your answer</legend>${q.answers.map((a,i)=>option('choice',a,i)).join('')}</fieldset><fieldset class="reason-field"><legend>2. Choose the best reason</legend>${q.reasons.map((a,i)=>option('reason',a,i)).join('')}</fieldset><p class="small" id="selection-help">Choose one answer and one reason before checking.</p><button class="primary" id="submit-answer" type="submit" disabled aria-describedby="selection-help">Check answer + reason</button></form>`;
+  if(state.phase==='feedback') {
+    const a=r.attempts.at(-1), earned=rewards(r,q), ac=a.choice===q.answer, rc=a.reason===q.reason;
+    return html+`<div class="feedback-title"><span class="result-pill">${ac&&rc?'Both parts correct':ac||rc?'One part to rethink':'A chance to rethink'}</span><b>${earned.total} credits so far</b></div><div class="result-row"><span>${ac?'Correct answer':'Answer to revisit'}</span><p>Your choice: ${esc(q.answers[a.choice])}</p><strong>Key: ${esc(q.answers[q.answer])}</strong></div><div class="result-row"><span>${rc?'Correct reasoning':'Reason to revisit'}</span><p>Your reason: ${esc(q.reasons[a.reason])}</p><strong>Key: ${esc(q.reasons[q.reason])}</strong></div><div class="explanation"><span class="label">THE SCIENCE BEHIND IT</span><p>${esc(q.explanation)}</p></div><p class="receipt">Award so far: answer ${earned.answer} + reasoning ${earned.reasoning}. Finish review adds 2 once.</p><div class="button-row">${canRetry(state)?button('Try once more','RETRY'):''}${button('Finish review · +2 credits','REVIEW','class="primary"')}</div>`;
+  }
+  const earned=rewards(r,q);
+  return html+`<div class="review-receipt"><span class="label">REVIEW COMPLETE</span><h3>+${earned.total} research credits</h3><p>Answer ${earned.answer} + reasoning ${earned.reasoning} + review ${earned.review}</p></div><h3>What will you add to your lab?</h3><p class="small">Spend now or save for a later challenge. Each item can be bought once.</p><div class="shop">${UPGRADES.map(u=>`<div class="shop-item"><div><b>${esc(u.name)}</b><p>${esc(u.description)}</p></div>${button(state.owned.includes(u.id)?'Installed':`Buy · ${u.cost}`, 'BUY',`data-id="${u.id}" ${canBuy(state,u.id)?'':'disabled'}`)}${!state.owned.includes(u.id)&&!canBuy(state,u.id)?`<small>Need ${u.cost-economy(state).available} more credits</small>`:''}</div>`).join('')}</div>${button(state.index===QUESTIONS.length-1?'Finish this run':'Next challenge <span aria-hidden="true">→</span>','NEXT','class="primary"')}`;
+}
+function option(name,label,i) {return `<label class="option"><input type="radio" name="${name}" value="${i}" required><span class="option-marker" aria-hidden="true">${String.fromCharCode(65+i)}</span><span>${esc(label)}</span></label>`;}
+function completeView() {
+  const money=economy(state);
+  return `<p class="eyebrow">ALL 12 CHALLENGES REVIEWED</p><h2 id="challenge-title" tabindex="-1">Your lab, built on thinking.</h2><p class="complete-lede">You’ve worked through equilibrium, disturbances and constants. Keep the explanations handy and return to anything you want to practise.</p><div class="review-receipt"><h3>${money.earned} credits earned · ${state.owned.length} upgrades</h3><p>${money.available} unspent + ${money.spent} invested = ${money.earned} earned</p></div><p class="small">This is a local practice record, not an assessment or measure of mastery.</p><h3>Your review notebook</h3><div class="notebook">${QUESTIONS.map((q,i)=>{const r=state.records[i],rw=rewards(r,q);return `<details><summary>${i+1}. ${esc(q.title)} <span>${rw.total}/10</span></summary><p>${esc(q.stem)}</p><p><b>Answer:</b> ${esc(q.answers[q.answer])}</p><p><b>Reason:</b> ${esc(q.reasons[q.reason])}</p><p>${esc(q.explanation)}</p><p class="small">${r.attempts.length} attempt${r.attempts.length===1?'':'s'} · answer ${rw.answer} + reasoning ${rw.reasoning} + review ${rw.review}</p></details>`;}).join('')}</div>`;
+}
+function wire() {
+  const revision=state.revision;
+  const currentControl=(id,element)=>state.revision===revision && !!element && document.getElementById(id)===element;
+  app.querySelectorAll('[data-action]').forEach(el=>el.addEventListener('click',()=>{
+    if(state.revision!==revision || !app.contains(el)) return;
+    dispatch({type:el.dataset.action,expectedRevision:revision,id:el.dataset.id});
+  }));
+  const form=document.getElementById('answer-form');
+  const submit=document.getElementById('submit-answer');
+  // A render owns its own selections. Detached forms can never write into a
+  // later question's inputs, even when their event callbacks are retained.
+  const selections={choice:null,reason:null};
+  const currentForm=()=>state.phase==='answer' && currentControl('answer-form',form) && currentControl('submit-answer',submit);
+  form?.addEventListener('change',event=>{
+    if(!currentForm()) return;
+    if(event.target.name==='choice'||event.target.name==='reason') selections[event.target.name]=Number(event.target.value);
+    submit.disabled=selections.choice===null||selections.reason===null;
+  });
+  form?.addEventListener('submit',event=>{
+    event.preventDefault();
+    if(!currentForm() || selections.choice===null || selections.reason===null) return;
+    dispatch({type:'SUBMIT',expectedRevision:revision,...selections});
+  });
+  const textSize=document.getElementById('text-size');
+  textSize.addEventListener('click',()=>{
+    if(!currentControl('text-size',textSize)) return;
+    largeText=!largeText;document.documentElement.classList.toggle('large-text',largeText);textSize.setAttribute('aria-pressed',String(largeText));
+  });
+  const dialog=document.getElementById('reset-dialog');
+  const openReset=document.getElementById('open-reset');
+  const cancelReset=document.getElementById('cancel-reset');
+  const confirmReset=document.getElementById('confirm-reset');
+  openReset.addEventListener('click',()=>{
+    if(!currentControl('open-reset',openReset)) return;
+    dialog.showModal();cancelReset.focus();
+  });
+  cancelReset.addEventListener('click',()=>{
+    if(currentControl('cancel-reset',cancelReset)) dialog.close();
+  });
+  confirmReset.addEventListener('click',()=>{
+    if(!currentControl('confirm-reset',confirmReset) || !dialog.open) return;
+    const next=transition(state,{type:'RESET',expectedRevision:revision});
+    if(next===state) {notice='The local revision limit has been reached. This run was not reset.';render(true);return;}
+    undoState=state;const backupError=saveCheckpoint(storage,undoState,UNDO_KEY);
+    state=next;
+    blockSaving=false;try {lastRaw=storage.getItem(CHECKPOINT_KEY);} catch {blockSaving=true;}
+    persist();notice=blockSaving ? 'Run reset in memory only. The new run could not be saved. Undo is available in this tab.' : backupError ? 'Run reset and saved. Undo is available in this tab only because the backup could not be saved.' : 'Run reset. Undo last reset is available below.';render(true);
+  });
+  const undoControl=document.getElementById('undo-reset');
+  const backup=undoState;
+  undoControl?.addEventListener('click',()=>{
+    if(!currentControl('undo-reset',undoControl) || !backup || undoState!==backup) return;
+    const restored=restoreProgress(state,backup);
+    if(restored===state) {notice='The saved backup could not be restored safely. This run is unchanged.';render(true);return;}
+    state=restored;undoState=null;persist();
+    // Retain a valid backup rather than deleting any storage. This control hides
+    // for this tab; a reload may offer the same recovery again, without awards.
+    notice=blockSaving ? 'Previous run restored in memory only; it could not be saved. No extra credits were awarded.' : 'Previous run restored. No extra credits were awarded.';render(true);
+  });
+}
+window.addEventListener('storage',event=>{
+  if(event.key===CHECKPOINT_KEY&&event.newValue!==lastRaw) {blockSaving=true;notice='Another tab changed the checkpoint. This tab is now memory-only. Reload to load the saved run.';const el=app.querySelector('.storage-status');if(el)el.textContent=notice;}
+});
+render();
+
+})();</script></body></html>

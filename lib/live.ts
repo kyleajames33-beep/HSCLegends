@@ -90,8 +90,12 @@ export async function claimGameXp(
 
 // Host/projector: how many players have answered the current question.
 export async function liveAnswerCount(sb: SupabaseClient, sessionId: string, index: number): Promise<{ answered: number; total: number; correct: number }> {
-  const { data } = await sb.rpc('live_answer_count', { p_session: sessionId, p_index: index });
-  return (data?.[0] ?? { answered: 0, total: 0, correct: 0 }) as { answered: number; total: number; correct: number };
+  const { data, error } = await sb.rpc('live_answer_count', { p_session: sessionId, p_index: index });
+  if (error) throw new Error(error.message);
+  const row = data?.[0];
+  if (!row || ![row.answered, row.total, row.correct].every((n) => Number.isInteger(n) && n >= 0)
+    || row.correct > row.answered) throw new Error('Answer count is unavailable.');
+  return { answered: row.answered, total: row.total, correct: row.correct };
 }
 
 export async function fetchPlayers(sb: SupabaseClient, sessionId: string): Promise<Player[]> {

@@ -12,20 +12,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { assessQuestion, diagnosticValue } from './lib/question-integrity.mjs';
+import { identifySourceCurriculum } from './lib/source-curriculum.mjs';
 
 const REPO = process.argv[2] || '/workspaces/Teaching-APP';
 const OUT = process.argv[3] || path.join(process.cwd(), 'out', 'questions.json');
-
-// --- Which subject dirs are HSC (v1). Junior maths/science are Phase 2. ---
-// Maps a subjects/ sub-path prefix -> canonical subject slug.
-const HSC_SUBJECTS = [
-  { dir: 'biology', subject: 'biology' },
-  { dir: 'chemistry', subject: 'chemistry' },
-  { dir: 'physics', subject: 'physics' },
-  { dir: 'maths-standard', subject: 'maths-standard' },
-  { dir: 'maths-advanced/extension1', subject: 'maths-ext1' }, // must test BEFORE maths-advanced
-  { dir: 'maths-advanced', subject: 'maths-advanced' },
-];
 
 const VALID_BLOOM = new Set(['remember', 'understand', 'apply', 'analyse']);
 
@@ -63,18 +53,26 @@ function findBanks(dir, acc = []) {
   return acc;
 }
 
-// Classify a file path -> {subject, year, module} or null if not an HSC bank.
+// Curriculum maps are evidence only; their labels never silently become target IDs.
+const curriculumMaps = new Map();
 function classify(relPath) {
-  // relPath like: subjects/maths-advanced/extension1/year11/module1/question-bank-data.js
-  const after = relPath.replace(/^subjects\//, '');
-  const match = HSC_SUBJECTS.find((s) => after.startsWith(s.dir + '/'));
-  if (!match) return null;
-  const yearM = relPath.match(/(?:^|\/)year(\d+)(?:\/|$)/);
-  const modM = relPath.match(/(?:^|\/)module(\d+)(?:\/|$)/);
-  if (!yearM || !modM) return null;
-  const year = Number(yearM[1]);
-  if (year !== 11 && year !== 12) return null; // HSC only
-  return { subject: match.subject, year, module: `module-${Number(modM[1])}` };
+  const mapFile = `subjects/${relPath.split('/')[1]}/curriculum-map.json`;
+  if (!curriculumMaps.has(mapFile)) {
+    const full = path.join(REPO, mapFile);
+    let map = null;
+    if (fs.existsSync(full)) {
+      try {
+        map = JSON.parse(fs.readFileSync(full, 'utf8'));
+        if (!map || !Array.isArray(map.modules)) throw new Error('Expected a modules array');
+        if (map.subject !== relPath.split('/')[1]) throw new Error('Curriculum-map subject does not match its source directory');
+      } catch (error) {
+        fileErrors.push({ file: mapFile, error: `Invalid curriculum evidence: ${error.message}` });
+        map = null;
+      }
+    }
+    curriculumMaps.set(mapFile, map);
+  }
+  return identifySourceCurriculum(relPath, curriculumMaps.get(mapFile));
 }
 
 // Run one file in an isolated fake-window sandbox; capture every known bank
@@ -84,7 +82,11 @@ function classify(relPath) {
 function loadFile(full) {
   let code = fs.readFileSync(full, 'utf8');
   for (const r of REPAIRS) if (full.endsWith(r.match)) code = r.fix(code);
-  let runtimeBank = {};
+  let runtimeBankMutated = false;
+  let runtimeBank = new Proxy({}, {
+    set(target, key, value) { runtimeBankMutated = true; target[key] = value; return true; },
+    deleteProperty(target, key) { runtimeBankMutated = true; return delete target[key]; },
+  });
   let runtimeBankAssigned = false;
   const fakeWindow = {};
   Object.defineProperty(fakeWindow, 'HSCQuestionBankData', {
@@ -108,7 +110,8 @@ function loadFile(full) {
   // Merging legacy data back in can resurrect questions filtered by the source.
   const win = sandbox.__CAP__.win;
   const legacy = sandbox.__CAP__.hasLegacy ? sandbox.__CAP__.lqb : {};
-  const hasRuntimeBank = runtimeBankAssigned || (win && Object.keys(win).length > 0);
+  const hasRuntimeBank = runtimeBankAssigned || runtimeBankMutated || (win && Object.keys(win).length > 0);
+  if (!hasRuntimeBank && !sandbox.__CAP__.hasLegacy) return { error: 'No supported question-bank container was published', data: {} };
   const data = hasRuntimeBank ? win : legacy;
   const selections = [];
   if (hasRuntimeBank && win && typeof win === 'object' && !Array.isArray(win) && legacy && typeof legacy === 'object' && !Array.isArray(legacy)) {
@@ -160,11 +163,14 @@ const dupes = [];
 const skippedFiles = [];
 const sourceSelections = [];
 const auditQuestions = [];
+const unsupportedQuestions = [];
+const skippedQuestionTypes = [];
 const stats = {}; // key: `${subject} y${year}` -> {original, variant}
 let recovered = 0; // review questions that needed LaTeX recovery
 
 // Shared ingest for both sources. `raw` is one source question object.
-function ingest(raw, meta, lessonId, rel, source, idx) {
+function ingest(raw, classification, lessonId, rel, source, idx) {
+  const { meta, identity } = classification;
   const sourceId = typeof raw?.id === 'string' || (typeof raw?.id === 'number' && Number.isFinite(raw.id)) ? String(raw.id).trim() : '';
   const qid = sourceId || `${lessonId}-${source}-${idx + 1}`;
   const assessment = assessQuestion(raw);
@@ -172,7 +178,13 @@ function ingest(raw, meta, lessonId, rel, source, idx) {
   const reasons = assessment.reasons;
   const audit = { id: qid, file: rel, lessonId, source, sourceIndex: idx,
     explanationStatus: assessment.explanationStatus, contentReview: assessment.contentReview,
-    metadata: assessment.metadata, reasons };
+    metadata: assessment.metadata, reasons, curriculumIdentity: identity };
+  if (!meta) {
+    audit.disposition = 'blocked-curriculum';
+    audit.question = diagnosticValue({ stem, options, correctIndex, explanation: assessment.explanation });
+    unsupportedQuestions.push(audit);
+    return;
+  }
   auditQuestions.push(audit);
   if (reasons.length) {
     // Quarantined items retain available instructional data for offline review.
@@ -230,18 +242,21 @@ function ingest(raw, meta, lessonId, rel, source, idx) {
 // Pass 1 — question-bank-data.js (Schemas A / A' / A")
 for (const full of findBanks(path.join(REPO, 'subjects'))) {
   const rel = path.relative(REPO, full).split(path.sep).join('/');
-  const meta = classify(rel);
-  if (!meta) {
-    skippedFiles.push({ file: rel, reason: 'outside-supported-subject-year-module-layout',
-      hscLayoutNeedsReview: HSC_SUBJECTS.some((s) => rel.startsWith(`subjects/${s.dir}/`)) && /(?:^|\/)year(?:11|12)(?:\/|$)/.test(rel) });
-    continue;
+  const classification = classify(rel);
+  if (!classification.meta) {
+    skippedFiles.push({ file: rel, reason: classification.reason,
+      hscLayoutNeedsReview: classification.hscLayoutNeedsReview,
+      curriculumIdentity: classification.identity ?? null });
+    // Junior sources are outside the declared scope. Senior sources are still
+    // inspected into diagnostics, but never emitted under an invented identity.
+    if (!classification.hscLayoutNeedsReview) continue;
   }
   const { error, data, selection } = loadFile(full);
   if (error) {
     fileErrors.push({ file: rel, error });
     continue;
   }
-  sourceSelections.push({ file: rel, ...selection });
+  sourceSelections.push({ file: rel, curriculumIdentity: classification.identity, ...selection });
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     fileErrors.push({ file: rel, error: 'Question bank must be a lesson-keyed object' });
     continue;
@@ -253,7 +268,7 @@ for (const full of findBanks(path.join(REPO, 'subjects'))) {
       fileErrors.push({ file: rel, error: `Question list is not an array: ${lessonId}` });
       continue;
     }
-    questions.forEach((q, idx) => ingest(q, meta, lessonId, rel, 'question-bank', idx));
+    questions.forEach((q, idx) => ingest(q, classification, lessonId, rel, 'question-bank', idx));
   }
 }
 
@@ -268,11 +283,14 @@ function findReviews(dir, acc = []) {
 }
 for (const full of findReviews(path.join(REPO, 'subjects'))) {
   const rel = path.relative(REPO, full).split(path.sep).join('/');
-  const meta = classify(rel);
-  if (!meta) {
-    skippedFiles.push({ file: rel, reason: 'outside-supported-subject-year-module-layout',
-      hscLayoutNeedsReview: HSC_SUBJECTS.some((s) => rel.startsWith(`subjects/${s.dir}/`)) && /(?:^|\/)year(?:11|12)(?:\/|$)/.test(rel) });
-    continue;
+  const classification = classify(rel);
+  if (!classification.meta) {
+    skippedFiles.push({ file: rel, reason: classification.reason,
+      hscLayoutNeedsReview: classification.hscLayoutNeedsReview,
+      curriculumIdentity: classification.identity ?? null });
+    // Junior sources are outside the declared scope. Senior sources are still
+    // inspected into diagnostics, but never emitted under an invented identity.
+    if (!classification.hscLayoutNeedsReview) continue;
   }
   let data;
   try {
@@ -287,22 +305,27 @@ for (const full of findReviews(path.join(REPO, 'subjects'))) {
   }
   const lessonId = data.lessonId || rel;
   data.questions.forEach((q, idx) => {
-    if (q?.type && q.type !== 'mc') return;
-    ingest(q, meta, lessonId, rel, 'review', idx);
+    if (q?.type && q.type !== 'mc') {
+      skippedQuestionTypes.push({ file: rel, lessonId, sourceIndex: idx,
+        type: diagnosticValue(q.type), id: diagnosticValue(q.id ?? null), reason: 'unsupported-review-question-type' });
+      return;
+    }
+    ingest(q, classification, lessonId, rel, 'review', idx);
   });
 }
 
 const auditPath = `${OUT}.audit.json`;
 const summary = { emitted: out.length, quarantined: invalid.length, duplicateIds: dupes.length,
   fileErrors: fileErrors.length, skippedFiles: skippedFiles.length,
+  blockedCurriculumQuestions: unsupportedQuestions.length, skippedQuestionTypes: skippedQuestionTypes.length,
   unsupportedHscFiles: skippedFiles.filter((file) => file.hscLayoutNeedsReview).length,
   omittedBySource: sourceSelections.reduce((sum, file) => sum + file.omittedLegacyQuestions.length, 0),
   explanationPresent: out.filter((q) => q.explanationStatus === 'present').length,
   explanationMissing: out.filter((q) => q.explanationStatus === 'missing').length,
   explanationPlaceholder: out.filter((q) => q.explanationStatus === 'placeholder').length };
-const auditJSON = JSON.stringify({ schemaVersion: 1,
+const auditJSON = JSON.stringify({ schemaVersion: 2,
   scope: 'Only the supplied checkout files; not a live database or scientific review',
-  summary, invalid, duplicateIds: dupes, fileErrors, skippedFiles, sourceSelections, questions: auditQuestions }, null, 2);
+  summary, invalid, duplicateIds: dupes, fileErrors, skippedFiles, sourceSelections, unsupportedQuestions, skippedQuestionTypes, questions: auditQuestions }, null, 2);
 const questionsJSON = JSON.stringify(out);
 // Serialize both before writing either. Invalid source data cannot leave an
 // apparently successful new canonical file with no diagnostic artifact.
@@ -321,7 +344,8 @@ console.log(`  by source:         question-bank ${fromQB} / review.json ${fromRe
 console.log(`  LaTeX recovered:   ${recovered} review questions had mangled escapes repaired`);
 console.log(`Source-filtered:     ${summary.omittedBySource} legacy entries not exposed by their runtime bank`);
 console.log(`Quarantined:         ${invalid.length}  (structural, scaffold, excluded or media-dependent)`);
-console.log(`Files outside scope: ${skippedFiles.length}  (see audit; not silently counted as covered)`);
+console.log(`Files outside scope: ${skippedFiles.length}  (${summary.unsupportedHscFiles} senior identity blockers; ${summary.blockedCurriculumQuestions} questions retained in audit)`);
+console.log(`Non-MC review rows:  ${skippedQuestionTypes.length}  (not part of this multiple-choice import; recorded in audit)`);
 console.log(`Explanation status:  ${summary.explanationPresent} present / ${summary.explanationMissing} missing / ${summary.explanationPlaceholder} placeholder`);
 console.log('Content review:      NOT ASSESSED. Explanation presence does not establish correctness.');
 console.log(`Duplicate ids:       ${dupes.length}`);

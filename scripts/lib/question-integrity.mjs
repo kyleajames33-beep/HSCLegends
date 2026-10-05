@@ -40,10 +40,21 @@ export function coerceQuestion(raw) {
   const options = keys ? keys.map((key) => raw.options[key]) : raw.options;
   const answers = [];
   const reasons = invalidId ? ['invalid-id'] : [];
+  const labels = keys?.map((key) => key.toUpperCase());
+  if (labels && new Set(labels).size !== labels.length) reasons.push('ambiguous-option-labels');
+  const letterIndex = (value) => {
+    const label = value.trim().toUpperCase();
+    return /^[A-Z]$/.test(label)
+      ? keys ? labels.indexOf(label) : label.charCodeAt(0) - 65 : NaN;
+  };
   for (const field of ['correctIndex', 'correct', 'answer']) {
     if (Object.hasOwn(raw, field)) {
-      if (typeof raw[field] !== 'number') reasons.push(`invalid-${field}`);
-      else answers.push(raw[field]);
+      if (typeof raw[field] === 'number') answers.push(raw[field]);
+      // The pinned source renderer supports letter-valued `correct` on array
+      // banks and `answer` on legacy A/B/C/D option maps. Never parse numeric
+      // strings or arbitrary text as indices, and still compare every key.
+      else if (((field === 'answer' && keys) || (field === 'correct' && Array.isArray(raw.options))) && typeof raw[field] === 'string' && /^[A-Z]$/i.test(raw[field].trim())) answers.push(letterIndex(raw[field]));
+      else reasons.push(`invalid-${field}`);
     }
   }
   if (Object.hasOwn(raw, 'correctAnswer')) {
@@ -73,7 +84,7 @@ export function assessQuestion(raw) {
   if (isRecord(raw) && raw.excluded === true) reasons.push('source-excluded');
 
   const metadata = {};
-  for (const key of ['media', 'syllabusPoint', 'syllabusTier', 'difficulty', 'bloom', 'band']) {
+  for (const key of ['media', 'syllabusPoint', 'syllabusTier', 'difficulty', 'bloom', 'band', 'dotPoint', 'dotpoint']) {
     if (isRecord(raw) && Object.hasOwn(raw, key)) {
       try { metadata[key] = copyMetadata(raw[key]); }
       catch { reasons.push(`invalid-${key}-metadata`); }

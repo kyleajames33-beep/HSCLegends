@@ -13,10 +13,12 @@ import {
   type LiveQuestion,
 } from '@/lib/live';
 import { readAcknowledgedAnswer, writeAcknowledgedAnswer, readPendingClaim, writePendingClaim, clearConfirmedClaim, cacheMessage, type PendingClaim } from '@/lib/live-session-cache';
+import { checkedReceipt, finalStanding } from '@/lib/classroom-learning';
 import { startHeartbeat, saveArenaSession, loadArenaSession, clearArenaSession, type ArenaSession } from '@/lib/presence';
 
 type Phase = 'form' | 'lobby' | 'question' | 'answered' | 'finishing' | 'complete';
 type Result = { is_correct: boolean; correct_index: number; points: number };
+type ViewConnection = { epoch: number; ownerId: string | null; sessionId: string; playerId: string };
 
 export default function JoinPage() {
   const sb = useMemo(() => createClient(), []);
@@ -26,7 +28,7 @@ export default function JoinPage() {
   const [phase, setPhase] = useState<Phase>('form');
   const [code, setCode] = useState('');
   const [alias, setAlias] = useState('');
-  const [sessionId, setSessionId] = useState('');
+  const [viewConnection, setViewConnection] = useState<ViewConnection | null>(null);
   const [playerId, setPlayerId] = useState('');
   const [q, setQ] = useState<LiveQuestion | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -35,9 +37,11 @@ export default function JoinPage() {
   const [busy, setBusy] = useState(false);
   const [receiptNotice, setReceiptNotice] = useState('');
   const [claimError, setClaimError] = useState('');
+  const [largeText, setLargeText] = useState(false);
+  const [practice, setPractice] = useState<{ index: number; choice: number | null } | null>(null);
   const claimInFlight = useRef<{ epoch: number; ownerId: string; playerId: string } | null>(null);
   const pendingClaim = useRef<PendingClaim | null>(null);
-  const context = useRef({ epoch: 0, ownerId: null as string | null, known: false, mounted: true, playerId: '', gameOwner: null as string | null });
+  const context = useRef({ epoch: 0, ownerId: null as string | null, known: false, mounted: true, sessionId: '', playerId: '', gameOwner: null as string | null });
   const loadVersion = useRef(0);
   const activeQuestion = useRef(-1);
   const answerInFlight = useRef('');
@@ -59,12 +63,12 @@ export default function JoinPage() {
     const current = context.current;
     const changed = current.known && current.ownerId !== ownerId;
     if (changed) {
-      current.epoch++; current.playerId = ''; current.gameOwner = null;
+      current.epoch++; current.sessionId = ''; current.playerId = ''; current.gameOwner = null;
       pendingClaim.current = null; subRef.current?.(); hbRef.current?.();
       const epoch = current.epoch;
       void Promise.resolve().then(() => {
         if (context.current.mounted && context.current.epoch === epoch) {
-          setPhase('form'); setXp(null); setResult(null); setClaimError(''); setReceiptNotice(''); setBusy(false); setResume(loadArenaSession('live'));
+          setPhase('form'); setViewConnection(null); setXp(null); setResult(null); setClaimError(''); setReceiptNotice(''); setBusy(false); setResume(loadArenaSession('live'));
         }
       });
     }
@@ -74,10 +78,14 @@ export default function JoinPage() {
   function currentRequest(epoch: number, owner: string | null) {
     return context.current.mounted && context.current.epoch === epoch && context.current.ownerId === owner;
   }
+  function currentConnection(connection: ViewConnection | null): connection is ViewConnection {
+    return !!connection && currentRequest(connection.epoch, connection.ownerId)
+      && context.current.sessionId === connection.sessionId && context.current.playerId === connection.playerId;
+  }
   function beginConnection() {
-    context.current.epoch++; context.current.playerId = ''; context.current.gameOwner = ownerId;
+    context.current.epoch++; context.current.sessionId = ''; context.current.playerId = ''; context.current.gameOwner = ownerId;
     pendingClaim.current = null; answerInFlight.current = ''; activeQuestion.current = -1; answeredIdx.current = -1;
-    setViewOwner(ownerId); setClaimError(''); setXp(null); setResult(null); setReceiptNotice('');
+    setViewOwner(ownerId); setViewConnection(null); setClaimError(''); setXp(null); setResult(null); setReceiptNotice(''); setPractice(null);
     return context.current.epoch;
   }
 
@@ -106,8 +114,8 @@ export default function JoinPage() {
   }
 
   function connect(sid: string, pid: string, epoch: number, owner: string | null) {
-    context.current.playerId = pid;
-    setSessionId(sid); setPlayerId(pid);
+    context.current.sessionId = sid; context.current.playerId = pid;
+    setViewConnection({ epoch, ownerId: owner, sessionId: sid, playerId: pid }); setPlayerId(pid);
     subRef.current?.();
     subRef.current = subscribeGame(sb, sid, { onSession: () => {
       const request = loadRef.current(sid, pid, epoch, owner); const version = loadVersion.current;
@@ -172,42 +180,49 @@ export default function JoinPage() {
     if (error) setClaimError('Browser storage is unavailable. Your score cannot be carried through sign-in on this device.');
     else router.push('/login?next=/join');
   }
-  function retryResults() {
-    const epoch = context.current.epoch; const owner = ownerId;
-    if (!currentRequest(epoch, owner)) return;
+  async function retryResults() {
+    // Capture this render's connection, never adopt a newer room's epoch when
+    // an old button is invoked. Repeated reads can supersede a hung read; the
+    // newest load version owns the result independently of answer submission.
+    const connection = viewConnection;
+    if (userLoading || !currentConnection(connection)) return;
     setErr('');
-    const request = loadState(sessionId, playerId, epoch, owner);
+    const request = loadState(connection.sessionId, connection.playerId, connection.epoch, connection.ownerId);
     const version = loadVersion.current;
-    void request.catch((e) => { if (currentRequest(epoch, owner) && version === loadVersion.current) setErr(msg(e)); });
+    try { await request; }
+    catch (e) { if (currentConnection(connection) && version === loadVersion.current) setErr(msg(e)); }
   }
 
   async function loadState(sid: string, pid: string, epoch: number, owner: string | null) {
-    if (!currentRequest(epoch, owner)) return;
+    const connection = { epoch, ownerId: owner, sessionId: sid, playerId: pid };
+    if (!currentConnection(connection)) return;
     const version = ++loadVersion.current;
     let lq: LiveQuestion;
     try {
       lq = await getLiveQuestion(sb, sid);
       if (!lq) throw new Error('Game state is unavailable. Your saved game is kept; try rejoining.');
     } catch (e) {
-      if (!currentRequest(epoch, owner) || version !== loadVersion.current) return;
+      if (!currentConnection(connection) || version !== loadVersion.current) return;
       // A newer failed read supersedes the connection's initial read, including
       // its cleanup. Release that busy state without unlocking a current answer.
       if (!answerInFlight.current) setBusy(false);
       throw e;
     }
-    if (!currentRequest(epoch, owner) || version !== loadVersion.current) return;
+    if (!currentConnection(connection) || version !== loadVersion.current) return;
     if (lq.status !== 'active' || activeQuestion.current !== lq.index) {
       activeQuestion.current = lq.status === 'active' ? lq.index : -1;
-      answerInFlight.current = ''; setBusy(false);
+      answerInFlight.current = ''; setBusy(false); setPractice(null);
     }
     if (lq.status === 'complete') {
       setPhase('finishing'); setBusy(true);
       let players;
       try { players = await fetchPlayers(sb, sid); }
-      catch (e) { if (currentRequest(epoch, owner) && version === loadVersion.current) { setBusy(false); throw e; } else return; }
-      if (!currentRequest(epoch, owner) || version !== loadVersion.current) return;
-      const idx = players.findIndex((p) => p.id === pid);
-      setMe({ rank: idx + 1, score: players[idx]?.score ?? 0 });
+      catch (e) { if (currentConnection(connection) && version === loadVersion.current) { setBusy(false); throw e; } else return; }
+      if (!currentConnection(connection) || version !== loadVersion.current) return;
+      let standing;
+      try { standing = finalStanding(players, pid); }
+      catch (e) { setBusy(false); throw e; }
+      setMe(standing);
       setPhase('complete'); setBusy(false);
       clearArenaSession('live'); // nothing to rejoin
       return;
@@ -244,20 +259,23 @@ export default function JoinPage() {
   }
 
   async function answer(choice: number) {
-    if (!q || userLoading) return;
-    const epoch = context.current.epoch; const owner = ownerId; const index = q.index;
-    const request = `${sessionId}:${playerId}:${index}`;
-    if (!currentRequest(epoch, owner) || answerInFlight.current === request) return;
+    const connection = viewConnection;
+    if (!q || userLoading || !currentConnection(connection)) return;
+    const { epoch, ownerId: owner, sessionId, playerId } = connection; const index = q.index;
+    const request = `${epoch}:${sessionId}:${playerId}:${index}`;
+    if (activeQuestion.current !== index || answeredIdx.current === index
+      || answerInFlight.current === request || !Number.isInteger(choice) || choice < 0 || choice >= (q.options?.length ?? 0)) return;
     answerInFlight.current = request; setBusy(true); setErr('');
     try {
-      const r = await submitAnswer(sb, playerId, index, choice);
-      if (!currentRequest(epoch, owner) || activeQuestion.current !== index) return;
+      const response = await submitAnswer(sb, playerId, index, choice);
+      if (!currentConnection(connection) || activeQuestion.current !== index) return;
+      const r = checkedReceipt(response, choice, q.options?.length ?? 0);
       answeredIdx.current = index; setResult({ ...r });
       const warning = writeAcknowledgedAnswer({ version: 1, sessionId, playerId, index, ownerId: owner, result: { ...r } });
       setReceiptNotice(warning ? cacheMessage(warning) : ''); setPhase('answered');
-    } catch (e) { if (currentRequest(epoch, owner) && activeQuestion.current === index) setErr(msg(e)); }
+    } catch (e) { if (currentConnection(connection) && activeQuestion.current === index) setErr(msg(e)); }
     finally {
-      if (answerInFlight.current === request && currentRequest(epoch, owner)) { answerInFlight.current = ''; setBusy(false); }
+      if (answerInFlight.current === request && currentConnection(connection)) { answerInFlight.current = ''; setBusy(false); }
     }
   }
 
@@ -269,15 +287,15 @@ export default function JoinPage() {
           <button onClick={() => rejoin(resume)} disabled={busy || userLoading}
             className="mt-5 w-full rounded-2xl border border-gold bg-gold/15 px-4 py-3 text-left active:translate-y-0.5 disabled:opacity-40">
             <span className="font-display font-extrabold text-golddeep">↩️ Rejoin game {resume.code}</span>
-            <span className="block text-sm text-inksoft">Pick up where you left off as {resume.alias} — your score is safe.</span>
+            <span className="block text-sm text-inksoft">Reconnect as {resume.alias} and check the server’s current game state.</span>
           </button>
         )}
         <form onSubmit={join} className="mt-6 space-y-4">
           <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="CODE" maxLength={6} autoCapitalize="characters"
+            aria-label="Game code" placeholder="CODE" maxLength={6} autoCapitalize="characters"
             className="w-full rounded-xl bg-panel border border-rule px-4 py-4 text-center text-3xl font-black tracking-[0.3em] outline-none focus:border-plum" />
           <input value={alias} onChange={(e) => setAlias(e.target.value)}
-            placeholder="Your name" maxLength={20}
+            aria-label="Your name" placeholder="Your name" maxLength={20}
             className="w-full rounded-xl bg-panel border border-rule px-4 py-3 outline-none focus:border-plum" />
           <button disabled={busy || userLoading || code.length < 6 || !alias.trim()}
             className="w-full rounded-xl bg-plum hover:bg-plumdeep text-white px-4 py-4 font-semibold disabled:opacity-40">
@@ -294,7 +312,7 @@ export default function JoinPage() {
   if (phase === 'finishing') {
     return <Shell><H>Loading final scores…</H>
       {err && <Err>{err}</Err>}
-      {err && <button disabled={busy} onClick={retryResults} className="mt-4 underline disabled:opacity-40">Retry loading results</button>}
+      <button disabled={userLoading} onClick={retryResults} className="mt-4 underline disabled:opacity-40">Retry loading results</button>
     </Shell>;
   }
 
@@ -305,6 +323,8 @@ export default function JoinPage() {
           <div className="text-5xl mb-4">⏳</div>
           <H>You’re in, {alias}!</H>
           <p className="text-inksoft mt-2">Waiting for the host to start…</p>
+          <button onClick={retryResults} disabled={userLoading} className="mt-4 underline disabled:opacity-40">Refresh game state</button>
+          {err && <Err>{err}</Err>}
         </div>
       </Shell>
     );
@@ -325,15 +345,17 @@ export default function JoinPage() {
             ⚡ DOUBLE POINTS — get this one!
           </div>
         )}
-        <h2 className="mt-3 text-xl md:text-3xl md:text-center font-display font-bold leading-snug"><MathText text={q.stem} /></h2>
+        <button type="button" aria-pressed={largeText} onClick={() => setLargeText(!largeText)} className="mt-3 text-sm underline">{largeText ? 'Standard text' : 'Larger text'}</button>
+        <h2 className={`mt-3 ${largeText ? 'text-3xl md:text-4xl' : 'text-xl md:text-3xl'} md:text-center font-display font-bold leading-snug`}><MathText text={q.stem} /></h2>
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           {(q.options ?? []).map((o, i) => (
             <AnswerTile key={i} index={i} disabled={busy || userLoading || timer.expired} onClick={() => answer(i)}>
-              <MathText text={o} />
+              <span className={largeText ? 'text-2xl leading-relaxed' : undefined}><MathText text={o} /></span>
             </AnswerTile>
           ))}
         </div>
         {timer.expired && <p className="mt-4 text-center text-inksoft">⏰ Time’s up — waiting for the next question…</p>}
+        <button onClick={retryResults} disabled={userLoading} className="mt-4 text-sm underline disabled:opacity-40">Refresh game state</button>
         {err && <Err>{err}</Err>}
       </Shell>
     );
@@ -349,7 +371,20 @@ export default function JoinPage() {
             <><div className="text-6xl mb-3">❌</div><H>Not quite</H>
               <p className="text-inksoft mt-2">Answer: <span className="text-ink font-semibold"><MathText text={q.options?.[result?.correct_index ?? -1] ?? ''} /></span></p></>
           )}
+          {result && <p className="mt-3 text-sm text-inksoft">This game does not supply an explanation yet. Ask your teacher to talk through the answer.</p>}
+          {result && !result.is_correct && practice?.index !== q.index && <button onClick={() => { if (currentConnection(viewConnection) && activeQuestion.current === q.index) setPractice({ index: q.index, choice: null }); }} className="mt-4 underline">Try again, unscored</button>}
+          {result && practice?.index === q.index && <section aria-label="Unscored learning retry" className="mt-5 w-full text-left">
+            <h2 className="font-semibold">Learning check · no extra points</h2>
+            <p className={`mt-2 ${largeText ? 'text-2xl leading-relaxed' : ''}`}><MathText text={q.stem} /></p>
+            <div className="mt-3 grid gap-2">{(q.options ?? []).map((option, index) => <button key={index}
+              disabled={practice.choice !== null} onClick={() => {
+                if (currentConnection(viewConnection) && activeQuestion.current === q.index) setPractice({ index: q.index, choice: index });
+              }} className={`rounded-xl border border-rule p-3 text-left disabled:opacity-70 ${largeText ? 'text-2xl' : ''}`}><MathText text={option} /></button>)}</div>
+            {practice.choice !== null && <p role="status" className="mt-3">{practice.choice === result.correct_index ? 'That matches the answer. No score changed.' : 'Review the answer above with your teacher. No score changed.'}</p>}
+          </section>}
           <p className="text-muted mt-6 text-sm">Waiting for the next question…</p>
+          <button onClick={retryResults} disabled={userLoading} className="mt-3 text-sm underline disabled:opacity-40">Refresh game state</button>
+          {err && <Err>{err}</Err>}
           {receiptNotice && <p role="status" className="mt-3 text-sm text-inksoft">{receiptNotice}</p>}
         </div>
       </Shell>

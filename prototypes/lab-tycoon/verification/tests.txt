@@ -1,0 +1,66 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> hsc-legends-offline-equilibrium-lab@0.1.0 test
+> node build.mjs && node --test tests/*.test.mjs
+
+Built self-contained lab-tycoon.html. No network or build dependencies.
+✔ self-contained artifact has a network-denying policy and valid JS (2.607481ms)
+✔ initial UI labels scope and offline status with accessible control hooks (3.877988ms)
+✔ UI handlers complete learning loop and reject double answer and purchase (11.88959ms)
+✔ UI retry has partial credit and cannot repeat (2.925155ms)
+✔ full UI run reaches notebook with transparent total (11.460209ms)
+✔ reset requires confirmation, cancel preserves progress and undo restores (3.67534ms)
+✔ corrupt checkpoint is preserved during memory-only play (1.961701ms)
+✔ newer checkpoint is never silently overwritten by ordinary progress (1.534269ms)
+✔ UI remains playable and discloses unavailable browser storage (1.906422ms)
+✔ reset and undo never hide a storage write failure (2.745033ms)
+✔ retained form changes during feedback are ignored without throwing (1.98858ms)
+✔ retained prior-question form cannot select or submit the current question (3.408394ms)
+✔ retained pre-retry form cannot populate a fresh retry form (2.130906ms)
+✔ retained undo cannot restore a later reset backup (4.404581ms)
+✔ retained reset confirmation cannot act on a newer dialog (1.94041ms)
+✔ unsafe imported base counter is rejected and never overwritten by ordinary UI progress (1.965355ms)
+✔ first attempt separately rewards answer, reasoning and review (3.021803ms)
+✔ duplicate, retained and changed-choice answer callbacks cannot award twice (0.55645ms)
+✔ retry rewards only newly corrected parts, and cannot loop (0.575274ms)
+✔ correct reasoning is worth as much as a correct answer (0.30429ms)
+✔ retry cannot lose already earned parts or pay for them again (0.26856ms)
+✔ no retry after fully correct work; no repeated review or skipped phases (0.512031ms)
+✔ upgrade eligibility enforces funds, phase, known item and one-time purchases (0.834653ms)
+✔ full run has a strict 120 ceiling and terminal actions do not farm currency (4.70906ms)
+✔ equipment never changes rewards and all equipment is reachable (2.782767ms)
+✔ invalid or missing input never changes state (0.635878ms)
+✔ checkpoint replays deterministically without trusting score fields (1.089387ms)
+✔ checkpoint rejects corrupt, stale-content, impossible, oversized, duplicate and reset events (1.846122ms)
+✔ checkpoint survives every phase including retry and completion (7.97182ms)
+✔ reset and undo use fresh callback ownership (2.464497ms)
+✔ storage errors are explicit and reads do not overwrite (0.618504ms)
+✔ all answer and reason combinations have bounded transparent scores (2.000495ms)
+✔ checkpoint counters reject unsafe values and reserve exact arithmetic headroom (1.430363ms)
+✔ maximum supported checkpoint cannot stall revisions or accept an old review (0.693085ms)
+✔ reset and restore fail closed when rebasing exceeds the supported bound (0.538383ms)
+✔ reset rejects invalid clocks and restore rejects invalid saved action sequences (0.665445ms)
+✔ science key: dynamic (1.170907ms)
+✔ science key: closed (0.152709ms)
+✔ science key: add-reactant (0.091657ms)
+✔ science key: compression (0.083062ms)
+✔ science key: equal-gas (0.151471ms)
+✔ science key: temperature (0.09206ms)
+✔ science key: catalyst (0.164516ms)
+✔ science key: expression (0.102445ms)
+✔ science key: calculate (0.108187ms)
+✔ science key: quotient (0.161682ms)
+✔ science key: solid (0.115818ms)
+✔ science key: constant (0.07235ms)
+✔ 12 stable unique questions have a pinned content revision (0.27639ms)
+✔ numeric Kc answer is independently recomputed (0.077651ms)
+✔ equal gas compression cancels Qc concentration factors (0.075284ms)
+✔ Haber coefficients conserve nitrogen and hydrogen atoms (0.092443ms)
+ℹ tests 52
+ℹ suites 0
+ℹ pass 52
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 186.660312
