@@ -1,9 +1,10 @@
 // The player's fighter character (toon sprites, idle/attack/hurt/special frames).
 // Pick one = "design your character". Sprites live in /public/fighters/<id>/.
 
-export const FIGHTERS = ['male-adventurer', 'female-adventurer', 'robot', 'zombie'] as const;
+export const FIGHTERS = ['spark', 'male-adventurer', 'female-adventurer', 'robot', 'zombie'] as const;
 export type FighterId = (typeof FIGHTERS)[number];
 export const FIGHTER_LABEL: Record<FighterId, string> = {
+  spark: 'Spark',
   'male-adventurer': 'Adventurer',
   'female-adventurer': 'Explorer',
   robot: 'Robot',
@@ -20,7 +21,7 @@ export default function PlayerFighter({
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`/fighters/${char}/${pose}.png`}
+      src={char === 'spark' ? `/campaign-art/catalyst-v1/fighter/${pose}.webp` : `/fighters/${char}/${pose}.png`}
       alt=""
       aria-hidden
       className={className}

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import { getQuizQuestions, SUBJECTS, type Subject, type Question } from '@/lib/questions';
 import BossArt from '@/components/boss-art';
+import ChemistryCampaignStage from '@/components/chemistry-campaign-stage';
 import PlayerFighter, { FIGHTERS, FIGHTER_LABEL, type FighterId } from '@/components/player-fighter';
 import AnswerTile from '@/components/answer-tile';
 import CountUp from '@/components/count-up';
@@ -68,11 +69,11 @@ export default function CampaignPage() {
 
   // Combat FX + the player's own character.
   const [bossAnim, setBossAnim] = useState<'hurt' | 'lunge' | null>(null);
-  const [playerAnim, setPlayerAnim] = useState<'hurt' | 'lunge' | null>(null);
+  const [playerAnim, setPlayerAnim] = useState<'hurt' | 'lunge' | 'special' | null>(null);
   const [flash, setFlash] = useState<'red' | 'gold' | 'blue' | null>(null);
   const [shakeScreen, setShakeScreen] = useState(false);
   const [floatHit, setFloatHit] = useState<{ who: 'boss' | 'player'; text: string; key: number } | null>(null);
-  const [fighter, setFighter] = useState<FighterId>('male-adventurer');
+  const [fighter, setFighter] = useState<FighterId>('spark');
   const fxId = useRef(0);
   const defeatedRef = useRef(false);
 
@@ -116,8 +117,8 @@ export default function CampaignPage() {
   }, [battling]);
 
   // Fire a burst of combat FX. target = who got hit.
-  function triggerFx(target: 'boss' | 'player', text: string, power = false) {
-    if (target === 'boss') { setBossAnim('hurt'); setPlayerAnim('lunge'); setFlash('gold'); }
+  function triggerFx(target: 'boss' | 'player', text: string, power = false, special = false) {
+    if (target === 'boss') { setBossAnim('hurt'); setPlayerAnim(special ? 'special' : 'lunge'); setFlash('gold'); }
     else { setBossAnim('lunge'); setPlayerAnim('hurt'); setFlash('red'); setShakeScreen(true); }
     if (power) setShakeScreen(true);
     // Haptics on mobile.
@@ -134,6 +135,8 @@ export default function CampaignPage() {
 
   async function enter(boss: CampaignBoss) {
     setErr('');
+    // A newly entered arena starts in its idle pose, even after a quick map switch.
+    setBossAnim(null); setPlayerAnim(null); setFloatHit(null); setFlash(null); setShakeScreen(false);
     setActive(boss.subject);
     setBhp(boss.max_hp); setBmax(boss.max_hp); setStage(boss.stage);
     setAnswered(null); setVictory(null); setLoot(null); setQi(0);
@@ -217,10 +220,10 @@ export default function CampaignPage() {
   }
 
   // ── Actions: spend Energy to act on the boss ──
-  function applyToBoss(dmg: number, power = false) {
+  function applyToBoss(dmg: number, power = false, special = false) {
     const nb = Math.max(0, bhp - dmg);
     setBhp(nb);
-    triggerFx('boss', `−${dmg}`, power);
+    triggerFx('boss', `−${dmg}`, power, special);
     if (nb <= 0) onBossDefeated();
   }
   function hitBoss() {
@@ -242,7 +245,7 @@ export default function CampaignPage() {
   function specialBoss() {
     if (ap < SPECIAL_COST || !battling) return;
     setAp((a) => a - SPECIAL_COST);
-    applyToBoss(SPECIAL_DMG, true);
+    applyToBoss(SPECIAL_DMG, true, true);
   }
   function blockMove() {
     if (ap < BLOCK_COST || !battling) return;
@@ -306,7 +309,7 @@ export default function CampaignPage() {
   if (active) {
     const frac = bmax > 0 ? bhp / bmax : 0;
     const bossPose = bossAnim === 'lunge' ? 'attack' : bossAnim === 'hurt' ? 'hurt' : bossCharging ? 'attack' : undefined;
-    const playerPose: 'idle' | 'attack' | 'hurt' = playerAnim === 'lunge' ? 'attack' : playerAnim === 'hurt' ? 'hurt' : 'idle';
+    const playerPose = playerAnim === 'special' ? 'special' : playerAnim === 'lunge' ? 'attack' : playerAnim === 'hurt' ? 'hurt' : 'idle';
     const enraged = bhp > 0 && bmax > 0 && bhp / bmax < 0.4;
     const lore = bossLore(active);
     const taunt = lore.taunts[qi % lore.taunts.length];
@@ -343,6 +346,12 @@ export default function CampaignPage() {
           className={`relative mt-3 overflow-hidden rounded-3xl px-4 py-5 ${shakeScreen ? 'fx-screen-shake' : ''}`}
           style={{ background: 'radial-gradient(120% 80% at 50% 0%, #3c3460 0%, transparent 55%), linear-gradient(165deg,#1a1d2e 0%,#2d3142 55%,#241f38 100%)' }}
         >
+          {active === 'chemistry' ? (
+            <ChemistryCampaignStage fighter={fighter} playerPose={playerPose} bossPose={bossPose}
+              playerHp={playerHp} bossHp={bhp} bossMaxHp={bmax} shielded={shielded}
+              combo={combo} energy={ap} maxEnergy={MAX_AP} enraged={enraged} floatHit={floatHit} />
+          ) : (
+          <>
           {/* Boss character */}
           <div className="relative flex flex-col items-center">
             {floatHit?.who === 'boss' && (
@@ -368,7 +377,7 @@ export default function CampaignPage() {
 
           {/* You — your designable character */}
           <div className="relative mx-auto mt-4 flex w-full max-w-xs items-center gap-3">
-            <div className={`relative shrink-0 ${playerAnim === 'lunge' ? 'fx-lunge' : playerAnim === 'hurt' ? 'fx-shake' : ''}`}>
+            <div className={`relative shrink-0 ${playerAnim === 'lunge' || playerAnim === 'special' ? 'fx-lunge' : playerAnim === 'hurt' ? 'fx-shake' : ''}`}>
               {floatHit?.who === 'player' && (
                 <span key={floatHit.key} className="fx-float text-4xl" style={{ top: -16, color: '#ff4444', textShadow: '0 3px 0 #5a0000, 0 0 12px rgba(0,0,0,0.5)' }}>{floatHit.text}</span>
               )}
@@ -395,6 +404,9 @@ export default function CampaignPage() {
               </div>
             </div>
           </div>
+
+          </>
+          )}
 
           {/* Boss telegraph — Block to negate */}
           {bossCharging && (
@@ -527,7 +539,7 @@ export default function CampaignPage() {
       {/* Choose your fighter */}
       <div className="mt-4">
         <p className="text-xs font-display font-bold tracking-wide text-muted">YOUR FIGHTER</p>
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2 flex flex-wrap gap-2">
           {FIGHTERS.map((f) => (
             <button key={f} onClick={() => chooseFighter(f)}
               className={`rounded-2xl p-1.5 text-center transition ${fighter === f ? 'ring-2 ring-plum bg-parchment-deep' : 'bg-panel border border-rule'}`}>
@@ -548,7 +560,7 @@ export default function CampaignPage() {
                 className="lg-card relative flex w-[82%] items-center gap-3 px-3 py-3 text-left transition active:translate-y-0.5 disabled:opacity-60">
                 <div className="relative shrink-0">
                   <div className="grid h-[72px] w-[72px] place-items-center rounded-full bg-parchment-deep">
-                    <BossArt subject={b.subject} frac={1} className="h-16 w-16" />
+                    <BossArt subject={b.subject} campaign frac={1} className="h-16 w-16" />
                   </div>
                   <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-plum px-2 py-0.5 text-[10px] font-display font-extrabold text-white">Stage {b.stage}</span>
                 </div>

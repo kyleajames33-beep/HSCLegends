@@ -47,12 +47,12 @@ without the bob, lunge, recoil or flash animations.
 
 ## Integration boundary
 
-Every change lives under `prototypes/catalyst-battle/`. Existing `app/`,
-`components/`, `lib/`, `public/`, production configuration and database files
-are untouched. If the art is accepted, the boss PNGs can be copied to a versioned
-production asset folder and consumed by `BossArt`; Spark can be added as a new
-fighter rather than overwriting an existing option. Arena art can be scoped to
-Chemistry campaign battles. This prototype is not connected gameplay proof.
+The original sample lives entirely under `prototypes/catalyst-battle/` and
+remains independent of the production app. The accepted artwork is now also
+integrated into the production campaign using versioned WebP assets; see
+`docs/CATALYST-CAMPAIGN-INTEGRATION.md`. Spark is an additional fighter, and the
+arena/Catalyst art are scoped to Chemistry campaign battles. This prototype
+still awards no production rewards and is not connected gameplay proof.
 
 ## Validation
 
