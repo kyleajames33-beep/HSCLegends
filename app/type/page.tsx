@@ -8,6 +8,7 @@ import { getQuizQuestions, SUBJECTS, type Question, type Subject } from '@/lib/q
 import { isCloseEnough } from '@/lib/fuzzy';
 import { celebrate } from '@/lib/confetti';
 import MathText from '@/components/math-text';
+import LessonVideoLink from '@/components/lesson-video-link';
 
 type Phase = 'pick' | 'loading' | 'play' | 'done' | 'error';
 const TARGET = 8; // aim to present ~8 typeable questions
@@ -235,6 +236,7 @@ export default function TypeGame() {
           {q.explanation && (
             <p className="mt-2 text-sm text-inksoft"><MathText text={q.explanation} /></p>
           )}
+          <LessonVideoLink q={q} />
           <button onClick={next} className="lg-btn lg-btn-primary mt-4 w-full px-4 py-4">
             {i + 1 >= questions.length ? 'Finish' : 'Next'}
           </button>
