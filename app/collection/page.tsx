@@ -136,6 +136,10 @@ export default function CollectionPage() {
           </span>
         ))}
       </p>
+      <p className="mt-1 text-center text-[11px] text-muted">
+        Specimen cards never drop from packs. Earn them in{' '}
+        <Link href="/specimens" className="font-semibold text-plum underline">Specimen Lab</Link>.
+      </p>
 
       {err && <Err>{err}</Err>}
 
