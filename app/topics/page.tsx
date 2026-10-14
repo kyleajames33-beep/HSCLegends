@@ -16,6 +16,7 @@ const DRILL_LIMIT = 12;
 
 type DrillQ = {
   id: string;
+  lesson_id: string | null;
   stem: string;
   options: string[];
   correct_index: number;

@@ -17,8 +17,9 @@ test('stored lesson_id wins over the question id prefix', () => {
   assert.equal(lessonVideoFor({ id: 'chem-y11-m2-l03-qb-01', lesson_id: 'chem-y11-m2-l05' }), null);
 });
 
-test('falls back to the question id prefix when lesson_id is absent', () => {
-  assert.equal(lessonVideoFor({ id: 'chem-y11-m2-l13-mc-002' })?.url, 'https://youtu.be/-TLemAVWFvs');
+test('missing lesson identity never guesses a video from the question id', () => {
+  assert.equal(lessonVideoFor({ id: 'chem-y11-m2-l13-mc-002' }), null);
+  assert.equal(lessonVideoFor({ id: 'chem-y11-m2-l13-mc-002', lesson_id: null }), null);
   assert.equal(lessonVideoFor({ id: 'chem-y11-m2-l1-qb-01' }), null);
   assert.equal(lessonVideoFor({ id: 'chem-y11-m2-l130-qb-01' }), null);
   assert.equal(lessonVideoFor({ id: 'synthetic-q1' }), null);
