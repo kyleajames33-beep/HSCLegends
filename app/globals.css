@@ -87,6 +87,28 @@ body {
   font-family: var(--font-body);
   min-height: 100%;
 }
+
+/* Chemistry campaign artwork: reaction poses use the existing combat state. */
+.boss-idle-bob { animation: bob 2.4s ease-in-out infinite; }
+.chemistry-stage { position: relative; height: 340px; overflow: hidden; border-radius: 18px; background: #30203e url('/campaign-art/catalyst-v1/arena.webp') center 58% / cover; }
+.chemistry-stage-shade { position: absolute; inset: 0; background: linear-gradient(#140f27b3, transparent 45%, #140f2766); }
+.chemistry-health { position: absolute; top: 16px; width: 42%; z-index: 2; text-shadow: 0 2px 3px #000; }
+.chemistry-health-player { left: 12px; }
+.chemistry-health-boss { right: 12px; }
+.chemistry-fighter, .chemistry-boss { position: absolute; bottom: 34px; width: 44%; height: 230px; }
+.chemistry-fighter { left: 1%; }
+.chemistry-boss { right: 0; height: 265px; }
+.chemistry-ground { position: absolute; bottom: 4px; left: 20%; width: 60%; height: 12px; border-radius: 50%; background: #100916a6; filter: blur(5px); }
+.chemistry-shield { position: absolute; inset: 5% 0; border: 2px solid #5dedcc99; border-radius: 45%; box-shadow: inset 0 0 20px #5dedcc44, 0 0 15px #5dedcc55; }
+.chemistry-stage-energy { position: absolute; bottom: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px; background: #140f27b3; }
+@media (max-width: 480px) {
+  .chemistry-stage { height: 270px; }
+  .chemistry-fighter { height: 170px; width: 48%; }
+  .chemistry-boss { height: 192px; width: 49%; }
+  .chemistry-health > div:first-child { flex-direction: column; gap: 0; font-size: 10px; }
+  .chemistry-health-boss { text-align: right; }
+}
+@media (prefers-reduced-motion: reduce) { .boss-idle-bob { animation: none; } }
 h1, h2, h3 { font-family: var(--font-display); }
 
 /* App column: full-bleed on phones, full-width on desktop (no narrow phone

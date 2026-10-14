@@ -1,0 +1,17 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+const root = path.dirname(fileURLToPath(import.meta.url));
+const read = (name) => readFileSync(path.join(root, name), 'utf8');
+const image = (name) => `data:image/png;base64,${readFileSync(path.join(root, name)).toString('base64')}`;
+let html = read('index.html');
+let css = read('styles.css').replaceAll('assets/arena.png', image('assets/arena.png'));
+let model = read('model.mjs').replaceAll('export ', '');
+let app = read('app.mjs').replace(/^import[^\n]+\n/, '');
+app = app.replace(/assets\/(fighter|boss)\/(idle|attack|hurt|special|defeat)\.png/g, (name) => image(name));
+html = html.replace('<link rel="stylesheet" href="styles.css">', `<style>${css}</style>`);
+html = html.replace('<script type="module" src="app.mjs"></script>', `<script>${model}\n${app}</script>`);
+html = html.replace(/src="(assets\/(?:fighter|boss)\/idle\.png)"/g, (_, name) => `src="${image(name)}"`);
+const output = process.argv[2] || path.join(root, 'hsc-legends-catalyst-preview.html');
+writeFileSync(output, html);
+console.log(`Built ${output} (${Buffer.byteLength(html)} bytes)`);

@@ -1,0 +1,50 @@
+[
+  {
+    "asset": "boss/idle.png",
+    "prompt": "Use case: stylized-concept. Asset: single transparent full-body boss idle pose for HSC Legends, a science quiz battle game for Australian students aged 16–18. Create THE CATALYST: an imposing compact alchemist golem with plum-purple chunky armour, bronze fittings, a large round glass reactor torso filled with luminous lime-green liquid, a small mischievous face inset above the reactor, hexagonal bronze crown, two chunky mechanical hands and broad boots, glass reagent tubes over the shoulders. Sophisticated playful mobile-game character render, polished stylized 3D, strong silhouette, controlled detail, not infantile, match warm plum/gold UI. Full body facing LEFT in three-quarter view toward a player on the left; standing upright in ready idle stance. Square canvas, feet at 90% height, entire character including crown and hands within central 80%, no cropping. Clean warm key light upper-left and teal rim. Genuine transparent alpha background, no scenery, no ground plane or baked shadow, no text, logo, labels or watermark. One character only. This design will be the fixed reference for three later poses.",
+    "reference": null
+  },
+  {
+    "asset": "fighter/idle.png",
+    "prompt": "Use case: stylized-concept. Asset: one transparent full-body player fighter IDLE pose for HSC Legends. Input image 1 is STYLE reference only: match its polished stylized 3D mobile-game render, chunky readable silhouette, plum and bronze materials, warm key light and teal rim light. Create a distinct friendly heroic compact science automaton called SPARK: small agile robot with an ivory rounded faceplate, two expressive teal eyes, plum-purple hood-shaped helmet, short ivory lab-coat jacket over bronze mechanical torso, lime-green power cell at chest, bronze gauntlets, plum boots and a short teal scarf. Teen-friendly adventurous science fantasy, no weapons, no gendered body. This fighter is on the LEFT of a battle: face RIGHT in three-quarter view, confident ready stance, both feet visible. Square canvas, full body centered, generous empty margin, feet at 90% canvas height, no cropping. Genuine transparent alpha background, no ground or baked shadow, no extra characters, no letters, logos or watermark. Keep materials and visual style coherent with the reference boss while making this robot distinctly smaller and quicker.",
+    "reference": "boss/idle.png"
+  },
+  {
+    "asset": "boss/attack.png",
+    "prompt": "Use case: identity-preserve. Edit target image 1 is the fixed THE CATALYST boss design. Generate a SINGLE full-body attack game pose. ATTACK: lean toward LEFT, extend the forward mechanical fist leftward in a powerful punch with a compact lime energy pulse. Keep both boots in frame. Preserve EXACT crown shape, face, purple-bronze armour, circular green reactor torso, shoulder glass cylinders, hands, boots, proportions, material treatment and light direction. Facing LEFT in three-quarter view. Use same canvas size, viewpoint, character scale and foot baseline as reference, keep all extremities within generous margins. Change pose and expression only. Genuine transparent alpha background preserved, no ground plane or baked shadow, no text or watermark. This must look like the SAME character in another frame, not a redesign.",
+    "reference": "boss/idle.png"
+  },
+  {
+    "asset": "boss/hurt.png",
+    "prompt": "Use case: identity-preserve. Edit target image 1 is the fixed THE CATALYST boss design. Generate a SINGLE full-body hurt game pose. HURT: recoil slightly toward RIGHT from a hit arriving on the left, grimace, shoulders lifted, hands pulled inward. Remain standing, reactor glass intact, no new costume or broken body parts. Preserve EXACT crown shape, face, purple-bronze armour, circular green reactor torso, shoulder glass cylinders, hands, boots, proportions, material treatment and light direction. Facing LEFT in three-quarter view. Use same canvas size, viewpoint, character scale and foot baseline as reference, keep all extremities within generous margins. Change pose and expression only. Genuine transparent alpha background preserved, no ground plane or baked shadow, no text or watermark. This must look like the SAME character in another frame, not a redesign.",
+    "reference": "boss/idle.png"
+  },
+  {
+    "asset": "boss/defeat.png",
+    "prompt": "Use case: identity-preserve. Edit target image 1 is the fixed THE CATALYST boss design. Generate a SINGLE full-body defeat game pose. DEFEAT: slump in a compact kneeling pose, tired expression, crown tilted but still worn, reactor glow dimmer. Still recognizable, playful defeat, not dead, no debris or gore. Preserve EXACT crown shape, face, purple-bronze armour, circular green reactor torso, shoulder glass cylinders, hands, boots, proportions, material treatment and light direction. Facing LEFT in three-quarter view. Use same canvas size, viewpoint, character scale and foot baseline as reference, keep all extremities within generous margins. Change pose and expression only. Genuine transparent alpha background preserved, no ground plane or baked shadow, no text or watermark. This must look like the SAME character in another frame, not a redesign.",
+    "reference": "boss/idle.png"
+  },
+  {
+    "asset": "fighter/attack.png",
+    "prompt": "Use case: identity-preserve. Edit target image 1 is SPARK, fixed player fighter design. Generate a SINGLE full-body attack pose. ATTACK: step forward toward RIGHT and punch with rightward-facing gauntlet, determined expression, short compact teal motion accent. Keep full body visible. Preserve EXACT ivory faceplate, large teal eyes, purple hood-shaped helmet with gold hexagon fitting, teal scarf, ivory lab coat, green circular power cell, bronze gauntlets, purple boots and body proportions. Preserve polished 3D style and light direction. Face RIGHT in three-quarter view. Same canvas size, viewpoint, scale and foot baseline as reference, entire character and effects within generous margins. Change pose/expression only, no redesign. Genuine transparent alpha preserved, no scenery, ground or baked shadow, no text, logos or watermark.",
+    "reference": "fighter/idle.png"
+  },
+  {
+    "asset": "fighter/hurt.png",
+    "prompt": "Use case: identity-preserve. Edit target image 1 is SPARK, fixed player fighter design. Generate a SINGLE full-body hurt pose. HURT: recoil toward LEFT from a hit on the right, worried squint, arms protect chest, both boots grounded. No costume damage. Preserve EXACT ivory faceplate, large teal eyes, purple hood-shaped helmet with gold hexagon fitting, teal scarf, ivory lab coat, green circular power cell, bronze gauntlets, purple boots and body proportions. Preserve polished 3D style and light direction. Face RIGHT in three-quarter view. Same canvas size, viewpoint, scale and foot baseline as reference, entire character and effects within generous margins. Change pose/expression only, no redesign. Genuine transparent alpha preserved, no scenery, ground or baked shadow, no text, logos or watermark.",
+    "reference": "fighter/idle.png"
+  },
+  {
+    "asset": "fighter/special.png",
+    "prompt": "Use case: identity-preserve. Edit target image 1 is SPARK, fixed player fighter design. Generate a SINGLE full-body special pose. SPECIAL: plant both boots and thrust both gauntlets toward RIGHT, projecting a compact bright teal/lime energy orb between the hands, excited confident expression. Energy fits within canvas. Preserve EXACT ivory faceplate, large teal eyes, purple hood-shaped helmet with gold hexagon fitting, teal scarf, ivory lab coat, green circular power cell, bronze gauntlets, purple boots and body proportions. Preserve polished 3D style and light direction. Face RIGHT in three-quarter view. Same canvas size, viewpoint, scale and foot baseline as reference, entire character and effects within generous margins. Change pose/expression only, no redesign. Genuine transparent alpha preserved, no scenery, ground or baked shadow, no text, logos or watermark.",
+    "reference": "fighter/idle.png"
+  },
+  {
+    "asset": "arena.png",
+    "prompt": "Use case: stylized-concept. Asset: landscape arena background for HSC Legends chemistry campaign, 16:9 composition. Input images 1 and 2 are STYLE AND PALETTE references only; do NOT draw any characters. An atmospheric alchemy laboratory battle stage: plum-purple vaulted laboratory, bronze pipes and hexagonal architectural trim, glowing lime reagent tanks at outer edges, teal accent lights, warm bronze overhead lamps. Polished stylized 3D game illustration matching the character materials. Camera looks straight across an open raised stone/bronze stage. Leave the middle 70% and lower central floor uncluttered for composited characters and battle UI; put apparatus at far left/right and background. Strong sense of place but quieter contrast behind characters, dark purple backdrop, readable silhouettes when overlaid. No text, logos, letters, people, creatures, foreground objects or UI. Full opaque illustrated environment.",
+    "reference": [
+      "boss/idle.png",
+      "fighter/idle.png"
+    ]
+  }
+]

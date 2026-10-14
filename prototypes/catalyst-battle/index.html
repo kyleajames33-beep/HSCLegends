@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#21172f">
+  <title>HSC Legends · The Catalyst</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar"><a class="brand" href="#">HSC <span>LEGENDS</span></a><div class="preview-chip">CAMPAIGN PREVIEW</div><button id="reset" class="reset">Restart ↻</button></header>
+    <section class="chapter"><div><p class="eyebrow">CHEMISTRY · BOSS BATTLE</p><h1>The Catalyst’s Lab</h1><p>Answer. Charge up. Pick your moment.</p></div><div class="chapter-number" aria-hidden="true">01</div></section>
+    <section id="arena" class="arena" aria-label="Battle arena">
+      <div class="arena-shade"></div>
+      <div class="health player-health"><div class="health-label"><span>SPARK <small>YOUR LEGEND</small></span><strong id="player-hp">100 / 100</strong></div><div class="track"><div id="player-bar" class="fill player-fill"></div></div></div>
+      <div class="health boss-health"><div class="health-label"><span>THE CATALYST <small>REACTOR GOLEM</small></span><strong id="boss-hp">100 / 100</strong></div><div class="track"><div id="boss-bar" class="fill boss-fill"></div></div></div>
+      <div class="versus" aria-hidden="true">VS</div>
+      <div id="player-stage" class="character-stage player-stage"><div class="ground"></div><img id="player-art" src="assets/fighter/idle.png" alt="Spark, a science robot wearing a lab coat"><div id="shield" class="shield" hidden></div></div>
+      <div id="boss-stage" class="character-stage boss-stage"><div class="ground"></div><img id="boss-art" src="assets/boss/idle.png" alt="The Catalyst, a reactor golem"><span id="damage" class="damage" aria-hidden="true"></span></div>
+      <div id="outcome" class="outcome" hidden><p class="eyebrow" id="outcome-label"></p><h2 id="outcome-title"></h2><p id="outcome-copy"></p><button id="again" class="gold-button">Battle again ↻</button></div>
+      <div class="arena-caption"><span class="live-dot"></span><span id="battle-caption">The Catalyst is waiting for your first move.</span></div>
+    </section>
+    <section class="battle-controls" aria-label="Battle actions">
+      <div class="energy"><div><span class="eyebrow">REACTOR ENERGY</span><strong id="energy-count">0 / 5</strong></div><div id="energy-orbs" class="orbs" aria-label="0 of 5 energy"></div></div>
+      <div class="actions"><button id="hit" class="action"><span class="action-icon">↗</span><span><strong>Strike</strong><small>1 energy</small></span></button><button id="special" class="action special"><span class="action-icon">✦</span><span><strong>Reactor burst</strong><small>3 energy</small></span></button><button id="block" class="action"><span class="action-icon">⬡</span><span><strong>Shield</strong><small>1 energy · +10 HP</small></span></button></div>
+    </section>
+    <section class="question-card" aria-label="Chemistry question">
+      <div class="question-top"><span class="eyebrow">CHARGE YOUR LEGEND</span><span id="combo" class="combo">CHEMISTRY</span></div>
+      <h2 id="question"></h2><div id="answers" class="answers"></div>
+      <div id="feedback" class="feedback" role="status" aria-live="polite" hidden></div>
+      <button id="next" class="next-button" hidden>Next question →</button>
+    </section>
+    <p id="event" class="event" role="status" aria-live="polite">Ready. Answer correctly to charge Spark.</p>
+    <footer>Art &amp; gameplay sample · Local battle · No saved XP or rewards</footer>
+  </main>
+  <script type="module" src="app.mjs"></script>
+</body>
+</html>
