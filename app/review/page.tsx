@@ -8,6 +8,7 @@ import { getDueReviews, gradeReview, type ReviewQuestion, type ReviewGrade } fro
 import AnswerTile from '@/components/answer-tile';
 import CountUp from '@/components/count-up';
 import MathText from '@/components/math-text';
+import LessonVideoLink from '@/components/lesson-video-link';
 
 type Phase = 'loading' | 'review' | 'empty' | 'done' | 'error' | 'signedout';
 
@@ -186,6 +187,7 @@ export default function ReviewPage() {
               <p className="text-sm text-inksoft"><MathText text={q.explanation} /></p>
             </div>
           )}
+          <LessonVideoLink q={q} />
 
           <p className="mt-5 text-center text-sm font-semibold text-inksoft">How well did you know it?</p>
           <div className="mt-2 grid grid-cols-4 gap-2">

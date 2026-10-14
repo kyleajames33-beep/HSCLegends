@@ -14,6 +14,7 @@ import CountUp from '@/components/count-up';
 import ShareButton from '@/components/share-button';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
+import LessonVideoLink from '@/components/lesson-video-link';
 import { useJuice, atEvent, StreakFlame, type JuiceAt } from '@/components/juice';
 import { getPowerups, usePowerup, QUICKGAME_POWERUPS, type Powerup } from '@/lib/powerups';
 
@@ -452,6 +453,7 @@ export default function QuickGame() {
             {picked === q.correct_index ? '✅ Correct!' : '❌ Not quite'}
           </p>
           {q.explanation && <p className="mt-1 text-sm text-inksoft"><MathText text={q.explanation} /></p>}
+          <LessonVideoLink q={q} />
           <button onClick={next} className="lg-btn lg-btn-primary mt-4 w-full px-4 py-4">
             {i + 1 >= questions.length ? 'Finish' : 'Next'}
           </button>

@@ -7,6 +7,7 @@ import { SUBJECTS, type Subject } from '@/lib/questions';
 import { subjectModules, SUBJECT_LABELS, moduleName, type SyllabusModule } from '@/lib/syllabus';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
+import LessonVideoLink from '@/components/lesson-video-link';
 
 // "Past papers by topic" — the syllabus map. Pick a subject, see its HSC
 // modules (grouped by Year 11 / Year 12 for sciences) with live per-module
@@ -15,6 +16,7 @@ const DRILL_LIMIT = 12;
 
 type DrillQ = {
   id: string;
+  lesson_id: string | null;
   stem: string;
   options: string[];
   correct_index: number;
@@ -342,6 +344,7 @@ function ModuleDrill({
               <MathText text={q.explanation} />
             </p>
           )}
+          <LessonVideoLink q={q} />
           <button onClick={next} className="lg-btn lg-btn-primary mt-4 w-full px-4 py-4">
             {i + 1 >= questions.length ? 'Finish' : 'Next'}
           </button>
