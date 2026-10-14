@@ -10,6 +10,7 @@ test('Review, Exam and Topic RPCs return stored lesson IDs, including mismatched
   try {
     await db.exec(`
       create role anon; create role authenticated; create role service_role;
+      alter default privileges grant execute on functions to anon;
       create schema auth;
       create function auth.uid() returns uuid language sql as $$ select '00000000-0000-0000-0000-000000000001'::uuid $$;
       create table questions(id text, subject text, topic text, topics text[], module text, stem text,
@@ -27,6 +28,8 @@ test('Review, Exam and Topic RPCs return stored lesson IDs, including mismatched
     await db.exec(fs.readFileSync(new URL('20260613b_module_topics.sql', migrations),'utf8'));
     const file = fs.readdirSync(migrations).find(f => f.endsWith('_authoritative_lesson_ids.sql'));
     await db.exec(fs.readFileSync(new URL(file,migrations),'utf8'));
+    const access = fs.readdirSync(migrations).find(f => f.endsWith('_restrict_review_rpc_access.sql'));
+    await db.exec(fs.readFileSync(new URL(access,migrations),'utf8'));
     await db.exec('grant usage on schema auth to authenticated, anon; set role authenticated;');
     for (const rpc of ["get_due_reviews()", "get_exam_questions('chemistry',11::smallint)", "get_module_questions('chemistry','module-2')"]) {
       const { rows } = await db.query(`select * from ${rpc}`);
@@ -37,6 +40,7 @@ test('Review, Exam and Topic RPCs return stored lesson IDs, including mismatched
       assert.equal(lessonVideoFor(rows.find(q => q.id.includes('l05-q2')))?.youtubeId,'Qjw7Rx5NOOQ');
     }
     await db.exec('reset role; set role anon;');
+    await assert.rejects(db.query('select * from get_due_reviews()'), /permission denied/);
     assert.equal((await db.query("select * from get_module_questions('chemistry','module-2')")).rows.length,2);
   } finally { await db.close(); }
 });

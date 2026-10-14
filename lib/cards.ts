@@ -1,7 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { specimenImageSrc } from '@/lib/specimens.mjs';
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
-export type ArtKind = 'boss' | 'emoji' | 'dicebear';
+export type ArtKind = 'boss' | 'emoji' | 'dicebear' | 'image';
 
 // Single card pulled from a pack (open_pack result row).
 export type PullCard = {
@@ -71,9 +72,23 @@ export const RARITY: Record<Rarity, {
 
 export const RARITY_ORDER: Rarity[] = ['common', 'rare', 'epic', 'legendary', 'mythic'];
 
-// Resolve the image src for a card whose art is a boss sprite.
+// Resolve the image src for a card whose art is a boss sprite or a Specimen Lab plate.
 export function cardImageSrc(card: { art_kind: ArtKind; art_ref: string }): string | null {
-  return card.art_kind === 'boss' ? `/bosses/${card.art_ref}/idle.png` : null;
+  if (card.art_kind === 'boss') return `/bosses/${card.art_ref}/idle.png`;
+  if (card.art_kind === 'image') return specimenImageSrc(card.art_ref);
+  return null;
+}
+
+// Submit the chosen answer; only the database can grade and award a specimen.
+export async function submitSpecimenAnswer(
+  sb: SupabaseClient, questionId: string, answerIndex: number,
+): Promise<{ correct: boolean; is_new: boolean }> {
+  const { data, error } = await sb.rpc('submit_specimen_answer', {
+    p_question_id: questionId, p_answer_index: answerIndex,
+  });
+  if (error) throw new Error(error.message);
+  if (!data?.[0]) throw new Error('No specimen answer result');
+  return data[0];
 }
 
 export async function openPack(sb: SupabaseClient, pack = 'standard'): Promise<PullCard> {

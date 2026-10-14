@@ -16,6 +16,7 @@ export default function Study() {
         <Tile href="/exam" emoji="📝" title="Exam mode" sub="timed Section I" />
       </div>
       <div className="mt-3 space-y-3">
+        <Row href="/specimens" label="🔬 Specimen Lab" hint="picture questions · collect cards" />
         <Row href="/type" label="⌨️ Type it" hint="free-recall typing" />
         <Row href="/play" label="🎲 Free practice" hint="any subject" />
       </div>
