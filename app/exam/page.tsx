@@ -16,6 +16,7 @@ const EXAM_SECONDS = EXAM_COUNT * 60; // 20 minutes
 
 type ExamQ = {
   id: string;
+  lesson_id: string | null;
   stem: string;
   options: string[];
   correct_index: number;

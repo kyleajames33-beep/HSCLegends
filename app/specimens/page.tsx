@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import { SPECIMEN_SETS, specimenImageSrc } from '@/lib/specimens.mjs';
-import { RARITY, claimSpecimenCard, getCollection } from '@/lib/cards';
+import { RARITY, submitSpecimenAnswer, getCollection } from '@/lib/cards';
 import { celebrate } from '@/lib/confetti';
 import AnswerTile from '@/components/answer-tile';
 import LessonVideoLink from '@/components/lesson-video-link';
@@ -25,14 +25,16 @@ export default function SpecimenLab() {
   const [done, setDone] = useState(false);
   const [owned, setOwned] = useState<Set<string>>(new Set());
   const [newCards, setNewCards] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [rewardError, setRewardError] = useState('');
 
   // Which specimen cards the player already owns (signed-in only; quiet on failure).
   useEffect(() => {
     if (!user) return;
     getCollection(sb).then(
       (cards) => setOwned(new Set(cards.filter((c) => c.count > 0).map((c) => c.card_id))),
-      () => {},
-    );
+      () => setRewardError('Card could not be saved. Try this set again.'),
+    ).finally(() => setSaving(false));
   }, [sb, user]);
 
   function begin(s: SpecimenSet) {
@@ -42,28 +44,30 @@ export default function SpecimenLab() {
     setScore(0);
     setDone(false);
     setNewCards([]);
+    setRewardError('');
   }
 
   function choose(idx: number) {
-    if (!set || picked !== null) return;
+    if (!set || picked !== null || saving) return;
     const q = set.questions[i];
     const correct = idx === q.correctIndex;
     setPicked(idx);
     if (correct) setScore((s) => s + 1);
     if (!user) return;
     sb.rpc('increment_quest', { p_metric: 'answer', p_amount: 1 }).then(undefined, () => {});
-    if (!correct) return;
-    sb.rpc('increment_quest', { p_metric: 'correct', p_amount: 1 }).then(undefined, () => {});
-    if (owned.has(q.card.id)) return;
-    claimSpecimenCard(sb, q.card.id).then(
-      (isNew) => {
+    if (correct) sb.rpc('increment_quest', { p_metric: 'correct', p_amount: 1 }).then(undefined, () => {});
+    setSaving(true);
+    setRewardError('');
+    submitSpecimenAnswer(sb, q.id, idx).then(
+      (result) => {
+        if (!result.correct) return;
         setOwned((o) => new Set(o).add(q.card.id));
-        if (!isNew) return;
+        if (!result.is_new) return;
         setNewCards((n) => [...n, q.card.id]);
         celebrate(false);
       },
-      () => {},
-    );
+      () => setRewardError('Card could not be saved. Try this set again.'),
+    ).finally(() => setSaving(false));
   }
 
   function next() {
@@ -187,7 +191,7 @@ export default function SpecimenLab() {
         {q.options.map((opt, idx) => {
           const reveal = !revealed ? null : idx === q.correctIndex ? 'correct' : idx === picked ? 'wrong' : 'dim';
           return (
-            <AnswerTile key={idx} index={idx} onClick={() => choose(idx)} disabled={revealed} reveal={reveal}>
+            <AnswerTile key={idx} index={idx} onClick={() => choose(idx)} disabled={revealed || saving} reveal={reveal}>
               {opt}
             </AnswerTile>
           );
@@ -205,9 +209,10 @@ export default function SpecimenLab() {
               🃏 Collected: {q.card.name} ({RARITY[q.card.rarity].label})
             </p>
           )}
+          {rewardError && <p role="alert" className="mt-2 text-sm text-brick">{rewardError}</p>}
           <LessonVideoLink video={set.video} />
-          <button onClick={next} className="lg-btn lg-btn-primary mt-4 w-full px-4 py-4">
-            {i + 1 >= set.questions.length ? 'Finish' : 'Next'}
+          <button onClick={next} disabled={saving} className="lg-btn lg-btn-primary mt-4 w-full px-4 py-4">
+            {saving ? 'Saving answer…' : i + 1 >= set.questions.length ? 'Finish' : 'Next'}
           </button>
         </div>
       )}

@@ -120,25 +120,13 @@ begin
                       v_card.art_ref, v_card.flavor, v_dupe, v_refund;
 end $function$;
 
--- 4. claim_specimen_card: idempotent award of one specimen card to the caller.
---    Cosmetic only (no Sparks, no dupes, never sellable), so the client-side correct-answer
---    check is the gate. Returns true when the card is newly collected.
+-- 4. Fail closed until the verified-answer migration installs the grading API.
+-- Existing installations are hardened by 20261014*_verified_specimen_answers.sql.
 create or replace function public.claim_specimen_card(p_card_id text)
 returns boolean
-language plpgsql security definer set search_path = public as $$
-declare
-  v_uid uuid := auth.uid();
-  v_new int;
+language plpgsql security definer set search_path = '' as $$
 begin
-  if v_uid is null then raise exception 'auth required'; end if;
-  if not exists (select 1 from public.card_catalog c where c.id = p_card_id and c.source = 'specimen') then
-    raise exception 'not a specimen card';
-  end if;
-  insert into public.user_cards(user_id, card_id) values (v_uid, p_card_id)
-    on conflict (user_id, card_id) do nothing;
-  get diagnostics v_new = row_count;
-  return v_new > 0;
+  raise exception 'verified correct answer required';
 end $$;
-
 revoke all on function public.claim_specimen_card(text) from public, anon;
 grant execute on function public.claim_specimen_card(text) to authenticated;

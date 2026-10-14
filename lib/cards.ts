@@ -79,11 +79,16 @@ export function cardImageSrc(card: { art_kind: ArtKind; art_ref: string }): stri
   return null;
 }
 
-// Award a Specimen card (earned by a first correct Specimen Lab answer). True if newly collected.
-export async function claimSpecimenCard(sb: SupabaseClient, cardId: string): Promise<boolean> {
-  const { data, error } = await sb.rpc('claim_specimen_card', { p_card_id: cardId });
+// Submit the chosen answer; only the database can grade and award a specimen.
+export async function submitSpecimenAnswer(
+  sb: SupabaseClient, questionId: string, answerIndex: number,
+): Promise<{ correct: boolean; is_new: boolean }> {
+  const { data, error } = await sb.rpc('submit_specimen_answer', {
+    p_question_id: questionId, p_answer_index: answerIndex,
+  });
   if (error) throw new Error(error.message);
-  return data === true;
+  if (!data?.[0]) throw new Error('No specimen answer result');
+  return data[0];
 }
 
 export async function openPack(sb: SupabaseClient, pack = 'standard'): Promise<PullCard> {
