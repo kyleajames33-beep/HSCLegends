@@ -1,0 +1,351 @@
+{
+  "columns": [
+    {
+      "type": "uuid",
+      "table": "game_answers",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "not_null": true
+    },
+    {
+      "type": "uuid",
+      "table": "game_answers",
+      "column": "session_id",
+      "default": null,
+      "ordinal": 2,
+      "not_null": true
+    },
+    {
+      "type": "uuid",
+      "table": "game_answers",
+      "column": "player_id",
+      "default": null,
+      "ordinal": 3,
+      "not_null": true
+    },
+    {
+      "type": "smallint",
+      "table": "game_answers",
+      "column": "question_index",
+      "default": null,
+      "ordinal": 4,
+      "not_null": true
+    },
+    {
+      "type": "smallint",
+      "table": "game_answers",
+      "column": "choice",
+      "default": null,
+      "ordinal": 5,
+      "not_null": true
+    },
+    {
+      "type": "boolean",
+      "table": "game_answers",
+      "column": "is_correct",
+      "default": null,
+      "ordinal": 6,
+      "not_null": true
+    },
+    {
+      "type": "integer",
+      "table": "game_answers",
+      "column": "points",
+      "default": "0",
+      "ordinal": 7,
+      "not_null": true
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "game_answers",
+      "column": "answered_at",
+      "default": "now()",
+      "ordinal": 8,
+      "not_null": true
+    },
+    {
+      "type": "uuid",
+      "table": "game_players",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "not_null": true
+    },
+    {
+      "type": "uuid",
+      "table": "game_players",
+      "column": "session_id",
+      "default": null,
+      "ordinal": 2,
+      "not_null": true
+    },
+    {
+      "type": "uuid",
+      "table": "game_players",
+      "column": "user_id",
+      "default": null,
+      "ordinal": 3,
+      "not_null": false
+    },
+    {
+      "type": "text",
+      "table": "game_players",
+      "column": "alias",
+      "default": null,
+      "ordinal": 4,
+      "not_null": true
+    },
+    {
+      "type": "integer",
+      "table": "game_players",
+      "column": "score",
+      "default": "0",
+      "ordinal": 5,
+      "not_null": true
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "game_players",
+      "column": "joined_at",
+      "default": "now()",
+      "ordinal": 6,
+      "not_null": true
+    },
+    {
+      "type": "uuid",
+      "table": "game_sessions",
+      "column": "id",
+      "default": "gen_random_uuid()",
+      "ordinal": 1,
+      "not_null": true
+    },
+    {
+      "type": "text",
+      "table": "game_sessions",
+      "column": "code",
+      "default": null,
+      "ordinal": 2,
+      "not_null": true
+    },
+    {
+      "type": "uuid",
+      "table": "game_sessions",
+      "column": "host_id",
+      "default": null,
+      "ordinal": 3,
+      "not_null": false
+    },
+    {
+      "type": "text",
+      "table": "game_sessions",
+      "column": "subject",
+      "default": null,
+      "ordinal": 4,
+      "not_null": true
+    },
+    {
+      "type": "smallint",
+      "table": "game_sessions",
+      "column": "year",
+      "default": null,
+      "ordinal": 5,
+      "not_null": false
+    },
+    {
+      "type": "text[]",
+      "table": "game_sessions",
+      "column": "question_ids",
+      "default": null,
+      "ordinal": 6,
+      "not_null": true
+    },
+    {
+      "type": "text",
+      "table": "game_sessions",
+      "column": "status",
+      "default": "'lobby'::text",
+      "ordinal": 7,
+      "not_null": true
+    },
+    {
+      "type": "smallint",
+      "table": "game_sessions",
+      "column": "current_index",
+      "default": "'-1'::integer",
+      "ordinal": 8,
+      "not_null": true
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "game_sessions",
+      "column": "question_started_at",
+      "default": null,
+      "ordinal": 9,
+      "not_null": false
+    },
+    {
+      "type": "smallint",
+      "table": "game_sessions",
+      "column": "per_question_seconds",
+      "default": "15",
+      "ordinal": 10,
+      "not_null": true
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "game_sessions",
+      "column": "created_at",
+      "default": "now()",
+      "ordinal": 11,
+      "not_null": true
+    },
+    {
+      "type": "timestamp with time zone",
+      "table": "game_sessions",
+      "column": "expires_at",
+      "default": "(now() + '06:00:00'::interval)",
+      "ordinal": 12,
+      "not_null": true
+    },
+    {
+      "type": "smallint",
+      "table": "game_sessions",
+      "column": "double_index",
+      "default": null,
+      "ordinal": 13,
+      "not_null": false
+    }
+  ],
+  "indexes": [
+    {
+      "name": "game_answers_pkey",
+      "ready": true,
+      "table": "game_answers",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX game_answers_pkey ON public.game_answers USING btree (id)"
+    },
+    {
+      "name": "game_answers_player_id_question_index_key",
+      "ready": true,
+      "table": "game_answers",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX game_answers_player_id_question_index_key ON public.game_answers USING btree (player_id, question_index)"
+    },
+    {
+      "name": "game_players_pkey",
+      "ready": true,
+      "table": "game_players",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX game_players_pkey ON public.game_players USING btree (id)"
+    },
+    {
+      "name": "game_players_session_idx",
+      "ready": true,
+      "table": "game_players",
+      "valid": true,
+      "definition": "CREATE INDEX game_players_session_idx ON public.game_players USING btree (session_id)"
+    },
+    {
+      "name": "game_sessions_code_idx",
+      "ready": true,
+      "table": "game_sessions",
+      "valid": true,
+      "definition": "CREATE INDEX game_sessions_code_idx ON public.game_sessions USING btree (code)"
+    },
+    {
+      "name": "game_sessions_code_key",
+      "ready": true,
+      "table": "game_sessions",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX game_sessions_code_key ON public.game_sessions USING btree (code)"
+    },
+    {
+      "name": "game_sessions_pkey",
+      "ready": true,
+      "table": "game_sessions",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX game_sessions_pkey ON public.game_sessions USING btree (id)"
+    }
+  ],
+  "triggers": null,
+  "constraints": [
+    {
+      "name": "game_answers_pkey",
+      "type": "p",
+      "table": "game_answers",
+      "validated": true,
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "game_answers_player_id_fkey",
+      "type": "f",
+      "table": "game_answers",
+      "validated": true,
+      "definition": "FOREIGN KEY (player_id) REFERENCES game_players(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "game_answers_player_id_question_index_key",
+      "type": "u",
+      "table": "game_answers",
+      "validated": true,
+      "definition": "UNIQUE (player_id, question_index)"
+    },
+    {
+      "name": "game_answers_session_id_fkey",
+      "type": "f",
+      "table": "game_answers",
+      "validated": true,
+      "definition": "FOREIGN KEY (session_id) REFERENCES game_sessions(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "game_players_pkey",
+      "type": "p",
+      "table": "game_players",
+      "validated": true,
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "game_players_session_id_fkey",
+      "type": "f",
+      "table": "game_players",
+      "validated": true,
+      "definition": "FOREIGN KEY (session_id) REFERENCES game_sessions(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "game_players_user_id_fkey",
+      "type": "f",
+      "table": "game_players",
+      "validated": true,
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id)"
+    },
+    {
+      "name": "game_sessions_code_key",
+      "type": "u",
+      "table": "game_sessions",
+      "validated": true,
+      "definition": "UNIQUE (code)"
+    },
+    {
+      "name": "game_sessions_host_id_fkey",
+      "type": "f",
+      "table": "game_sessions",
+      "validated": true,
+      "definition": "FOREIGN KEY (host_id) REFERENCES auth.users(id)"
+    },
+    {
+      "name": "game_sessions_pkey",
+      "type": "p",
+      "table": "game_sessions",
+      "validated": true,
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "game_sessions_status_check",
+      "type": "c",
+      "table": "game_sessions",
+      "validated": true,
+      "definition": "CHECK (status = ANY (ARRAY['lobby'::text, 'active'::text, 'complete'::text]))"
+    }
+  ]
+}
