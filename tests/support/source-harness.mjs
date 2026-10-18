@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
+import posix from 'node:path/posix';
 
 const root = new URL('../../', import.meta.url);
 export function sourceText(path) { return fs.readFileSync(new URL(path, root), 'utf8'); }
@@ -12,8 +13,16 @@ export function loadSourceModule(path, dependencies = {}, globals = {}) {
   const context = {
     module: loaded, exports: loaded.exports, Error, TypeError, SyntaxError, JSON,
     require(name) {
-      if (!Object.hasOwn(dependencies, name)) throw new Error(`Unmocked dependency: ${name} in ${path}`);
-      return dependencies[name];
+      if (Object.hasOwn(dependencies, name)) return dependencies[name];
+      // Route selectors can import adjacent components. Keep their real source
+      // and the same dependency doubles; do not stub out the chosen page.
+      if (name.startsWith('./') || name.startsWith('../')) {
+        const relative = posix.normalize(posix.join(posix.dirname(path), name));
+        for (const suffix of ['', '.tsx', '.ts']) if (fs.existsSync(new URL(relative + suffix, root))) {
+          return loadSourceModule(relative + suffix, dependencies, globals);
+        }
+      }
+      throw new Error(`Unmocked dependency: ${name} in ${path}`);
     },
     setInterval: () => 0, clearInterval: () => {}, setTimeout: () => 0, clearTimeout: () => {},
     ...globals,
@@ -91,6 +100,8 @@ export function pageHarness(path, sb, storage = memoryStorage(), auth = { user: 
     '@/lib/live': loadSourceModule('lib/live.ts'),
     '@/lib/live-session-cache': cache,
     '@/lib/classroom-learning': learning,
+    '@/lib/classroom-recovery': loadSourceModule('lib/classroom-recovery.ts'),
+    '@/lib/classroom-recovery-gate': loadSourceModule('lib/classroom-recovery-gate.ts'),
     '@/lib/live-host-controller': loadSourceModule('lib/live-host-controller.ts', { './live': loadSourceModule('lib/live.ts'), './live-session-cache': cache }, globals),
     '@/lib/presence': loadSourceModule('lib/presence.ts', {}, globals),
     '@/components/answer-tile': { default: 'AnswerTile' },
@@ -104,6 +115,9 @@ export function pageHarness(path, sb, storage = memoryStorage(), auth = { user: 
       let tree;
       for (let pass = 0; pass < 8; pass++) {
         cursor = 0; dirty = false; tree = Page();
+        // Evaluate a route's selected root component while the hook cursor and
+        // effect queue are active. JSX inspection afterward is too late.
+        while (tree && typeof tree.type === 'function') tree = tree.type(tree.props);
         const effects = pending; pending = [];
         for (const effect of effects) effect();
         await Promise.resolve(); await Promise.resolve();
@@ -129,3 +143,4 @@ export function textContent(node) {
   if (typeof node.type === 'function') return textContent(node.type(node.props));
   return textContent(node.props?.children);
 }
+

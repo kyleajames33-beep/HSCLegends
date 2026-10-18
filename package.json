@@ -10,7 +10,8 @@
     "test": "node --import ./tests/support/deny-network.mjs --test tests/offline/*.test.mjs",
     "test:regressions": "node --import ./tests/support/deny-network.mjs --test tests/regressions/*.test.mjs",
     "test:all": "npm test && npm run test:regressions",
-    "test:db": "node --test tests/database/*.test.mjs"
+    "test:db": "node --test tests/database/*.test.mjs",
+    "test:classroom-candidate": "node --import ./tests/support/deny-network.mjs --test tests/database/classroom-*.test.mjs tests/offline/classroom-join-recovery.test.mjs tests/offline/classroom-scoped-page-integration.test.mjs"
   },
   "dependencies": {
     "@dicebear/collection": "^9.4.2",
