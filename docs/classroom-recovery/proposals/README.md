@@ -24,8 +24,8 @@ The normal candidate command discovers the six upgrade tests. Negative controls 
 - Ledger claim/event retention and account/room deletion semantics. Ledger tables and grants are intentionally excluded here. Unsafe legacy claim access must be retired before replacement exactly-once guarantees apply.
 - Reviewed retention and rollback plan. Transaction failure rolls back an unsuccessful upgrade; that is not an approved post-deployment rollback. Dropping evidence after accepted answers or claims could destroy recovery/idempotency guarantees, so no destructive down migration is supplied.
 - Native PostgreSQL independent-connection lock/expiry/retry and uncertain-commit tests, actual constrained-role tests and a complete approved nonproduction schema-upgrade rehearsal.
-- Real guest issuance, cookie-only resolution, verified nonanonymous account identity, origin/CSRF/abuse protection, compatible host lifecycle and claim UI integration.
-- Actual browser SSR/hydration and interrupted recovery flows. Local Chromium could not launch due to a socket restriction; the hosted preview requires Vercel login. Neither was counted as passing browser QA.
+- Hosted mounting of the locally tested guest issuance/resolution and HTTP/auth boundary, SSR refresh-cookie propagation, a real shared limiter, compatible host lifecycle and claim UI integration. The candidate modules alone do not configure any of these services.
+- Actual hosted browser/auth/database integration. An isolated native-cloud-browser fixture now exercises real secure-page SSR/hydration and interrupted recovery with synthetic auth/transport. This does not validate hosted Supabase cookie refresh, real database concurrency or live classroom writes. The hosted preview still requires Vercel login.
 
 The previous core/scoped/ledger/client tests remain useful, but their synthetic fixture includes a DELETE-blocking evidence trigger. This proposal deliberately changes that lifecycle behavior to preserve verified classroom cleanup. The ledger adapter is not claimed to run on this classroom-only schema.
 

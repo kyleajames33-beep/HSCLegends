@@ -1,0 +1,8 @@
+import React, { useEffect, useSyncExternalStore } from 'react';
+import JoinPage from '../../../app/join/secure-join';
+import { scenario, subscribe, getCounts, identity, queueStale, advance, releaseStale, finish, corruptNext, rejectServerLeave, loseNextLeaveAck } from './fixture-state.mjs';
+export default function Fixture() {
+    const counts = useSyncExternalStore(subscribe, getCounts, getCounts);
+    useEffect(() => { window.__hydrated(); }, []);
+    return <><aside><strong>Synthetic local browser fixture · {scenario}</strong><p>Actual secure page and controller. In-memory transport and synthetic auth. No hosted accounts, API or XP claims.</p><nav><a href="/fresh.html">Fresh answer</a> · <a href="/committed.html">Uncached committed</a> · <a href="/historical.html">Historical missing content</a></nav><details><summary>Fixture controls</summary><button onClick={queueStale}>Queue one stale read</button><button onClick={advance}>Advance and notify</button><button onClick={releaseStale}>Release stale response</button><button onClick={corruptNext}>Corrupt next ownership binding</button><button onClick={rejectServerLeave}>Reject server leave</button><button onClick={loseNextLeaveAck}>Lose next leave acknowledgement</button><button onClick={finish}>Complete synthetic game</button><button onClick={() => identity(true)}>Sign in synthetic account</button><button onClick={() => identity(false)}>Sign out synthetic account</button><button onClick={() => identity('anonymous')}>Use synthetic anonymous account</button><button onClick={() => identity('second')}>Switch synthetic signed-in account</button></details><output aria-label="Synthetic transport counters">{JSON.stringify(counts)}</output></aside><JoinPage /></>;
+}

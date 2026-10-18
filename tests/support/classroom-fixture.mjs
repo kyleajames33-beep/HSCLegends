@@ -30,6 +30,7 @@ export function fixture(principalId = null) {
   const transport = {
     enabled: true,
     async join(input) { calls.push(['join', input]); return { ...binding }; },
+    async leave(input) { calls.push(['leave', input]); return { schemaVersion: 1, disposition: 'left-this-device' }; },
     async restore() { calls.push(['restore']); return { ...binding }; },
     async ownSnapshot(b) {
       assertBinding(b); calls.push(['snapshot']);

@@ -11,7 +11,7 @@
     "test:regressions": "node --import ./tests/support/deny-network.mjs --test tests/regressions/*.test.mjs",
     "test:all": "npm test && npm run test:regressions",
     "test:db": "node --test tests/database/*.test.mjs",
-    "test:classroom-candidate": "node --import ./tests/support/deny-network.mjs --test tests/database/classroom-*.test.mjs tests/offline/classroom-join-recovery.test.mjs tests/offline/classroom-scoped-page-integration.test.mjs"
+    "test:classroom-candidate": "node --import ./tests/support/deny-network.mjs --test --test-concurrency=1 tests/database/classroom-*.test.mjs tests/offline/classroom-*.test.mjs"
   },
   "dependencies": {
     "@dicebear/collection": "^9.4.2",

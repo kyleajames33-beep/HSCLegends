@@ -264,3 +264,54 @@ test('scoped ownSnapshot legacy complete without a question set still reaches te
   assert.equal(snapshot.total, null);
   assert.deepEqual(await f.core.ownStanding(proof), { score: 0, rank: 1 });
 }));
+
+test('scoped owner guard denies a post-resolution ownership change before private reads or answer writes', () => using(async f => {
+  // Cookie resolution observed null in tx1; another authorized operation changes
+  // the owner before this request's independent scoped transaction begins.
+  const resolvedProof = { ...proof, expectedOwnerId: null };
+  await f.db.query('update public.game_players set user_id=$1 where id=$2', [account, alice]);
+  for (const perform of [
+    () => f.core.snapshot(resolvedProof, 0),
+    () => f.core.ownSnapshot(resolvedProof),
+    () => f.core.submit(resolvedProof, { index: 0, choice: 0 }),
+  ]) {
+    f.trace.length = 0;
+    await assert.rejects(perform(), e => e.code === 'forbidden');
+    assert.ok(f.trace.every(q => !/game_answers|question_sets|receipts/.test(q.text)));
+    assert.ok(f.trace.every(q => !/^\s*(insert|update|delete)\b/.test(q.text)));
+  }
+  await f.db.query("update public.game_sessions set status='complete' where id=$1", [room]);
+  for (const perform of [() => f.core.ownStanding(resolvedProof), () => f.core.ownSnapshot(resolvedProof)]) {
+    f.trace.length = 0;
+    await assert.rejects(perform(), e => e.code === 'forbidden');
+    const playerReads = f.trace.filter(q => q.text.includes('from public.game_players'));
+    assert.equal(playerReads.length, 1);
+    assert.deepEqual(playerReads[0].params, [room, alice]);
+    assert.ok(f.trace.every(q => !/question_sets|game_answers|receipts/.test(q.text)));
+  }
+  assert.equal(await count(f, 'public.game_answers'), 0);
+  assert.equal(await count(f, 'classroom_candidate_private.receipts'), 0);
+}));
+
+test('scoped owner guard accepts matching null/account and is copied before asynchronous work', () => using(async f => {
+  const nullProof = { ...proof, expectedOwnerId: null };
+  assert.equal((await f.core.ownSnapshot(nullProof)).playerId, alice);
+  await f.db.query('update public.game_players set user_id=$1 where id=$2', [account, alice]);
+  const matched = { ...proof, expectedOwnerId: account };
+  const pending = f.core.submit(matched, { index: 0, choice: 0 });
+  matched.expectedOwnerId = null;
+  assert.equal((await pending).points, 147);
+  const persisted = await f.core.snapshot({ ...proof, expectedOwnerId: account }, 0);
+  assert.equal(persisted.ownReceipt.points, 147);
+  await assert.rejects(f.core.snapshot({ ...proof, expectedOwnerId: host }, 0), e => e.code === 'forbidden');
+  await f.db.query("update public.game_sessions set status='complete' where id=$1", [room]);
+  assert.deepEqual(await f.core.ownStanding({ ...proof, expectedOwnerId: account }), { score: 147, rank: 1 });
+}));
+
+test('scoped owner guard rejects malformed present values before SQL while omission remains compatible', () => using(async f => {
+  for (const expectedOwnerId of [undefined, '', 'invalid', 0, false, {}, []]) {
+    await assert.rejects(f.core.ownSnapshot({ ...proof, expectedOwnerId }), e => e.code === 'forbidden');
+  }
+  assert.equal(f.trace.length, 0);
+  assert.equal((await f.core.ownSnapshot(proof)).playerId, alice);
+}));

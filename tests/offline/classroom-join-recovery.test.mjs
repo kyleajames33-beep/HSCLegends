@@ -149,7 +149,7 @@ for (const change of ['account-switch', 'logout', 'unmount', 'reset']) test(`ACT
     if (change === 'account-switch') { auth.user = { id: 'account-b' }; await h.render(); }
     if (change === 'logout') { auth.user = null; await h.render(); }
     if (change === 'unmount') h.unmount();
-    if (change === 'reset') { f.transport.ownSnapshot = async () => { throw new Error('temporary'); }; await refresh(h); await button(await h.render(), 'Back to join').props.onClick(); }
+    if (change === 'reset') { f.transport.ownSnapshot = async () => { throw new Error('temporary'); }; await refresh(h); await button(await h.render(), 'Back to join').props.onClick(); await button(await h.render(), 'Confirm leave').props.onClick(); }
     const count = f.calls.length; deferred.resolve(); await pending;
     if (change !== 'unmount') assert.doesNotMatch(textContent(await h.render()), /Correct!|Original A|points recorded/);
     assert.equal(f.calls.length, count);
@@ -231,4 +231,88 @@ test('ACTUAL ROUTE: explicit gate defaults to byte-identical legacy page and can
   assert.equal((await import('node:crypto')).createHash('sha256').update(sourceText('app/join/legacy-join.tsx')).digest('hex'), '655876c71ed64f9c5da39e635d0874ae759e0e974e206965478ff9d2b9475f62');
   dependencies['@/lib/classroom-recovery-gate'] = { classroomRecoveryEnabled: true };
   assert.equal(loadSourceModule('app/join/page.tsx', dependencies).default().type, 'SecureJoin');
+});
+
+for (const complete of [false, true]) test(`ACTUAL LEAVE: confirmation cancel preserves ${complete ? 'final standing' : 'accepted receipt'} and makes no request`, async () => {
+  const f = fixture(); await f.core.submit(f.proof, { index: 0, choice: 0 }); if (complete) { f.room().status = 'complete'; f.room().currentIndex = 2; }
+  const h = pageHarness(f.transport);
+  try {
+    let tree = await restore(h); const original = complete ? /GAME OVER/ : /Correct!/;
+    await button(tree, complete ? 'Play another' : 'Leave current game').props.onClick(); tree = await h.render();
+    assert.match(textContent(tree), original); assert.match(textContent(tree), /End this recovery session/); assert.equal(f.calls.filter(c => c[0] === 'leave').length, 0);
+    await button(tree, 'Keep current game').props.onClick(); tree = await h.render(); assert.match(textContent(tree), original); assert.equal(button(tree, 'Confirm leave'), undefined);
+    assert.equal(f.state.answers.size, 1);
+  } finally { h.unmount(); }
+});
+
+test('ACTUAL LEAVE: confirmed revoke resets only after acknowledgement and allows another join', async () => {
+  const f = fixture(); const h = pageHarness(f.transport); const d = defer(); f.transport.leave = async input => { f.calls.push(['leave', input]); return d.promise; };
+  try {
+    let tree = await restore(h); const staleAnswer = tiles(tree)[0].props.onClick;
+    await button(tree, 'Leave current game').props.onClick(); tree = await h.render(); const click = button(tree, 'Confirm leave').props.onClick;
+    const pending = click(); await click(); tree = await h.render(); assert.match(textContent(tree), /Leaving this browser/); assert.ok(tiles(tree).every(e => e.props.disabled));
+    await staleAnswer(); assert.equal(f.calls.filter(c => c[0] === 'submit').length, 0); assert.equal(f.calls.filter(c => c[0] === 'leave').length, 1);
+    d.resolve({ schemaVersion: 1, disposition: 'left-this-device' }); await pending; tree = await h.render(); assert.match(textContent(tree), /Join a game/); assert.match(textContent(tree), /can join another game/);
+    elements(tree).find(e => e.props?.['aria-label'] === 'Game code').props.onChange({ target: { value: 'NEXT12' } }); elements(tree).find(e => e.props?.['aria-label'] === 'Your name').props.onChange({ target: { value: 'New guest' } });
+    tree = await h.render(); await elements(tree).find(e => e.type === 'form').props.onSubmit({ preventDefault() {} }); assert.match(textContent(await h.render()), /Question 1\/2/);
+    assert.deepEqual(JSON.parse(JSON.stringify(f.calls.find(c => c[0] === 'leave'))), ['leave', { intent: 'revoke-session' }]);
+  } finally { h.unmount(); }
+});
+
+test('ACTUAL LEAVE: failed or malformed acknowledgement preserves recovery for explicit retry and locks stale question', async () => {
+  for (const response of ['throw', {}, { schemaVersion: 1, disposition: 'wrong' }]) {
+    const f = fixture(); const h = pageHarness(f.transport); f.transport.leave = async input => { f.calls.push(['leave', input]); if (response === 'throw') throw Error('private backend'); return response; };
+    try {
+      let tree = await restore(h); await button(tree, 'Leave current game').props.onClick(); await button(await h.render(), 'Confirm leave').props.onClick(); tree = await h.render();
+      assert.match(textContent(tree), /Leaving could not be confirmed/); assert.doesNotMatch(textContent(tree), /private backend/); assert.equal(tiles(tree).length, 0);
+      await button(tree, 'Forget recovery on this browser').props.onClick(); tree = await h.render(); assert.match(textContent(tree), /server session will not be revoked/);
+      assert.equal(f.calls.filter(c => c[0] === 'leave').length, 1);
+      f.transport.leave = async input => { f.calls.push(['leave', input]); return { schemaVersion: 1, disposition: 'left-this-device' }; };
+      await button(tree, 'Confirm forget').props.onClick(); assert.match(textContent(await h.render()), /Join a game/);
+      assert.equal(f.calls.at(-1)[1].intent, 'forget-browser');
+    } finally { h.unmount(); }
+  }
+});
+
+test('ACTUAL LEAVE: explicit forget is reachable before binding and cancelled confirmation never clears recovery', async () => {
+  const f = fixture(); f.transport.restore = async () => { throw Error('foreign or expired'); }; const h = pageHarness(f.transport);
+  try {
+    let tree = await restore(h); await button(tree, 'Forget recovery on this browser').props.onClick(); tree = await h.render();
+    await button(tree, 'Keep current game').props.onClick(); assert.equal(f.calls.filter(c => c[0] === 'leave').length, 0);
+    await button(await h.render(), 'Forget recovery on this browser').props.onClick(); await button(await h.render(), 'Confirm forget').props.onClick();
+    assert.match(textContent(await h.render()), /can join another game/); assert.equal(f.calls.at(-1)[1].intent, 'forget-browser');
+  } finally { h.unmount(); }
+});
+
+test('ACTUAL LEAVE: stale read and submit cannot reopen question after unknown leave outcome', async () => {
+  const f = fixture(); const h = pageHarness(f.transport); const d = defer(); const submit = f.transport.submit;
+  f.transport.submit = async (...args) => { const result = await submit(...args); await d.promise; return result; };
+  f.transport.leave = async () => { throw Error('unknown commit'); };
+  try {
+    let tree = await restore(h); const pending = tiles(tree)[0].props.onClick(); await settle(); await button(await h.render(), 'Leave current game').props.onClick();
+    await button(await h.render(), 'Confirm leave').props.onClick(); const reads = f.calls.filter(c => c[0] === 'snapshot').length;
+    d.resolve(); await pending; tree = await h.render(); assert.match(textContent(tree), /Leaving could not be confirmed/); assert.equal(tiles(tree).length, 0);
+    assert.equal(f.calls.filter(c => c[0] === 'snapshot').length, reads);
+  } finally { h.unmount(); }
+});
+
+test('CONTROLLER LEAVE: cookie operations stay fenced across identity changes until leave settles', async () => {
+  const f = fixture(); const d = defer(); f.transport.leave = async input => { f.calls.push(['leave', input]); return d.promise; };
+  const { ClassroomRecoveryController } = loadSourceModule('lib/classroom-recovery.ts'); const c = new ClassroomRecoveryController(f.transport); c.mount(); c.setIdentity(null, false);
+  try {
+    await c.restore(); const leaving = c.leave(c.getSnapshot(), 'revoke-session'); c.setIdentity('next-account', false);
+    assert.equal(c.getSnapshot().leaving, true); await c.join('NEXT12','Guest'); await c.restore(); await c.leave(c.getSnapshot(), 'forget-browser');
+    assert.equal(f.calls.filter(x => x[0] === 'join').length, 0); assert.equal(f.calls.filter(x => x[0] === 'restore').length, 1); assert.equal(f.calls.filter(x => x[0] === 'leave').length, 1);
+    d.resolve({ schemaVersion: 1, disposition: 'left-this-device' }); await leaving; assert.equal(c.getSnapshot().leaving, false); assert.equal(c.getSnapshot().identity, 'next-account'); assert.equal(c.getSnapshot().binding, null);
+  } finally { c.dispose(); }
+});
+
+test('CONTROLLER LEAVE: pending join cookie writer blocks leave and new joins across account switch', async () => {
+  const f = fixture(); const d = defer(); f.transport.join = async input => { f.calls.push(['join',input]); return d.promise; };
+  const { ClassroomRecoveryController } = loadSourceModule('lib/classroom-recovery.ts'); const c = new ClassroomRecoveryController(f.transport); c.mount(); c.setIdentity(null, false);
+  try {
+    const joining = c.join('LAB001','Guest'); c.setIdentity('next-account', false); assert.equal(c.getSnapshot().joining, true);
+    await c.leave(c.getSnapshot(),'forget-browser'); await c.join('NEXT12','Other'); assert.equal(f.calls.filter(x=>x[0]==='leave').length,0); assert.equal(f.calls.filter(x=>x[0]==='join').length,1);
+    d.resolve(f.binding); await joining; assert.equal(c.getSnapshot().joining,false); assert.equal(c.getSnapshot().binding,null);
+  } finally { c.dispose(); }
 });

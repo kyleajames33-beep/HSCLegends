@@ -14,12 +14,14 @@ export type Snapshot = Binding & {
   ownReceipt: Receipt | null;
 };
 export type Standing = Binding & { schemaVersion: 1; rank: number; score: number };
+export type LeaveMode = 'revoke-session' | 'forget-browser';
 export type Transport = {
   enabled: boolean;
   // join creates a guest-capable session grant. restore uses an already issued
   // server credential, NOT alias/code/player ID or a browser answer receipt.
   join(input: { code: string; alias: string }): Promise<unknown>;
   restore(): Promise<unknown>;
+  leave(input: { intent: LeaveMode }): Promise<unknown>;
   ownSnapshot(binding: Binding): Promise<unknown>;
   submit(binding: Binding, answer: { index: number; choice: number }): Promise<unknown>;
   ownStanding(binding: Binding): Promise<unknown>;
@@ -30,7 +32,7 @@ const disconnected = async (): Promise<never> => { throw new Error('integration-
 // Intentionally not configurable by environment variables or browser globals.
 // Replace only after the reviewed server adapter and security gates are satisfied.
 export const classroomTransport: Transport = Object.freeze({
-  enabled: false, join: disconnected, restore: disconnected,
+  enabled: false, join: disconnected, restore: disconnected, leave: disconnected,
   ownSnapshot: disconnected, submit: disconnected, ownStanding: disconnected,
 });
 
@@ -101,10 +103,10 @@ export function checkedStanding(value: unknown, binding: Binding): Standing {
 export type View = {
   epoch: number; identity: string | null; known: boolean; binding: Binding | null;
   phase: 'form' | 'connecting' | 'lobby' | 'question' | 'answered' | 'finishing' | 'complete' | 'unavailable';
-  busy: boolean; snapshot: Snapshot | null; standing: Standing | null; error: string; notice: string;
+  busy: boolean; leaving: boolean; joining: boolean; snapshot: Snapshot | null; standing: Standing | null; error: string; notice: string;
 };
 const empty = (epoch: number, identity: string | null, known: boolean): View => ({
-  epoch, identity, known, binding: null, phase: 'form', busy: false, snapshot: null, standing: null, error: '', notice: '',
+  epoch, identity, known, binding: null, phase: 'form', busy: false, leaving: false, joining: false, snapshot: null, standing: null, error: '', notice: '',
 });
 const errorText = (e: unknown) => e instanceof InvalidResponse
   ? 'This response could not be verified for your session. Reconnect securely to continue.'
@@ -119,6 +121,8 @@ export class ClassroomRecoveryController {
   private completedObserved = false;
   private accepted: { index: number; receipt: string } | null = null;
   private answerPending: object | null = null;
+  private leavePending: object | null = null;
+  private joinPending: object | null = null;
   private stopWatch: (() => void) | undefined;
   constructor(private readonly transport: Transport) {}
   getSnapshot = (): View => this.view;
@@ -129,19 +133,55 @@ export class ClassroomRecoveryController {
   setIdentity(identity: string | null, loading: boolean) {
     if (loading || !this.view.known || this.view.identity !== identity) {
       this.stopWatch?.(); this.stopWatch = undefined; this.readVersion++; this.answerPending = null; this.highestIndex = -1; this.completedObserved = false; this.accepted = null;
-      this.publish(empty(this.view.epoch + 1, identity, !loading));
+      this.publish({ ...empty(this.view.epoch + 1, identity, !loading), leaving: this.leavePending !== null, joining: this.joinPending !== null, busy: this.leavePending !== null || this.joinPending !== null });
     }
   }
   private current(epoch: number) { return this.mounted && this.view.known && this.view.epoch === epoch; }
   private connected(view: View) { return this.current(view.epoch) && !!view.binding && this.view.binding === view.binding; }
-  private enabled() { return this.transport.enabled && this.mounted && this.view.known; }
+  private enabled() { return this.transport.enabled && this.mounted && this.view.known && !this.leavePending && !this.joinPending; }
   reset() {
     this.stopWatch?.(); this.stopWatch = undefined; this.readVersion++; this.answerPending = null; this.highestIndex = -1; this.completedObserved = false; this.accepted = null;
-    this.publish(empty(this.view.epoch + 1, this.view.identity, this.view.known));
+    this.publish({ ...empty(this.view.epoch + 1, this.view.identity, this.view.known), leaving: this.leavePending !== null, joining: this.joinPending !== null, busy: this.leavePending !== null || this.joinPending !== null });
+  }
+  async leave(view: View, intent: LeaveMode) {
+    if (!this.enabled() || !this.current(view.epoch) || !['revoke-session', 'forget-browser'].includes(intent)) return;
+    const pending = {}; this.leavePending = pending;
+    const epoch = this.view.epoch + 1;
+    this.readVersion++; this.answerPending = null;
+    this.stopWatch?.(); this.stopWatch = undefined;
+    this.publish({ epoch, leaving: true, busy: true, error: '', notice: '' });
+    let succeeded = false;
+    try {
+      const response = object(await this.transport.leave({ intent }));
+      if (response.schemaVersion !== 1 || response.disposition !== 'left-this-device') invalid();
+      succeeded = true;
+    } catch {
+      // A lost acknowledgement may mean the server already revoked the grant.
+      // Keep the binding for retry, but never re-enable a stale question.
+    } finally {
+      if (this.leavePending === pending) this.leavePending = null;
+    }
+    if (!this.mounted) return;
+    // Same-controller identity changes cannot start competing cookie operations
+    // until this promise settles. Epochs do NOT protect Set-Cookie delivery:
+    // cross-tab/remount response ordering remains a transport integration gate.
+    if (!this.current(epoch)) { this.publish({ leaving: false, busy: false }); return; }
+    if (succeeded) {
+      this.reset();
+      this.publish({ notice: 'This browser has left the game. You can join another game.' });
+    } else {
+      this.publish({ leaving: false, busy: false, phase: this.view.binding ? 'unavailable' : 'form', snapshot: null, standing: null,
+        error: 'Leaving could not be confirmed. It may already have finished. Retry leaving, or explicitly forget this browser’s recovery.' });
+    }
   }
   async join(code: string, alias: string) {
     if (!this.enabled() || this.view.busy || !/^[A-Z0-9]{6}$/.test(code) || !alias.trim() || alias.trim().length > 20) return;
-    await this.connect(() => this.transport.join({ code, alias: alias.trim() }));
+    const pending = {}; this.joinPending = pending;
+    try { await this.connect(() => this.transport.join({ code, alias: alias.trim() })); }
+    finally {
+      if (this.joinPending === pending) this.joinPending = null;
+      if (this.mounted) this.publish({ joining: false, busy: this.view.phase === 'form' ? false : this.view.busy });
+    }
   }
   async restore() {
     if (!this.enabled() || this.view.busy) return;
@@ -163,7 +203,7 @@ export class ClassroomRecoveryController {
     }
   }
   async refresh(view: View) {
-    if (!this.enabled() || !this.connected(view)) return;
+    if (!this.transport.enabled || !this.mounted || !this.view.known || this.leavePending || !this.connected(view)) return;
     const binding = view.binding!; const version = ++this.readVersion;
     const current = () => this.connected(view) && version === this.readVersion;
     // A refresh never enables submission while a submit may have committed.

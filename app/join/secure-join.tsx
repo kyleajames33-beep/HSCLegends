@@ -5,7 +5,7 @@ import { useUser } from '@/lib/use-user';
 import { useCountdown } from '@/lib/use-countdown';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
-import { classroomTransport, ClassroomRecoveryController } from '@/lib/classroom-recovery';
+import { classroomTransport, ClassroomRecoveryController, type LeaveMode } from '@/lib/classroom-recovery';
 
 // Local-only integration candidate for the actual join route. The imported
 // transport is disconnected. No legacy alias rejoin, roster, receipt cache,
@@ -18,6 +18,7 @@ export default function JoinPage() {
   const [code, setCode] = useState('');
   const [alias, setAlias] = useState('');
   const [largeText, setLargeText] = useState(false);
+  const [leaveIntent, setLeaveIntent] = useState<{ epoch: number; mode: LeaveMode } | null>(null);
   const [practice, setPractice] = useState<{ epoch: number; index: number; choice: number | null } | null>(null);
   useEffect(() => { controller.mount(); return () => controller.dispose(); }, [controller]);
   useEffect(() => { controller.setIdentity(ownerId, userLoading); }, [controller, ownerId, userLoading]);
@@ -28,16 +29,33 @@ export default function JoinPage() {
   const result = snapshot?.ownReceipt;
   const phase = ready ? view.phase : 'form';
   const timer = useCountdown(snapshot?.startedAt == null ? null : new Date(snapshot.startedAt).toISOString(), (snapshot?.durationMs ?? 15000) / 1000);
-  const enabled = ready && classroomTransport.enabled;
+  const confirmingLeave = leaveIntent?.epoch === view.epoch;
+  const enabled = ready && classroomTransport.enabled && !view.leaving && !view.joining && !confirmingLeave;
   const refresh = () => { if (enabled) return controller.refresh(view); };
   const error = view.error && ready ? <Err>{view.error}</Err> : null;
   const notice = view.notice && ready ? <p role="status" className="mt-3 text-sm text-inksoft">{view.notice}</p> : null;
   const currentView = () => controller.getSnapshot().epoch === view.epoch;
-  const reset = () => { if (currentView()) { controller.reset(); setPractice(null); } };
+  const requestLeave = (mode: LeaveMode) => { if (ready && classroomTransport.enabled && !view.leaving && !view.joining && currentView()) setLeaveIntent({ epoch: view.epoch, mode }); };
+  const reset = () => requestLeave('revoke-session');
   const currentPractice = () => { const latest = controller.getSnapshot(); return currentView() && latest.phase === 'answered' && latest.snapshot?.index === snapshot?.index; };
 
+  const leaveControls = <section aria-label="Leave or switch game" className="mt-6 border-t border-rule pt-4">
+    {confirmingLeave ? <section role="alertdialog" aria-label="Confirm leaving this browser">
+      <h2 className="font-semibold">{leaveIntent.mode === 'revoke-session' ? 'Leave this game?' : 'Forget recovery on this browser?'}</h2>
+      <p className="mt-2 text-sm">{leaveIntent.mode === 'revoke-session'
+        ? 'End this recovery session and remove it from this browser. Submitted answers and points are not deleted. If the connection drops, leaving may still finish. You can retry safely.'
+        : 'Remove only this browser’s recovery cookie. The server session will not be revoked. You may lose the ability to reconnect here. Submitted answers and points are not deleted.'}</p>
+      <button disabled={view.leaving} onClick={() => { if (currentView() && !view.leaving) { const mode = leaveIntent.mode; setLeaveIntent(null); setPractice(null); return controller.leave(view, mode); } }} className="mt-3 underline">{leaveIntent.mode === 'revoke-session' ? 'Confirm leave' : 'Confirm forget'}</button>
+      <button disabled={view.leaving} onClick={() => { if (currentView() && !view.leaving) setLeaveIntent(null); }} className="mt-3 ml-4 underline">Keep current game</button>
+    </section> : <>
+      <button disabled={!ready || !classroomTransport.enabled || view.leaving || view.joining} onClick={() => requestLeave('revoke-session')} className="text-sm underline disabled:opacity-40">Leave current game on this device</button>
+      <button disabled={!ready || !classroomTransport.enabled || view.leaving || view.joining} onClick={() => requestLeave('forget-browser')} className="mt-3 block text-sm underline disabled:opacity-40">Forget recovery on this browser</button>
+    </>}
+    {view.leaving && <p role="status" className="mt-3">Leaving this browser’s game…</p>}
+  </section>;
+
   if (phase === 'form' || phase === 'connecting') return (
-    <Shell>
+    <Shell actions={leaveControls}>
       <H>Join a game</H>
       {!classroomTransport.enabled && <p role="status" className="mt-4 text-inksoft">Local review only. Secure classroom recovery is not connected in this candidate.</p>}
       <button onClick={() => { if (enabled && currentView()) return controller.restore(); }} disabled={!enabled || view.busy}
@@ -55,12 +73,12 @@ export default function JoinPage() {
       </form>
       <p className="mt-3 text-sm text-muted">You can play as a guest.</p>
       {view.busy && ready && <p role="status" className="mt-3">Checking your game…</p>}
-      {error}
+      {error}{notice}
     </Shell>
   );
 
   if (phase === 'unavailable' || phase === 'finishing') return (
-    <Shell>
+    <Shell actions={leaveControls}>
       <H>{phase === 'finishing' ? 'Loading your final score…' : 'Your game needs a fresh check'}</H>
       {error}
       <button disabled={!enabled} onClick={refresh} className="mt-4 underline disabled:opacity-40">Retry loading game</button>
@@ -69,7 +87,7 @@ export default function JoinPage() {
   );
 
   if (phase === 'lobby') return (
-    <Shell><div className="flex-1 flex flex-col items-center justify-center text-center">
+    <Shell actions={leaveControls}><div className="flex-1 flex flex-col items-center justify-center text-center">
       <div className="text-5xl mb-4">⏳</div><H>You’re in!</H>
       <p className="text-inksoft mt-2">Waiting for the host to start…</p>
       <button disabled={!enabled} onClick={refresh} className="mt-4 underline disabled:opacity-40">Refresh game state</button>
@@ -78,7 +96,7 @@ export default function JoinPage() {
   );
 
   if (phase === 'question' && snapshot && q) return (
-    <Shell wide>
+    <Shell wide actions={leaveControls}>
       <div className="flex items-center justify-between text-sm text-muted">
         <span>Question {snapshot.index + 1}/{snapshot.total}</span>
         <span className={`font-bold tabular-nums ${timer.remaining <= 5 ? 'text-brick' : 'text-ink'}`}>{timer.remaining}s</span>
@@ -102,7 +120,7 @@ export default function JoinPage() {
   if (phase === 'answered' && snapshot && result) {
     const frozen = result.keyProvenance === 'frozen' && q && result.correctIndex !== null;
     const practicing = frozen && practice?.epoch === view.epoch && practice.index === snapshot.index;
-    return <Shell><div className="flex-1 flex flex-col items-center justify-center text-center">
+    return <Shell actions={leaveControls}><div className="flex-1 flex flex-col items-center justify-center text-center">
       {frozen ? <>
         <div className="text-6xl mb-3">{result.isCorrect ? '✅' : '❌'}</div><H>{result.isCorrect ? 'Correct!' : 'Not quite'}</H>
         {!result.isCorrect && <p className="text-inksoft mt-2">Answer: <span className="text-ink font-semibold"><MathText text={q.options[result.correctIndex!]} /></span></p>}
@@ -128,7 +146,7 @@ export default function JoinPage() {
   }
 
   if (phase === 'complete' && view.standing) return (
-    <Shell><div className="flex-1 flex flex-col items-center justify-center text-center">
+    <Shell actions={leaveControls}><div className="flex-1 flex flex-col items-center justify-center text-center">
       <p className="text-berrydeep font-semibold text-sm">GAME OVER</p>
       <div className="text-6xl my-3">{view.standing.rank <= 3 ? '🏆' : '🎉'}</div><H>#{view.standing.rank}</H>
       <p className="text-ink mt-2 text-xl font-bold">{view.standing.score} pts</p>
@@ -137,8 +155,8 @@ export default function JoinPage() {
       <button onClick={reset} className="mt-8 text-sm text-muted underline">Play another</button>
     </div></Shell>
   );
-  return <Shell><H>Checking your game…</H><button onClick={refresh} disabled={!enabled} className="mt-4 underline">Retry loading game</button>{error}</Shell>;
+  return <Shell actions={leaveControls}><H>Checking your game…</H><button onClick={refresh} disabled={!enabled} className="mt-4 underline">Retry loading game</button>{error}</Shell>;
 }
-const Shell = ({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) => <main className={`flex flex-1 flex-col px-6 pt-12 pb-10 w-full mx-auto ${wide ? 'max-w-md md:max-w-4xl md:justify-center md:px-12' : 'max-w-md'}`}>{children}</main>;
+const Shell = ({ children, wide = false, actions }: { children: React.ReactNode; wide?: boolean; actions?: React.ReactNode }) => <main className={`flex flex-1 flex-col px-6 pt-12 pb-10 w-full mx-auto ${wide ? 'max-w-md md:max-w-4xl md:justify-center md:px-12' : 'max-w-md'}`}>{children}{actions}</main>;
 const H = ({ children }: { children: React.ReactNode }) => <h1 className="text-2xl font-bold">{children}</h1>;
 const Err = ({ children }: { children: React.ReactNode }) => <p role="alert" className="mt-4 text-brick text-sm">{children}</p>;
