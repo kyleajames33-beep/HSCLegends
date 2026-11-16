@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
@@ -18,11 +18,22 @@ import {
 import { startHeartbeat, saveArenaSession, loadArenaSession, clearArenaSession, type ArenaSession } from '@/lib/presence';
 
 const ARENA = 'linear-gradient(165deg,#16182a 0%,#2d3142 45%,#4e4068 100%)';
+const subscribeSavedSession = () => () => {};
+const noSavedSession = () => '';
+function savedSessionSnapshot() {
+  try {
+    const raw = localStorage.getItem('legends_arena_knockout');
+    if (!raw) return '';
+    const s = JSON.parse(raw) as ArenaSession;
+    return s.code && s.player && Date.now() - s.ts <= 3 * 60 * 60 * 1000 ? raw : '';
+  } catch { return ''; }
+}
 
 export default function KnockoutPage() {
   const sb = useMemo(() => createClient(), []);
   const { user } = useUser();
-  const [alias, setAlias] = useState('');
+  const [aliasOverride, setAlias] = useState<string | null>(null);
+  const alias = aliasOverride ?? (user?.email ?? '').split('@')[0].slice(0, 16);
   const [subject, setSubject] = useState<Subject>('biology');
   const [year, setYear] = useState<11 | 12>(12);
   const [code, setCode] = useState('');
@@ -50,31 +61,26 @@ export default function KnockoutPage() {
 
   const subRef = useRef<(() => void) | null>(null);
   const hbRef = useRef<(() => void) | null>(null);
-  const [resume, setResume] = useState<ArenaSession | null>(null);
+  const savedRaw = useSyncExternalStore(subscribeSavedSession, savedSessionSnapshot, noSavedSession);
+  const [resumeOverride, setResume] = useState<ArenaSession | null | undefined>(undefined);
+  const resume: ArenaSession | null = resumeOverride === undefined ? (savedRaw ? JSON.parse(savedRaw) as ArenaSession : null) : resumeOverride;
   const drive = useRef({ st: null as KoState | null, room: '', startFired: false, advanceRound: -2 });
-  drive.current.st = st;
-  drive.current.room = room;
   const answeredRound = useRef(-1);
 
-  useEffect(() => {
-    if (user && !alias) setAlias((user.email ?? '').split('@')[0].slice(0, 16));
-  }, [user, alias]);
+  useEffect(() => { drive.current.st = st; drive.current.room = room; }, [st, room]);
   useEffect(() => () => { subRef.current?.(); hbRef.current?.(); }, []);
 
-  // Drop recovery: a stashed session means a refresh/crash mid-game — offer to rejoin.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setResume(loadArenaSession('knockout'));
-  }, []);
+  // Drop recovery is read from a stable external-store snapshot after hydration.
   async function rejoin(s: ArenaSession) {
     setBusy(true); setErr('');
     try {
-      const r = await koRejoin(sb, s.code, s.alias);
+      const r = await koRejoin(sb, s.code, s.alias, s);
       if (!r) throw new Error('Could not find your player in that game.');
-      setAlias(s.alias); setCode(s.code); setResume(null);
+      setAlias(s.alias); setCode(s.code);
       await enter(r.room_id, r.player_id);
+      setResume(null);
     } catch (e) {
-      clearArenaSession('knockout'); setResume(null); setErr(msg(e));
+      setErr(msg(e));
     } finally { setBusy(false); }
   }
 
@@ -91,11 +97,11 @@ export default function KnockoutPage() {
     roundRef.current = { round: s.round, alive: s.alive };
     if (pl) setMe(await koMyState(sb, pl));
     if (s.round !== answeredRound.current) setAnswered(null);
-    if (s.status === 'finished') clearArenaSession('knockout'); // nothing to rejoin
     if (s.status === 'finished' && results.length === 0) setResults(await koResults(sb, rm));
+    if (s.status === 'finished') clearArenaSession('knockout'); // nothing to rejoin
   }
   const syncRef = useRef(sync);
-  syncRef.current = sync;
+  useEffect(() => { syncRef.current = sync; });
 
   // self-driving clock: start the game when the lobby countdown ends; advance a
   // round when its timer expires (idempotent server-side).
@@ -129,8 +135,7 @@ export default function KnockoutPage() {
       juice.buzz([60, 40, 120]);
     }
     wasAlive.current = me.alive;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me?.alive]);
+  }, [me, juice]);
 
   const celebrated = useRef(false);
   useEffect(() => {
@@ -141,15 +146,22 @@ export default function KnockoutPage() {
   }, [st?.status, results]);
 
   async function enter(rm: string, pl: string) {
-    setRoom(rm); setPlayer(pl);
     setPowerup(null); setPuUsedRound(null);
     setStreak(0); wasAlive.current = null;
     drive.current.startFired = false; drive.current.advanceRound = -2;
-    subRef.current?.();
-    subRef.current = subscribeRoom(sb, rm, () => syncRef.current(rm, pl));
-    hbRef.current?.();
-    hbRef.current = startHeartbeat(sb, 'knockout', pl);
-    await sync(rm, pl);
+    try {
+      subRef.current?.(); subRef.current = null;
+      hbRef.current?.(); hbRef.current = null;
+      subRef.current = subscribeRoom(sb, rm, () => syncRef.current(rm, pl));
+      hbRef.current = startHeartbeat(sb, 'knockout', pl);
+      await sync(rm, pl);
+    } catch (error) {
+      subRef.current?.(); subRef.current = null;
+      hbRef.current?.(); hbRef.current = null;
+      setSt(null); setMe(null);
+      throw error;
+    }
+    setRoom(rm); setPlayer(pl);
     koPowerup(sb, pl).then(setPowerup).catch(() => {});
   }
   async function usePowerup() {
@@ -169,7 +181,7 @@ export default function KnockoutPage() {
       sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {});
       await enter(r.room_id, r.player_id);
     }
-    catch (e) { setErr(msg(e)); } finally { setBusy(false); }
+    catch (e) { setErr(msg(e)); setResume(loadArenaSession('knockout')); } finally { setBusy(false); }
   }
   async function joinByCode() {
     if (joinCode.length < 6 || !alias.trim()) return;
@@ -181,7 +193,7 @@ export default function KnockoutPage() {
       sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {});
       await enter(r.room_id, r.player_id);
     }
-    catch (e) { setErr(msg(e)); } finally { setBusy(false); }
+    catch (e) { setErr(msg(e)); setResume(loadArenaSession('knockout')); } finally { setBusy(false); }
   }
   async function answer(choice: number) {
     if (!st) return;
@@ -259,7 +271,7 @@ export default function KnockoutPage() {
           <button onClick={joinByCode} disabled={busy || joinCode.length < 6 || !alias.trim()}
             className="rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold disabled:opacity-40">Join</button>
         </div>
-        {err && <p className="mt-3 text-rose-300 text-sm">{err}</p>}
+        {err && <p role="alert" className="mt-3 text-rose-300 text-sm">{err}</p>}
         <Link href="/" className="mt-6 text-center text-sm text-white/50 underline">Home</Link>
       </Arena>
     );
@@ -394,7 +406,13 @@ export default function KnockoutPage() {
   );
 }
 
-const msg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
+function msg(e: unknown): string {
+  const message = e && typeof e === 'object' && 'message' in e && typeof e.message === 'string'
+    ? e.message : 'Something went wrong.';
+  return /permission denied for function ko_/i.test(message)
+    ? 'Knockout is currently unavailable. Try a solo game instead.'
+    : message;
+}
 function Arena({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
   return (
     <main className="flex flex-1 flex-col w-full text-white" style={{ background: ARENA }}>

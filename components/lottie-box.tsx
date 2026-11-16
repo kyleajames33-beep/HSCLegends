@@ -9,11 +9,20 @@ import { LOTTIES, type LottieName } from '@/lib/lotties';
 export default function LottieBox({
   name, src, loop = true, className,
 }: { name?: LottieName; src?: string; loop?: boolean; className?: string }) {
-  const [data, setData] = useState<object | null>(name ? LOTTIES[name] : null);
+  const [remote, setRemote] = useState<{ src: string; data: object } | null>(null);
   useEffect(() => {
-    if (src) fetch(src).then((r) => r.json()).then(setData).catch(() => {});
-    else if (name) setData(LOTTIES[name]);
-  }, [src, name]);
+    if (!src) return;
+    const controller = new AbortController();
+    fetch(src, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error('Animation unavailable');
+        return response.json();
+      })
+      .then((data) => { if (!controller.signal.aborted) setRemote({ src, data }); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [src]);
+  const data = src ? (remote?.src === src ? remote.data : null) : (name ? LOTTIES[name] : null);
   if (!data) return null;
   return <Lottie animationData={data} loop={loop} className={className} />;
 }

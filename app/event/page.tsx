@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
@@ -18,32 +18,59 @@ function daysLeft(ends: string) {
 export default function EventPage() {
   const sb = useMemo(() => createClient(), []);
   const { user, loading } = useUser();
-  const [info, setInfo] = useState<EventInfo | null>(null);
-  const [rows, setRows] = useState<EventRow[]>([]);
-  const [claiming, setClaiming] = useState(false);
-  const [flash, setFlash] = useState('');
-  const [err, setErr] = useState('');
+  const [snapshot, setSnapshot] = useState<{ owner: string; info: EventInfo | null; rows: EventRow[]; ends: string; err: string } | null>(null);
+  const [claimingOwner, setClaimingOwner] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ owner: string; text: string } | null>(null);
+  const requestRef = useRef(0);
+  const activeOwner = useRef<string | null>(null);
+  const claimLock = useRef(false);
+  const visible = snapshot?.owner === user?.id ? snapshot : null;
+  const info = visible?.info ?? null;
+  const rows = visible?.rows ?? [];
+  const err = visible?.err ?? '';
+  const flash = notice && notice.owner === user?.id ? notice.text : '';
+  const claiming = claimingOwner === user?.id;
 
-  async function load() {
-    try {
-      const [i, b] = await Promise.all([getEvent(sb), getEventBoard(sb)]);
-      setInfo(i ? { ...i, my_points: Number(i.my_points) } : null);
-      setRows(b);
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Could not load.'); }
-  }
-  useEffect(() => { if (!loading && user) load(); /* eslint-disable-next-line */ }, [loading, user]);
+  useEffect(() => {
+    const request = ++requestRef.current;
+    activeOwner.current = user?.id ?? null;
+    claimLock.current = false;
+    if (!loading && user) {
+      const owner = user.id;
+      Promise.all([getEvent(sb), getEventBoard(sb)]).then(([i, rows]) => {
+        if (requestRef.current === request) setSnapshot({ owner, info: i ? { ...i, my_points: Number(i.my_points) } : null, rows, ends: i ? daysLeft(i.ends_at) : '', err: '' });
+      }, (e) => {
+        if (requestRef.current === request) setSnapshot({ owner, info: null, rows: [], ends: '', err: e instanceof Error ? e.message : 'Could not load.' });
+      });
+    }
+    return () => { activeOwner.current = null; requestRef.current += 1; claimLock.current = false; };
+  }, [sb, loading, user]);
 
   async function claim() {
-    setClaiming(true); setErr('');
+    if (!user || activeOwner.current !== user.id || !info || claimLock.current || info.claimed || info.my_points < info.target) return;
+    const owner = user.id, request = requestRef.current;
+    claimLock.current = true; setClaimingOwner(owner); setNotice(null);
     try {
       const reward = await claimEventReward(sb);
+      if (requestRef.current !== request) return;
+      if (typeof reward !== 'string' || !reward.trim()) throw new Error('Reward could not be confirmed. Check your event status before trying again.');
       celebrate(true);
-      setFlash(`Claimed: ${reward} 🎉`);
-      await load();
+      setNotice({ owner, text: `Claimed: ${reward} 🎉` });
+      // Mark confirmed completion immediately so a failed refresh cannot offer a duplicate claim.
+      setSnapshot(current => current?.owner === owner ? { ...current, info: current.info ? { ...current.info, claimed: true } : null, err: '' } : current);
+      try {
+        const [i, rows] = await Promise.all([getEvent(sb), getEventBoard(sb)]);
+        if (requestRef.current === request) setSnapshot({ owner, info: i ? { ...i, my_points: Number(i.my_points), claimed: i.id === info.id ? true : i.claimed } : null, rows, ends: i ? daysLeft(i.ends_at) : '', err: '' });
+      } catch {
+        if (requestRef.current === request) setNotice({ owner, text: `Claimed: ${reward}. The leaderboard could not be refreshed.` });
+      }
     } catch (e) {
+      if (requestRef.current !== request) return;
       const m = e instanceof Error ? e.message : 'Could not claim.';
-      setErr(m === 'locked' ? 'Reach the target first!' : m === 'already_claimed' ? 'Already claimed.' : m);
-    } finally { setClaiming(false); }
+      setSnapshot(current => current?.owner === owner ? { ...current, err: m === 'locked' ? 'Reach the target first!' : m === 'already_claimed' ? 'Already claimed.' : m } : current);
+    } finally {
+      if (requestRef.current === request) { claimLock.current = false; setClaimingOwner(null); }
+    }
   }
 
   if (!loading && !user) {
@@ -57,8 +84,8 @@ export default function EventPage() {
     );
   }
 
-  if (!info && !err) return <Shell><H>🏆 Championship</H><p className="mt-6 text-muted text-sm">Loading…</p><HomeLink /></Shell>;
-  if (!info) return <Shell><H>🏆 Championship</H><p className="mt-4 text-inksoft">No live event right now — check back soon!</p><HomeLink /></Shell>;
+  if (!visible) return <Shell><H>🏆 Championship</H><p className="mt-6 text-muted text-sm">Loading…</p><HomeLink /></Shell>;
+  if (!info) return <Shell><H>🏆 Championship</H><p className={err ? 'mt-4 text-brick' : 'mt-4 text-inksoft'}>{err || 'No live event right now — check back soon!'}</p><HomeLink /></Shell>;
 
   const pct = Math.min(100, Math.round((info.my_points / info.target) * 100));
   const canClaim = info.my_points >= info.target && !info.claimed;
@@ -67,7 +94,7 @@ export default function EventPage() {
     <Shell>
       <H>🏆 {info.name}</H>
       <p className="mt-1 text-sm text-inksoft">
-        Every correct answer counts{info.subject ? ` (${info.subject.replace('-', ' ')})` : ' (all subjects)'} · {daysLeft(info.ends_at)} · {info.player_count} competing
+        Every correct answer counts{info.subject ? ` (${info.subject.replace('-', ' ')})` : ' (all subjects)'} · {visible?.ends} · {info.player_count} competing
       </p>
 
       {/* My progress */}

@@ -100,6 +100,11 @@ h1, h2, h3 { font-family: var(--font-display); }
   background: var(--color-parchment);
 }
 
+/* Game surfaces own their palette while learning/account screens retain theirs. */
+body:has(.arcade-surface), .app-shell:has(.arcade-surface) {
+  background: #0b1020;
+}
+
 /* Signature chunky offset shadow (the "sticker / card-game" feel). */
 @utility chunk { box-shadow: 0 4px 0 var(--color-rule); }
 @utility chunk-plum { box-shadow: 0 4px 0 var(--color-plumdeep); }

@@ -3,12 +3,13 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { safeReturnPath } from '@/lib/safe-return-path';
 
 function LoginInner() {
   const sb = createClient();
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get('next') || '/';
+  const next = safeReturnPath(params.get('next'));
 
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');

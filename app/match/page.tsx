@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useSparksAward } from '@/lib/use-sparks-award';
 import { useUser } from '@/lib/use-user';
 import { getQuizQuestions, SUBJECTS, type Question, type Subject } from '@/lib/questions';
 import { celebrate } from '@/lib/confetti';
@@ -10,10 +11,10 @@ import MathText from '@/components/math-text';
 import CountUp from '@/components/count-up';
 
 type Phase = 'pick' | 'loading' | 'play' | 'done' | 'error';
-type Sel = { subject: Subject; year: 11 | 12 };
-
 const COUNT = 5;
 const WRONG_PENALTY = 2; // seconds added per mismatch
+// Only called by event/timer callbacks; time is never read during rendering.
+function nowMs() { return Date.now(); }
 
 // Fisher–Yates shuffle returning a new array.
 function shuffle<T>(arr: T[]): T[] {
@@ -34,6 +35,10 @@ function fmt(secs: number): string {
 export default function MatchGame() {
   const sb = useMemo(() => createClient(), []);
   const { user } = useUser();
+  const sparks = useSparksAward(sb, user?.id);
+  const [runVersion, setRunVersion] = useState(0);
+  const gameRun = useRef(0);
+  const finishedRun = useRef<number | null>(null);
   const [phase, setPhase] = useState<Phase>('pick');
   const [err, setErr] = useState('');
 
@@ -59,13 +64,18 @@ export default function MatchGame() {
     tickRef.current = null;
   }
 
-  useEffect(() => () => { stopTimer(); if (wrongTimer.current) clearTimeout(wrongTimer.current); }, []);
+  useEffect(() => () => { gameRun.current += 1; stopTimer(); if (wrongTimer.current) clearTimeout(wrongTimer.current); }, []);
 
   async function start(subject: Subject, year: 11 | 12) {
+    const run = sparks.reset();
+    gameRun.current = run;
+    setRunVersion(run);
+    finishedRun.current = null;
     setPhase('loading');
     setErr('');
     try {
       const qs = await getQuizQuestions(sb, { subject, year, count: COUNT });
+      if (gameRun.current !== run) return;
       if (!qs.length) throw new Error('No questions found for that selection.');
       setQuestions(qs);
       setRightOrder(shuffle(qs.map((_, idx) => idx)));
@@ -75,14 +85,15 @@ export default function MatchGame() {
       setWrong(null);
       setMistakes(0);
       penaltyRef.current = 0;
-      startRef.current = Date.now();
+      startRef.current = nowMs();
       setElapsed(0);
       stopTimer();
       tickRef.current = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - startRef.current) / 1000) + penaltyRef.current);
+        setElapsed(Math.floor((nowMs() - startRef.current) / 1000) + penaltyRef.current);
       }, 250);
       setPhase('play');
     } catch (e) {
+      if (gameRun.current !== run) return;
       setErr(e instanceof Error ? e.message : 'Something went wrong.');
       setPhase('error');
     }
@@ -102,7 +113,7 @@ export default function MatchGame() {
       setWrong({ left, right });
       setMistakes((m) => m + 1);
       penaltyRef.current += WRONG_PENALTY;
-      setElapsed(Math.floor((Date.now() - startRef.current) / 1000) + penaltyRef.current);
+      setElapsed(Math.floor((nowMs() - startRef.current) / 1000) + penaltyRef.current);
       setPickedLeft(null);
       setPickedRight(null);
       if (wrongTimer.current) clearTimeout(wrongTimer.current);
@@ -133,15 +144,17 @@ export default function MatchGame() {
   useEffect(() => { mistakesRef.current = mistakes; }, [mistakes]);
 
   function finish() {
+    if (gameRun.current !== runVersion || finishedRun.current === runVersion) return;
+    finishedRun.current = runVersion;
     stopTimer();
-    const finalTime = Math.floor((Date.now() - startRef.current) / 1000) + penaltyRef.current;
+    const finalTime = Math.floor((nowMs() - startRef.current) / 1000) + penaltyRef.current;
     setElapsed(finalTime);
     setPhase('done');
     celebrate(false);
 
     if (user) {
       const ms = mistakesRef.current;
-      sb.rpc('credit_coins', { p_amount: Math.max(5, 20 - ms), p_reason: 'match', p_meta: null }).then(undefined, () => {});
+      void sparks.claim(Math.max(5, 20 - ms), 'match', runVersion);
       for (const q of questions) {
         sb.rpc('record_attempt', { p_question_id: q.id, p_subject: q.subject, p_topic: q.topic, p_correct: true }).then(undefined, () => {});
       }
@@ -202,15 +215,17 @@ export default function MatchGame() {
 
         {user ? (
           <div className="lg-card mt-5 px-4 py-4 text-center" style={{ boxShadow: '0 4px 0 #6b9b7c' }}>
-            <div className="text-leaf font-display font-extrabold text-lg">+<CountUp to={Math.max(5, 20 - mistakes)} /> ✨ Sparks</div>
-            <div className="text-xs text-inksoft mt-1">Earned for finishing the match.</div>
+            {sparks.state.status === 'confirmed' ? <div className="text-leaf font-display font-extrabold text-lg">+<CountUp to={sparks.state.amount} /> ✨ Sparks</div>
+              : sparks.state.status === 'unconfirmed' ? <p className="text-brick text-sm">Sparks could not be confirmed. Check your wallet before trying again.</p>
+                : sparks.state.status === 'pending' ? <p className="text-inksoft text-sm">Confirming Sparks…</p>
+                  : <p className="text-inksoft text-sm">No Sparks recorded for this account.</p>}
           </div>
         ) : (
           <p className="mt-5 text-muted text-sm text-center">Sign in to earn Sparks for matches.</p>
         )}
 
         <div className="mt-6 space-y-3">
-          <button onClick={() => setPhase('pick')} className="lg-btn lg-btn-primary block w-full px-4 py-4">
+          <button onClick={() => { gameRun.current = sparks.reset(); setPhase('pick'); }} className="lg-btn lg-btn-primary block w-full px-4 py-4">
             Play again
           </button>
           <Link href="/" className="lg-card block w-full px-4 py-3.5 text-center font-display font-bold text-ink">

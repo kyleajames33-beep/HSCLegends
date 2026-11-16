@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
@@ -10,23 +10,24 @@ import { duelPeak, duelTier } from '@/lib/duel';
 import { getProfileSummary, type ProfileSummary } from '@/lib/profile';
 
 export default function ProfilePage() {
+  const auth = useUser();
+  return <ProfileView key={auth.loading ? 'loading' : auth.user?.id ?? 'guest'} {...auth} />;
+}
+
+function ProfileView({ user, loading }: ReturnType<typeof useUser>) {
   const sb = useMemo(() => createClient(), []);
-  const { user, loading } = useUser();
 
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [duelRank, setDuelRank] = useState<{ elo: number; subject: string; year: number } | null>(null);
   const [err, setErr] = useState('');
 
-  const load = useCallback(async () => {
-    setErr('');
-    try {
-      setProfile(await getProfileSummary(sb));
-    } catch (e) { setErr(msg(e)); }
-  }, [sb]);
-
   useEffect(() => {
-    if (!loading && user) { load(); duelPeak(sb, user.id).then(setDuelRank).catch(() => {}); }
-  }, [loading, user, load, sb]);
+    if (loading || !user) return;
+    let active = true;
+    getProfileSummary(sb).then((value) => { if (active) setProfile(value); }, (e) => { if (active) setErr(msg(e)); });
+    duelPeak(sb, user.id).then((value) => { if (active) setDuelRank(value); }, () => {});
+    return () => { active = false; };
+  }, [loading, user, sb]);
 
   // ---------- gates ----------
   if (loading) {
@@ -57,6 +58,8 @@ export default function ProfilePage() {
       </Shell>
     );
   }
+
+  if (!profile) return <Shell><H>👤 Profile</H><p className="mt-2 text-inksoft">Loading…</p></Shell>;
 
   const p = profile;
   const xp = p?.total_xp ?? 0;

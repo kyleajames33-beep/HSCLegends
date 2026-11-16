@@ -1,38 +1,52 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
 import { getPowerups, buyPowerup, type Powerup } from '@/lib/powerups';
 
+async function readShop(sb: ReturnType<typeof createClient>) {
+  const [pus, wallet] = await Promise.all([getPowerups(sb), sb.rpc('get_wallet')]);
+  if (wallet.error) throw wallet.error;
+  return { pus, wallet: Array.isArray(wallet.data) ? wallet.data[0] : wallet.data };
+}
+
 // Power-up shop: spend Sparks on consumable boosts. A strategic sink for the economy.
 export default function PowerupShop() {
-  const sb = useMemo(() => createClient(), []);
   const { user } = useUser();
+  return user ? <AccountPowerupShop key={user.id} /> : null;
+}
+
+function AccountPowerupShop() {
+  const sb = useMemo(() => createClient(), []);
+  const active = useRef(false);
   const [items, setItems] = useState<Powerup[]>([]);
   const [coins, setCoins] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState('');
 
-  async function refresh() {
-    const [pus, w] = await Promise.all([
-      getPowerups(sb),
-      sb.rpc('get_wallet').then(({ data }) => (Array.isArray(data) ? data[0] : data)),
-    ]);
-    setItems(pus);
-    if (w) setCoins(Number(w.coins ?? 0));
-  }
+  const refresh = useCallback(async () => {
+    const result = await readShop(sb);
+    if (active.current) { setItems(result.pus); if (result.wallet) setCoins(Number(result.wallet.coins ?? 0)); }
+  }, [sb]);
 
-  useEffect(() => { if (user) refresh().catch((e) => setErr(String(e.message ?? e))); /* eslint-disable-next-line */ }, [user]);
+  useEffect(() => {
+    let current = true;
+    active.current = true;
+    void readShop(sb).then(result => {
+      if (current) { setItems(result.pus); if (result.wallet) setCoins(Number(result.wallet.coins ?? 0)); }
+    }, e => { if (current) setErr(e instanceof Error ? e.message : 'Could not load shop.'); });
+    return () => { current = false; active.current = false; };
+  }, [sb]);
 
   async function buy(p: Powerup) {
+    if (busy) return;
     setBusy(p.id); setErr('');
-    try { await buyPowerup(sb, p.id); await refresh(); }
-    catch (e) { setErr(e instanceof Error ? (e.message === 'insufficient_coins' ? 'Not enough Sparks yet.' : e.message) : 'Could not buy.'); }
-    finally { setBusy(null); }
+    try { await buyPowerup(sb, p.id); if (active.current) await refresh(); }
+    catch (e) { if (active.current) setErr(e instanceof Error ? (e.message === 'insufficient_coins' ? 'Not enough Sparks yet.' : e.message) : 'Could not buy.'); }
+    finally { if (active.current) setBusy(null); }
   }
 
-  if (!user) return null;
   return (
     <section>
       <p className="px-1 pb-2 text-xs font-display font-bold tracking-wide text-muted">POWER-UP SHOP</p>
@@ -48,7 +62,7 @@ export default function PowerupShop() {
               </div>
               <button
                 onClick={() => buy(p)}
-                disabled={busy === p.id || !afford}
+                disabled={!!busy || !afford}
                 className="lg-btn lg-btn-primary px-3 py-2 text-sm whitespace-nowrap disabled:opacity-40"
               >
                 {busy === p.id ? '…' : `${p.price} ✨`}

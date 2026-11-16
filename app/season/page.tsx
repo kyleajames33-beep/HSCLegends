@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
@@ -8,30 +8,47 @@ import { celebrate } from '@/lib/confetti';
 import { getSeason, claimSeasonTier, rewardIcon, type SeasonTier } from '@/lib/season';
 
 export default function SeasonPage() {
+  const auth = useUser();
+  return <SeasonView key={auth.loading ? 'loading' : auth.user?.id ?? 'guest'} {...auth} />;
+}
+
+function SeasonView({ user, loading }: ReturnType<typeof useUser>) {
   const sb = useMemo(() => createClient(), []);
-  const { user, loading } = useUser();
   const [tiers, setTiers] = useState<SeasonTier[]>([]);
   const [claiming, setClaiming] = useState<number | null>(null);
   const [flash, setFlash] = useState('');
   const [err, setErr] = useState('');
 
-  async function load() {
-    try { setTiers(await getSeason(sb)); }
-    catch (e) { setErr(e instanceof Error ? e.message : 'Could not load.'); }
-  }
-  useEffect(() => { if (!loading && user) load(); /* eslint-disable-next-line */ }, [loading, user]);
+  const active = useRef(false);
+  const loadVersion = useRef(0);
+  useEffect(() => {
+    let current = true;
+    const version = ++loadVersion.current;
+    active.current = true;
+    if (!loading && user) {
+      getSeason(sb).then((value) => { if (current && version === loadVersion.current) setTiers(value); }, (e) => { if (current && version === loadVersion.current) setErr(e instanceof Error ? e.message : 'Could not load.'); });
+    }
+    return () => { current = false; active.current = false; };
+  }, [loading, user, sb]);
 
   async function claim(tier: number) {
+    if (claiming !== null) return;
+    ++loadVersion.current;
     setClaiming(tier); setErr('');
+    let claimed = false;
     try {
       const reward = await claimSeasonTier(sb, tier);
+      if (!active.current) return;
+      claimed = true;
       celebrate(true);
       setFlash(`Claimed: ${reward} 🎉`);
-      await load();
+      const updated = await getSeason(sb);
+      if (active.current) setTiers(updated);
     } catch (e) {
+      if (!active.current) return;
       const m = e instanceof Error ? e.message : 'Could not claim.';
-      setErr(m === 'locked' ? 'Not enough season XP yet.' : m);
-    } finally { setClaiming(null); }
+      setErr(claimed ? 'Reward claimed, but the pass could not be refreshed. Reload to check.' : m === 'locked' ? 'Not enough season XP yet.' : m);
+    } finally { if (active.current) setClaiming(null); }
   }
 
   if (!loading && !user) {
@@ -84,7 +101,7 @@ export default function SeasonPage() {
             {t.claimed ? (
               <span className="text-xs font-display font-bold text-leaf">✓ Claimed</span>
             ) : t.unlocked ? (
-              <button onClick={() => claim(t.tier)} disabled={claiming === t.tier}
+              <button onClick={() => claim(t.tier)} disabled={claiming !== null}
                 className="lg-btn lg-btn-primary px-3 py-2 text-sm disabled:opacity-40">
                 {claiming === t.tier ? '…' : 'Claim'}
               </button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
@@ -27,6 +27,16 @@ const REVEAL_SECONDS = 4; // the reveal is the payoff — give it time to land
 
 // Casino-felt shell — same family as the Heist vault, its own wine-dark mood.
 const FELT = 'linear-gradient(165deg,#171021 0%,#31203f 55%,#8a4a3f 140%)';
+const subscribeSavedSession = () => () => {};
+const noSavedSession = () => '';
+function savedSessionSnapshot() {
+  try {
+    const raw = localStorage.getItem('legends_arena_gamble');
+    if (!raw) return '';
+    const s = JSON.parse(raw) as ArenaSession;
+    return s.code && s.player && Date.now() - s.ts <= 3 * 60 * 60 * 1000 ? raw : '';
+  } catch { return ''; }
+}
 
 function Table({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
   return (
@@ -50,12 +60,15 @@ export default function GamblePage() {
   // Lobby/room state
   const [phase, setPhase] = useState<Phase>('pick');
   const [err, setErr] = useState('');
-  const [alias, setAlias] = useState('');
+  const [aliasOverride, setAlias] = useState<string | null>(null);
+  const alias = aliasOverride ?? (user?.email ?? '').split('@')[0].slice(0, 16);
   const [subject, setSubject] = useState<Subject>('biology');
   const [year, setYear] = useState<11 | 12>(12);
   const [code, setCode] = useState('');
   const [joinCode, setJoinCode] = useState('');
-  const [resume, setResume] = useState<ArenaSession | null>(null);
+  const savedRaw = useSyncExternalStore(subscribeSavedSession, savedSessionSnapshot, noSavedSession);
+  const [resumeOverride, setResume] = useState<ArenaSession | null | undefined>(undefined);
+  const resume: ArenaSession | null = resumeOverride === undefined ? (savedRaw ? JSON.parse(savedRaw) as ArenaSession : null) : resumeOverride;
 
   // Game state
   const [room, setRoom] = useState('');
@@ -90,32 +103,22 @@ export default function GamblePage() {
   const lastPoll = useRef(0);             // throttle for the reveal fallback poll
   const syncRef = useRef<(rm?: string, pid?: string) => Promise<void>>(() => Promise.resolve());
 
-  useEffect(() => {
-    if (user && !alias) setAlias((user.email ?? '').split('@')[0].slice(0, 16));
-  }, [user, alias]);
-
   useEffect(() => () => {
     subRef.current?.();
     hbRef.current?.();
-  }, []);
-
-  useEffect(() => {
-    setResume(loadArenaSession('gamble'));
   }, []);
 
   async function rejoin(s: ArenaSession) {
     setBusy(true);
     setErr('');
     try {
-      const r = await gambleRejoin(sb, s.code, s.alias);
+      const r = await gambleRejoin(sb, s.code, s.alias, s);
       if (!r) throw new Error('Could not find your player in that game.');
       setAlias(s.alias);
       setCode(s.code);
+      await enter(r.room_id, r.player_id, { code: s.code, alias: s.alias }, false);
       setResume(null);
-      await enter(r.room_id, r.player_id);
     } catch (e) {
-      clearArenaSession('gamble');
-      setResume(null);
       setErr(msg(e));
     } finally {
       setBusy(false);
@@ -125,19 +128,25 @@ export default function GamblePage() {
   async function sync(rm = room, pid = player) {
     if (!rm) return;
     const s = await gambleState(sb, rm);
+    if (seenRound.current !== s.round) {
+      seenRound.current = s.round;
+      setRoundPhase('question'); setAnswered(null); setPicked(null);
+      setMyChoice(null); setLastReveal(null); setPartner(''); setPartnerAlias('');
+      revealAt.current = 0;
+    }
     setSt(s);
     if (pid) {
       const myMe = await gambleMe(sb, pid);
       setMe(myMe);
     }
     if (s.status === 'finished') {
-      clearArenaSession('gamble');
       const lbs = await gambleLeaderboard(sb);
       setLeaders(lbs);
+      clearArenaSession('gamble');
     }
   }
 
-  syncRef.current = sync;
+  useEffect(() => { syncRef.current = sync; });
 
   // Self-driving clock. The server room row (round, round_started_at) is the
   // source of truth; this drives the local question → decision → reveal flow
@@ -196,23 +205,7 @@ export default function GamblePage() {
       }
     }, 250);
     return () => clearInterval(tick);
-    // sb is a stable useMemo instance — deliberately not a dep.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roundPhase, myChoice, player, partner, room, lastReveal]);
-
-  // Server round changed → reset all per-round local state.
-  useEffect(() => {
-    if (!st || seenRound.current === st.round) return;
-    seenRound.current = st.round;
-    setRoundPhase('question');
-    setAnswered(null);
-    setPicked(null);
-    setMyChoice(null);
-    setLastReveal(null);
-    setPartner('');
-    setPartnerAlias('');
-    revealAt.current = 0;
-  }, [st?.round]);
+  }, [roundPhase, myChoice, player, partner, room, lastReveal, sb]);
 
   // Sync state when it changes
   useEffect(() => {
@@ -225,41 +218,41 @@ export default function GamblePage() {
     if (room) drive.current.room = room;
   }, [st, room]);
 
-  // Phase transitions
-  useEffect(() => {
-    if (!st) return;
-    if (st.status === 'finished') {
-      setPhase('finished');
-    } else if (st.status === 'active' && (phase === 'lobby' || phase === 'loading')) {
-      setPhase('play');
-    }
-  }, [st?.status, phase]);
+  // Once connected, render the current server phase directly.
+  const displayedPhase: Phase = phase === 'pick' || phase === 'loading' ? phase
+    : st?.status === 'finished' ? 'finished' : st?.status === 'active' ? 'play' : phase;
 
-  async function enter(roomId: string, playerId: string) {
+  async function enter(roomId: string, playerId: string, identity: { code: string; alias: string }, save = true) {
+    if (save) saveArenaSession('gamble', { ...identity, room: roomId, player: playerId });
+
+    try {
+      hbRef.current?.(); hbRef.current = null;
+      subRef.current?.(); subRef.current = null;
+      hbRef.current = startHeartbeat(sb, 'gamble', playerId);
+      subRef.current = subscribeGamble(
+        sb, roomId,
+        () => syncRef.current(roomId, playerId),
+        (row) => {
+          // Only my pair's reveal matters to this client.
+          if (row.player_a_id !== playerId && row.player_b_id !== playerId) return;
+          const mine = row.player_a_id === playerId ? row.points_a : row.points_b;
+          revealAt.current = Date.now();
+          setLastReveal(row);
+          setRoundPhase('reveal');
+          juice.flash(row.outcome === 'both_share' ? 'gold' : 'red');
+          juice.burst({ tone: mine > 0 ? 'green' : 'red' });
+        },
+      );
+      await sync(roomId, playerId);
+    } catch (error) {
+      subRef.current?.(); subRef.current = null;
+      hbRef.current?.(); hbRef.current = null;
+      setSt(null); setMe(null);
+      throw error;
+    }
     setRoom(roomId);
     setPlayer(playerId);
-    saveArenaSession('gamble', { code, alias, room: roomId, player: playerId });
     setPhase('lobby');
-
-    hbRef.current = startHeartbeat(sb, 'gamble', playerId);
-
-    subRef.current?.();
-    subRef.current = subscribeGamble(
-      sb, roomId,
-      () => syncRef.current(roomId, playerId),
-      (row) => {
-        // Only my pair's reveal matters to this client.
-        if (row.player_a_id !== playerId && row.player_b_id !== playerId) return;
-        const mine = row.player_a_id === playerId ? row.points_a : row.points_b;
-        revealAt.current = Date.now();
-        setLastReveal(row);
-        setRoundPhase('reveal');
-        juice.flash(row.outcome === 'both_share' ? 'gold' : 'red');
-        juice.burst({ tone: mine > 0 ? 'green' : 'red' });
-      },
-    );
-
-    await sync(roomId, playerId);
   }
 
   // Quick match: create/join a lobby and load questions, but DON'T start —
@@ -277,9 +270,10 @@ export default function GamblePage() {
         stem: q.stem, options: q.options, correct_index: q.correct_index,
       })));
 
-      await enter(res.room_id, res.player_id);
+      await enter(res.room_id, res.player_id, { code: res.code, alias: alias.trim() });
     } catch (e) {
       setErr(msg(e));
+      setResume(loadArenaSession('gamble'));
       setPhase('pick');
     }
   }
@@ -302,9 +296,10 @@ export default function GamblePage() {
     try {
       const res = await gambleJoin(sb, joinCode, alias.trim());
       setCode(joinCode);
-      await enter(res.room_id, res.player_id);
+      await enter(res.room_id, res.player_id, { code: joinCode, alias: alias.trim() });
     } catch (e) {
       setErr(msg(e));
+      setResume(loadArenaSession('gamble'));
       setPhase('pick');
     }
   }
@@ -327,15 +322,17 @@ export default function GamblePage() {
 
   // Assign partners at the start of each round (idempotent server-side).
   const pairingRound = useRef(-1);
+  const currentRound = st?.round;
+  const currentStatus = st?.status;
   useEffect(() => {
-    if (phase !== 'play' || !st || st.status !== 'active' || !player || !room || pairingRound.current === st.round) return;
+    if (displayedPhase !== 'play' || currentStatus !== 'active' || currentRound === undefined || !player || !room || pairingRound.current === currentRound) return;
 
     (async () => {
       try {
-        await gambleAssignPairs(sb, room, st.round);
-        const partnerInfo = await gambleGetPartner(sb, player, room, st.round);
+        await gambleAssignPairs(sb, room, currentRound);
+        const partnerInfo = await gambleGetPartner(sb, player, room, currentRound);
         if (partnerInfo) {
-          pairingRound.current = st.round;
+          pairingRound.current = currentRound;
           setPartner(partnerInfo.partner_id);
           setPartnerAlias(partnerInfo.alias);
         }
@@ -343,17 +340,15 @@ export default function GamblePage() {
         console.error('Failed to assign pairs:', msg(e));
       }
     })();
-  }, [phase, st?.round, st?.status, player, room]);
+  }, [displayedPhase, currentRound, currentStatus, player, room, sb]);
 
   // Bot partners lock their (deterministic, server-rolled) choice once the
   // decision phase opens. Runs on whichever client is paired with the bot.
   useEffect(() => {
-    if (roundPhase !== 'decision' || !st || !partner || partnerAlias !== 'Bot' || botRound.current === st.round) return;
-    botRound.current = st.round;
-    gambleBotDecide(sb, partner, room, st.round, player).catch(() => {});
-    // sb stable; st.round covers the st read.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roundPhase, st?.round, partner, partnerAlias, room, player]);
+    if (roundPhase !== 'decision' || currentRound === undefined || !partner || partnerAlias !== 'Bot' || botRound.current === currentRound) return;
+    botRound.current = currentRound;
+    gambleBotDecide(sb, partner, room, currentRound, player).catch(() => {});
+  }, [roundPhase, currentRound, partner, partnerAlias, room, player, sb]);
 
   async function submitAnswer(choice: number) {
     if (ansRound.current === st?.round || !st) return;
@@ -392,7 +387,7 @@ export default function GamblePage() {
     : st?.per_q_seconds || 18;
 
   // ── PICK ──
-  if (phase === 'pick') {
+  if (displayedPhase === 'pick') {
     return (
       <Table>
         <h1 className="text-3xl font-display font-extrabold">🤝 Trust or Bust 💰</h1>
@@ -443,14 +438,14 @@ export default function GamblePage() {
           </button>
         </div>
 
-        {err && <p className="mt-3 text-rose-300 text-sm">{err}</p>}
+        {err && <p role="alert" className="mt-3 text-rose-300 text-sm">{err}</p>}
         <Link href="/" className="mt-6 text-center text-sm text-white/50 underline">Home</Link>
       </Table>
     );
   }
 
   // ── LOADING ──
-  if (phase === 'loading') {
+  if (displayedPhase === 'loading') {
     return (
       <Table>
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
@@ -462,7 +457,7 @@ export default function GamblePage() {
   }
 
   // ── LOBBY ──
-  if (phase === 'lobby') {
+  if (displayedPhase === 'lobby') {
     const players = st?.players ?? 1;
     return (
       <Table>
@@ -494,7 +489,7 @@ export default function GamblePage() {
   }
 
   // ── PLAY ──
-  if (phase === 'play' && st && me) {
+  if (displayedPhase === 'play' && st && me) {
     return (
       <Table wide>
         {juice.overlay}
@@ -620,7 +615,7 @@ export default function GamblePage() {
   }
 
   // ── FINISHED ──
-  if (phase === 'finished') {
+  if (displayedPhase === 'finished') {
     return (
       <Table>
         {juice.overlay}
@@ -666,5 +661,9 @@ export default function GamblePage() {
 }
 
 function msg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Something went wrong.';
+  const message = e && typeof e === 'object' && 'message' in e && typeof e.message === 'string'
+    ? e.message : 'Something went wrong.';
+  return /permission denied for function gamble_/i.test(message)
+    ? 'Gamble is currently unavailable. Try a solo game instead.'
+    : message;
 }

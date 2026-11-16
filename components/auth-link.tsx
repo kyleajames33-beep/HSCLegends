@@ -6,8 +6,9 @@ import { useUser } from '@/lib/use-user';
 
 // Compact auth indicator: "Sign in" when logged out, name + sign-out when in.
 export default function AuthLink() {
-  const { user, loading } = useUser();
+  const { user, loading, error } = useUser();
   if (loading) return <span className="text-muted">·</span>;
+  if (error) return <span className="text-muted">Account unavailable</span>;
   if (!user)
     return (
       <Link href="/login" className="underline">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import TabBar from '@/components/tab-bar';
 import { createClient } from '@/lib/supabase/client';
@@ -13,8 +13,12 @@ import {
 } from '@/lib/friends';
 
 export default function FriendsPage() {
+  const auth = useUser();
+  return <FriendsView key={auth.loading ? 'loading' : auth.user?.id ?? 'guest'} {...auth} />;
+}
+
+function FriendsView({ user, loading }: ReturnType<typeof useUser>) {
   const sb = useMemo(() => createClient(), []);
-  const { user, loading } = useUser();
   const [handle, setHandle] = useState<string | null>(null);
   const [friends, setFriends] = useState<FriendRow[]>([]);
   const [board, setBoard] = useState<FriendsBoardRow[]>([]);
@@ -23,41 +27,56 @@ export default function FriendsPage() {
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
 
-  async function refresh() {
-    try {
-      const [f, b] = await Promise.all([getFriends(sb), getFriendsBoard(sb)]);
-      setFriends(f); setBoard(b);
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Could not load.'); }
-  }
-
+  const active = useRef(false);
+  const loadVersion = useRef(0);
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    if (loading || !user) return;
-    getMyHandle(sb).then(setHandle, () => {});
-    refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    active.current = true;
+    let current = true;
+    const version = ++loadVersion.current;
+    if (!loading && user) {
+      getMyHandle(sb).then((value) => { if (current) setHandle(value); }, (e) => { if (current) setErr(e instanceof Error ? e.message : 'Could not load handle.'); });
+      Promise.all([getFriends(sb), getFriendsBoard(sb)]).then(([f, b]) => {
+        if (current && version === loadVersion.current) { setFriends(f); setBoard(b); setLoaded(true); }
+      }, (e) => { if (current && version === loadVersion.current) { setErr(e instanceof Error ? e.message : 'Could not load.'); setLoaded(true); } });
+    }
+    return () => { current = false; active.current = false; };
   }, [sb, user, loading]);
+
+  async function refresh() {
+    const version = ++loadVersion.current;
+    const [f, b] = await Promise.all([getFriends(sb), getFriendsBoard(sb)]);
+    if (active.current && version === loadVersion.current) { setFriends(f); setBoard(b); setLoaded(true); }
+  }
 
   async function onAdd() {
     const h = input.trim();
     if (!h || busy) return;
     setBusy(true); setMsg(''); setErr('');
+    let added = false;
     try {
       const { name } = await addFriend(sb, h);
-      setMsg(`Added ${name}! 🎉`);
-      setInput('');
+      if (!active.current) return;
+      added = true;
+      setMsg(`Added ${name}! 🎉`); setInput('');
       await refresh();
     } catch (e) {
+      if (!active.current) return;
       const m = e instanceof Error ? e.message : '';
-      if (m.includes('no_such_handle')) setErr('No Legend found with that handle. Check the spelling.');
+      if (added) setErr('Friend added, but the list could not be refreshed. Reload to check.');
+      else if (m.includes('no_such_handle')) setErr('No Legend found with that handle. Check the spelling.');
       else if (m.includes('cannot_add_self')) setErr("That's your own handle!");
-      else setErr('Could not add that friend.');
-    } finally { setBusy(false); }
+      else setErr('Could not update friends.');
+    } finally { if (active.current) setBusy(false); }
   }
 
   async function onRemove(id: string) {
-    setFriends((prev) => prev.filter((f) => f.friend_id !== id));
-    try { await removeFriend(sb, id); } catch { /* ignore */ }
-    refresh();
+    if (busy) return;
+    setBusy(true); setErr('');
+    let removed = false;
+    try { await removeFriend(sb, id); removed = true; if (active.current) await refresh(); }
+    catch { if (active.current) setErr(removed ? 'Friend removed, but the list could not be refreshed. Reload to check.' : 'Could not remove that friend.'); }
+    finally { if (active.current) setBusy(false); }
   }
 
   if (!loading && !user) {
@@ -117,16 +136,17 @@ export default function FriendsPage() {
             <span className="font-display font-bold text-golddeep tabular-nums">⚡ {r.week_xp}</span>
           </div>
         ))}
-        {board.length === 0 && <p className="text-muted text-sm">Loading…</p>}
+        {!loaded && <p className="text-muted text-sm">Loading…</p>}
+        {loaded && !err && board.length === 0 && <p className="text-muted text-sm">No scores this week yet.</p>}
       </div>
 
       {/* Your friends */}
       <h2 className="mt-6 font-display font-extrabold text-ink">Your friends</h2>
-      {friends.length === 0 ? (
+      {loaded && !err && friends.length === 0 ? (
         <p className="mt-2 rounded-2xl bg-panel border border-rule px-4 py-6 text-center text-sm text-inksoft">
           No friends yet. Share your handle above and add a friend&apos;s to get started! 👋
         </p>
-      ) : (
+      ) : friends.length > 0 ? (
         <div className="mt-2 space-y-1.5">
           {friends.map((f) => {
             const d = division(f.division);
@@ -139,13 +159,13 @@ export default function FriendsPage() {
                     {d.emoji} · 🔥 {f.streak} · Lv {f.level}
                   </div>
                 </div>
-                <button onClick={() => onRemove(f.friend_id)} aria-label={`Remove ${f.name}`}
+                <button onClick={() => onRemove(f.friend_id)} disabled={busy} aria-label={`Remove ${f.name}`}
                   className="shrink-0 rounded-full px-2 py-1 text-muted hover:text-brick">✕</button>
               </div>
             );
           })}
         </div>
-      )}
+      ) : null}
 
       <HomeLink />
     </Shell>

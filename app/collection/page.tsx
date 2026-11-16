@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import TabBar from '@/components/tab-bar';
 import { createClient } from '@/lib/supabase/client';
@@ -19,8 +19,16 @@ const SUBJECT_LABEL: Record<string, string> = {
 };
 
 export default function CollectionPage() {
-  const sb = useMemo(() => createClient(), []);
   const { user, loading } = useUser();
+  if (loading) return <Shell><H>🃏 Collection</H><p>Loading…</p><Home /></Shell>;
+  if (!user) return <Shell><H>🃏 Collection</H><p className="mt-2 text-inksoft">Open packs and collect Legend Cards. Sign in to start your collection.</p><Link href="/login?next=/collection" className="lg-btn lg-btn-primary mt-6 px-5 py-3 text-center">Sign in</Link><Home /></Shell>;
+  return <AccountCollection key={user.id} />;
+}
+
+function AccountCollection() {
+  const sb = useMemo(() => createClient(), []);
+  const active = useRef(false);
+  const request = useRef(0);
   const [coins, setCoins] = useState<number | null>(null);
   const [cards, setCards] = useState<OwnedCard[]>([]);
   const [pull, setPull] = useState<PullCard | null>(null);
@@ -28,43 +36,48 @@ export default function CollectionPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
-  async function refresh() {
-    const [{ data: w }, col] = await Promise.all([
+  const refresh = useCallback(async () => {
+    const generation = ++request.current;
+    const [{ data: w, error }, col] = await Promise.all([
       sb.rpc('get_wallet'),
       getCollection(sb),
     ]);
-    setCoins(w?.coins ?? w?.[0]?.coins ?? 0);
-    setCards(col);
-  }
+    if (error) throw error;
+    if (active.current && request.current === generation) { setCoins(w?.coins ?? w?.[0]?.coins ?? 0); setCards(col); }
+  }, [sb]);
 
   useEffect(() => {
-    if (loading || !user) return;
-    refresh().catch((e) => setErr(msg(e)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, user]);
+    active.current = true;
+    const guard = request;
+    const operation = refresh();
+    const sequence = guard.current;
+    void operation.catch(e => { if (active.current && guard.current === sequence) setErr(msg(e)); });
+    return () => { active.current = false; guard.current++; };
+  }, [refresh]);
 
   async function buyPack() {
     if (busy || coins == null || coins < PACK_COST) return;
     setBusy(true); setErr('');
     try {
       const c = await openPack(sb);
-      setPull(c);
-    } catch (e) { setErr(msg(e)); } finally { setBusy(false); }
+      if (active.current) setPull(c);
+    } catch (e) { if (active.current) setErr(msg(e)); } finally { if (active.current) setBusy(false); }
   }
 
   async function closePull() {
     setPull(null);
-    await refresh().catch((e) => setErr(msg(e)));
+    await refresh().catch((e) => { if (active.current) setErr(msg(e)); });
   }
 
   async function sell(card: OwnedCard) {
     setBusy(true); setErr('');
     try {
       const newBal = await sellDupe(sb, card.card_id);
+      if (!active.current) return;
       setCoins(newBal);
       setSelected(null);
       await refresh();
-    } catch (e) { setErr(msg(e)); } finally { setBusy(false); }
+    } catch (e) { if (active.current) setErr(msg(e)); } finally { if (active.current) setBusy(false); }
   }
 
   // --- group cards by subject (null = Legends) for sectioned grid, with set-completion ---
@@ -85,16 +98,6 @@ export default function CollectionPage() {
 
   const owned = cards.filter((c) => c.count > 0).length;
 
-  if (!loading && !user) {
-    return (
-      <Shell>
-        <H>🃏 Collection</H>
-        <p className="mt-2 text-inksoft">Open packs and collect Legend Cards. Sign in to start your collection.</p>
-        <Link href="/login?next=/collection" className="lg-btn lg-btn-primary mt-6 px-5 py-3 text-center">Sign in</Link>
-        <Home />
-      </Shell>
-    );
-  }
 
   return (
     <Shell>

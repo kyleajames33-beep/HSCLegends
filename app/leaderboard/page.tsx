@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
@@ -11,42 +12,63 @@ import Avatar from '@/components/avatar';
 import { PodiumSpot } from '@/components/spot';
 
 export default function LeaderboardPage() {
+  const auth = useUser();
+  return <Suspense fallback={<main className="p-6">Loading leaderboard…</main>}><LeaderboardView key={auth.loading ? 'loading' : auth.user?.id ?? 'guest'} {...auth} /></Suspense>;
+}
+
+function LeaderboardView({ user }: ReturnType<typeof useUser>) {
   const sb = useMemo(() => createClient(), []);
-  const { user } = useUser();
-  const [subject, setSubject] = useState<Subject>('biology');
-  const [year, setYear] = useState<11 | 12>(12);
+  const search = useSearchParams();
+  const [subject, setSubject] = useState<Subject>(() => {
+    const value = search.get('subject');
+    return SUBJECTS.find((item) => item.id === value)?.id ?? 'biology';
+  });
+  const [year, setYear] = useState<11 | 12>(() => search.get('year') === '11' ? 11 : 12);
   const [period, setPeriod] = useState<'day' | 'week'>('week');
-  const [rows, setRows] = useState<BoardRow[]>([]);
+  const [revision, setRevision] = useState(0);
+  const [board, setBoard] = useState<{ key: string; rows: BoardRow[]; error?: string } | null>(null);
   const [optIn, setOptIn] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [optErr, setOptErr] = useState('');
+  const [saving, setSaving] = useState(false);
+  const active = useRef(false);
+  const key = `${subject}:${year}:${period}:${revision}`;
+  const loading = board?.key !== key;
+  const rows = loading ? [] : board.rows;
+  const boardError = loading ? '' : board.error;
 
-  // Default the board from the URL (e.g. coming from a finished daily quiz).
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
-    const s = p.get('subject') as Subject;
-    const y = Number(p.get('year'));
-    if (s && SUBJECTS.some((x) => x.id === s)) setSubject(s);
-    if (y === 11 || y === 12) setYear(y);
+    active.current = true;
+    return () => { active.current = false; };
   }, []);
-
-  async function load() {
-    setLoading(true);
-    setRows(await getSubjectLeaderboard(sb, subject, year, period));
-    setLoading(false);
-  }
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [subject, year, period]);
-
   useEffect(() => {
-    if (!user) { setOptIn(null); return; }
+    let current = true;
+    getSubjectLeaderboard(sb, subject, year, period).then((value) => {
+      if (current) setBoard({ key, rows: value });
+    }, () => { if (current) setBoard({ key, rows: [], error: 'Could not load leaderboard.' }); });
+    return () => { current = false; };
+  }, [sb, subject, year, period, key]);
+  useEffect(() => {
+    if (!user) return;
+    let current = true;
     sb.from('user_profiles').select('leaderboard_opt_in').eq('user_id', user.id).single()
-      .then(({ data }) => setOptIn(Boolean(data?.leaderboard_opt_in)));
+      .then(({ data, error }) => {
+        if (!current) return;
+        if (error || !data || typeof data.leaderboard_opt_in !== 'boolean') setOptErr('Could not load leaderboard setting.');
+        else setOptIn(data.leaderboard_opt_in);
+      }, () => { if (current) setOptErr('Could not load leaderboard setting.'); });
+    return () => { current = false; };
   }, [user, sb]);
 
   async function toggle() {
+    if (optIn === null || saving) return;
     const next = !optIn;
-    setOptIn(next);
-    await setLeaderboardOptIn(sb, next);
-    load();
+    setSaving(true); setOptErr('');
+    try {
+      await setLeaderboardOptIn(sb, next);
+      if (!active.current) return;
+      setOptIn(next); setRevision((value) => value + 1);
+    } catch { if (active.current) setOptErr('Could not save leaderboard setting.'); }
+    finally { if (active.current) setSaving(false); }
   }
 
   const label = SUBJECTS.find((s) => s.id === subject)?.label ?? subject;
@@ -87,6 +109,8 @@ export default function LeaderboardPage() {
       <div className="mt-2 flex-1">
         {loading ? (
           <p className="text-muted">Loading…</p>
+        ) : boardError ? (
+          <p className="text-brick" role="alert">{boardError}</p>
         ) : rows.length === 0 ? (
           <div className="flex flex-col items-center text-center mt-4">
             <PodiumSpot className="w-52 h-auto" />
@@ -115,12 +139,13 @@ export default function LeaderboardPage() {
         ) : (
           <label className="flex items-center justify-between text-sm">
             <span className="text-ink">Show me on leaderboards</span>
-            <button onClick={toggle}
+            <button onClick={toggle} type="button" role="switch" aria-checked={optIn === true} aria-label="Show me on leaderboards" disabled={saving || optIn === null}
               className={`relative h-6 w-11 rounded-full transition ${optIn ? 'bg-plum' : 'bg-rule'}`}>
               <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${optIn ? 'left-[22px]' : 'left-0.5'}`} />
             </button>
           </label>
         )}
+        {optErr && <p className="mt-2 text-sm text-brick" role="alert">{optErr}</p>}
       </div>
     </main>
   );

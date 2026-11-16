@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
@@ -17,9 +17,24 @@ import { getQuests, claimQuest, type Quest } from '@/lib/quests';
 const FREEZE_COST = 150;
 const FREEZE_CAP = 5;
 
+function walletBalance(data: unknown): number {
+  const row = Array.isArray(data) ? data[0] : data;
+  const value = row && typeof row === 'object' ? (row as { coins?: unknown }).coins : undefined;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) throw new Error('Wallet balance is unavailable.');
+  return value;
+}
+
 export default function RewardsPage() {
-  const sb = useMemo(() => createClient(), []);
   const { user, loading } = useUser();
+  if (loading) return <Shell><H>🎁 Daily rewards</H><p>Loading…</p><Home /></Shell>;
+  if (!user) return <Shell><H>🎁 Daily rewards</H><p className="mt-2 text-inksoft">Spin for free Sparks every day, keep your streak, and finish quests. Sign in to start.</p><Link href="/login?next=/rewards" className="lg-btn lg-btn-primary mt-6 px-5 py-3 text-center">Sign in</Link><Home /></Shell>;
+  return <AccountRewards key={user.id} />;
+}
+
+function AccountRewards() {
+  const sb = useMemo(() => createClient(), []);
+  const active = useRef(false);
+  const generation = useRef(0);
 
   const [coins, setCoins] = useState<number | null>(null);
   const [spin, setSpin] = useState<SpinStatus | null>(null);
@@ -31,30 +46,33 @@ export default function RewardsPage() {
   const [err, setErr] = useState('');
 
   const refreshWallet = useCallback(async () => {
-    const { data } = await sb.rpc('get_wallet');
-    setCoins((data?.[0]?.coins as number) ?? data?.coins ?? 0);
+    try {
+      const { data, error } = await sb.rpc('get_wallet');
+      if (error) throw error;
+      const balance = walletBalance(data);
+      if (active.current) setCoins(balance);
+    } catch (e) { if (active.current) setCoins(null); throw e; }
   }, [sb]);
 
-  const load = useCallback(async () => {
-    setErr('');
-    try {
-      const [sp, st, qs] = await Promise.all([
-        getSpinStatus(sb), getStreakStatus(sb), getQuests(sb),
-      ]);
-      setSpin(sp); setStreak(st); setQuests(qs);
-      await refreshWallet();
-    } catch (e) { setErr(msg(e)); }
-  }, [sb, refreshWallet]);
-
   useEffect(() => {
-    if (!loading && user) load();
-  }, [loading, user, load]);
+    active.current = true;
+    const guard = generation;
+    const request = ++guard.current;
+    void Promise.all([getSpinStatus(sb), getStreakStatus(sb), getQuests(sb), sb.rpc('get_wallet')]).then(([sp, st, qs, wallet]) => {
+      if (!active.current || generation.current !== request) return;
+      if (wallet.error) throw wallet.error;
+      setSpin(sp); setStreak(st); setQuests(qs);
+      setCoins(walletBalance(wallet.data));
+    }).catch(e => { if (active.current && generation.current === request) setErr(msg(e)); });
+    return () => { active.current = false; guard.current++; };
+  }, [sb]);
 
   async function handleSpin(): Promise<number> {
     const r = await spinDaily(sb);
+    if (!active.current) return r.reward;
     setSpin({ can_spin: false, ladder_day: r.ladder_day });
     setLastReward(r.reward);
-    refreshWallet();
+    void refreshWallet().catch(e => { if (active.current) setErr(msg(e)); });
     celebrate(r.reward >= 100);
     return r.reward;
   }
@@ -63,33 +81,24 @@ export default function RewardsPage() {
     setClaiming(questId); setErr('');
     try {
       const bal = await claimQuest(sb, questId);
+      if (!active.current) return;
       setCoins(bal);
       celebrate(false);
-      setQuests(await getQuests(sb));
-    } catch (e) { setErr(msg(e)); } finally { setClaiming(null); }
+      const updated = await getQuests(sb);
+      if (active.current) setQuests(updated);
+    } catch (e) { if (active.current) setErr(msg(e)); } finally { if (active.current) setClaiming(null); }
   }
 
   async function handleBuyFreeze() {
     setBuyingFreeze(true); setErr('');
     try {
       const n = await buyStreakFreeze(sb);
+      if (!active.current) return;
       setStreak((s) => (s ? { ...s, freezes: n } : s));
       await refreshWallet();
     } catch (e) {
-      setErr(msg(e) === 'insufficient_coins' ? 'Not enough Sparks yet — keep earning!' : msg(e));
-    } finally { setBuyingFreeze(false); }
-  }
-
-  // ---------- gates ----------
-  if (!loading && !user) {
-    return (
-      <Shell>
-        <H>🎁 Daily rewards</H>
-        <p className="mt-2 text-inksoft">Spin for free Sparks every day, keep your streak, and finish quests. Sign in to start.</p>
-        <Link href="/login?next=/rewards" className="lg-btn lg-btn-primary mt-6 px-5 py-3 text-center">Sign in</Link>
-        <Home />
-      </Shell>
-    );
+      if (active.current) setErr(msg(e) === 'insufficient_coins' ? 'Not enough Sparks yet — keep earning!' : msg(e));
+    } finally { if (active.current) setBuyingFreeze(false); }
   }
 
   const ladderDay = spin?.ladder_day ?? 0;
@@ -159,7 +168,7 @@ export default function RewardsPage() {
         <p className="mt-3 text-sm text-inksoft">Weekends never count. A bought freeze covers a missed weekday once your free weekly one is used. <Link href="/streak" className="font-semibold text-plumdeep underline">See your streak</Link></p>
         <button
           onClick={handleBuyFreeze}
-          disabled={buyingFreeze || (streak?.freezes ?? 0) >= FREEZE_CAP}
+          disabled={buyingFreeze || !streak || streak.freezes >= FREEZE_CAP}
           className="lg-btn lg-btn-berry mt-3 w-full px-4 py-3 disabled:opacity-40"
         >
           {(streak?.freezes ?? 0) >= FREEZE_CAP

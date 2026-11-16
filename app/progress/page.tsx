@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
@@ -8,7 +8,7 @@ import {
   getProgress, getWeakTopics, bandRange, levelLabel,
   type SubjectProgress, type WeakTopic,
 } from '@/lib/learning';
-import { SUBJECTS, type Subject } from '@/lib/questions';
+import { SUBJECTS } from '@/lib/questions';
 import MasteryRing from '@/components/mastery-ring';
 
 type Phase = 'loading' | 'ready' | 'empty' | 'error' | 'signedout';
@@ -28,32 +28,39 @@ function ringColor(pct: number): string {
 export default function ProgressPage() {
   const sb = useMemo(() => createClient(), []);
   const { user, loading: userLoading } = useUser();
-  const [phase, setPhase] = useState<Phase>('loading');
-  const [rows, setRows] = useState<SubjectProgress[]>([]);
-  const [weak, setWeak] = useState<WeakTopic[]>([]);
-  const [err, setErr] = useState('');
-
-  async function load() {
-    setPhase('loading');
-    setErr('');
-    try {
-      const [p, w] = await Promise.all([getProgress(sb), getWeakTopics(sb, null, 3)]);
-      if (!p.length) { setPhase('empty'); return; }
-      setRows(p);
-      setWeak(w);
-      setPhase('ready');
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Something went wrong.');
-      setPhase('error');
-    }
-  }
+  const [snapshot, setSnapshot] = useState<{ owner: string; phase: Phase; rows: SubjectProgress[]; weak: WeakTopic[]; err: string } | null>(null);
+  const requestRef = useRef(0);
+  const activeOwner = useRef<string | null>(null);
+  const phase: Phase = userLoading ? 'loading' : !user ? 'signedout' : snapshot?.owner === user.id ? snapshot.phase : 'loading';
+  const rows = snapshot && snapshot.owner === user?.id ? snapshot.rows : [];
+  const weak = snapshot && snapshot.owner === user?.id ? snapshot.weak : [];
+  const err = snapshot && snapshot.owner === user?.id ? snapshot.err : '';
 
   useEffect(() => {
-    if (userLoading) return;
-    if (!user) { setPhase('signedout'); return; }
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLoading, user]);
+    const request = ++requestRef.current;
+    activeOwner.current = user?.id ?? null;
+    if (!userLoading && user) {
+      const owner = user.id;
+      Promise.all([getProgress(sb), getWeakTopics(sb, null, 3)]).then(([rows, weak]) => {
+        if (requestRef.current !== request) return;
+        setSnapshot({ owner, phase: rows.length ? 'ready' : 'empty', rows, weak, err: '' });
+      }, (e) => {
+        if (requestRef.current === request) setSnapshot({ owner, phase: 'error', rows: [], weak: [], err: e instanceof Error ? e.message : 'Something went wrong.' });
+      });
+    }
+    return () => { activeOwner.current = null; requestRef.current += 1; };
+  }, [sb, user, userLoading]);
+
+  function load() {
+    if (!user || userLoading || activeOwner.current !== user.id) return;
+    const owner = user.id, request = ++requestRef.current;
+    setSnapshot({ owner, phase: 'loading', rows: [], weak: [], err: '' });
+    Promise.all([getProgress(sb), getWeakTopics(sb, null, 3)]).then(([rows, weak]) => {
+      if (requestRef.current === request) setSnapshot({ owner, phase: rows.length ? 'ready' : 'empty', rows, weak, err: '' });
+    }, (e) => {
+      if (requestRef.current === request) setSnapshot({ owner, phase: 'error', rows: [], weak: [], err: e instanceof Error ? e.message : 'Something went wrong.' });
+    });
+  }
 
   if (phase === 'loading') {
     return <Shell><p className="mt-10 text-plum font-semibold">Loading your progress…</p></Shell>;

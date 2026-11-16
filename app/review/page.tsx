@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
@@ -22,7 +22,7 @@ const GRADES: { grade: ReviewGrade; label: string; bg: string; deep: string }[] 
 export default function ReviewPage() {
   const sb = useMemo(() => createClient(), []);
   const { user, loading: userLoading } = useUser();
-  const [phase, setPhase] = useState<Phase>('loading');
+  const [storedPhase, setPhase] = useState<Phase>('loading');
   const [queue, setQueue] = useState<ReviewQuestion[]>([]);
   const [i, setI] = useState(0);
   const [total, setTotal] = useState(0);
@@ -33,51 +33,69 @@ export default function ReviewPage() {
   const [sparkPop, setSparkPop] = useState(0);
   const [err, setErr] = useState('');
 
-  async function load() {
-    setPhase('loading');
-    setErr('');
-    try {
-      const qs = await getDueReviews(sb, 15);
-      if (!qs.length) { setPhase('empty'); return; }
-      setQueue(qs);
-      setTotal(qs.length);
-      setI(0);
-      setPicked(null);
-      setSessionSparks(0);
-      setStreak(0);
-      setPhase('review');
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Something went wrong.');
-      setPhase('error');
-    }
+  const [owner, setOwner] = useState<string | null>(null);
+  const requestRef = useRef(0);
+  const activeOwner = useRef<string | null>(null);
+  const gradeLock = useRef(false);
+  const choiceLock = useRef(false);
+  const currentIndex = useRef(0);
+  const phase: Phase = userLoading ? 'loading' : !user ? 'signedout' : owner === user.id ? storedPhase : 'loading';
+
+  function applyReviews(qs: ReviewQuestion[], account: string, request: number) {
+    if (requestRef.current !== request) return;
+    gradeLock.current = false; choiceLock.current = false; currentIndex.current = 0;
+    setOwner(account); setQueue(qs); setTotal(qs.length); setI(0); setPicked(null);
+    setSessionSparks(0); setStreak(0); setSparkPop(0); setGrading(false); setErr('');
+    setPhase(qs.length ? 'review' : 'empty');
   }
 
   useEffect(() => {
-    if (userLoading) return;
-    if (!user) { setPhase('signedout'); return; }
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLoading, user]);
+    const request = ++requestRef.current;
+    activeOwner.current = user?.id ?? null;
+    gradeLock.current = false; choiceLock.current = false;
+    if (!userLoading && user) {
+      const account = user.id;
+      getDueReviews(sb, 15).then(qs => applyReviews(qs, account, request), e => {
+        if (requestRef.current !== request) return;
+        setOwner(account); setErr(e instanceof Error ? e.message : 'Something went wrong.'); setPhase('error');
+      });
+    }
+    return () => { activeOwner.current = null; requestRef.current += 1; gradeLock.current = false; choiceLock.current = false; };
+  }, [sb, user, userLoading]);
+
+  function load() {
+    if (!user || userLoading || activeOwner.current !== user.id) return;
+    const request = ++requestRef.current, account = user.id;
+    gradeLock.current = false; choiceLock.current = false; currentIndex.current = 0;
+    setOwner(account); setPhase('loading'); setErr('');
+    getDueReviews(sb, 15).then(qs => applyReviews(qs, account, request), e => {
+      if (requestRef.current !== request) return;
+      setErr(e instanceof Error ? e.message : 'Something went wrong.'); setPhase('error');
+    });
+  }
 
   function choose(idx: number) {
-    if (picked !== null) return;
-    setPicked(idx);
-    setStreak((s) => (idx === queue[i].correct_index ? s + 1 : 0));
+    if (phase !== 'review' || owner !== activeOwner.current || i !== currentIndex.current || choiceLock.current || picked !== null || !queue[i] || !Number.isInteger(idx) || idx < 0 || idx >= queue[i].options.length) return;
+    choiceLock.current = true; setPicked(idx);
+    setStreak(s => idx === queue[i].correct_index ? s + 1 : 0);
   }
 
   async function grade(g: ReviewGrade) {
-    if (grading) return;
-    setGrading(true);
+    if (phase !== 'review' || !user || activeOwner.current !== user.id || i !== currentIndex.current || owner !== user.id || picked === null || gradeLock.current || !queue[i]) return;
+    const request = requestRef.current, question = queue[i];
+    gradeLock.current = true; setGrading(true);
     try {
-      const r = await gradeReview(sb, queue[i].id, g);
-      if (r.awarded > 0) { setSessionSparks((s) => s + r.awarded); setSparkPop((p) => p + 1); }
+      const r = await gradeReview(sb, question.id, g);
+      if (requestRef.current !== request) return;
+      if (r.awarded > 0) { setSessionSparks(s => s + r.awarded); setSparkPop(p => p + 1); }
+      currentIndex.current = i + 1;
       if (i + 1 >= queue.length) setPhase('done');
-      else { setI((n) => n + 1); setPicked(null); }
+      else { choiceLock.current = false; setI(i + 1); setPicked(null); }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Could not save your review.');
-      setPhase('error');
+      if (requestRef.current !== request) return;
+      setErr(e instanceof Error ? e.message : 'Could not save your review.'); setPhase('error');
     } finally {
-      setGrading(false);
+      if (requestRef.current === request) { gradeLock.current = false; setGrading(false); }
     }
   }
 

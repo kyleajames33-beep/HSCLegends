@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
@@ -11,37 +11,61 @@ import {
 import { ClassSpot } from '@/components/spot';
 
 export default function ClassesPage() {
+  const auth = useUser();
+  return <ClassesView key={auth.loading ? 'loading' : auth.user?.id ?? 'guest'} {...auth} />;
+}
+
+function ClassesView({ user, loading }: ReturnType<typeof useUser>) {
   const sb = useMemo(() => createClient(), []);
-  const { user, loading } = useUser();
   const [classes, setClasses] = useState<ClassRow[]>([]);
   const [open, setOpen] = useState<ClassRow | null>(null);
   const [rows, setRows] = useState<ClassMemberStat[]>([]);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
   const [name, setName] = useState('');
   const [year, setYear] = useState<11 | 12>(12);
   const [joinCode, setJoinCode] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
 
-  async function refresh() {
-    setClasses(await getMyClasses(sb));
-  }
-  useEffect(() => { if (user) refresh(); /* eslint-disable-next-line */ }, [user]);
+  const active = useRef(false);
+  const listVersion = useRef(0);
+  const dashboardVersion = useRef(0);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    active.current = true;
+    let current = true;
+    const version = ++listVersion.current;
+    if (user) getMyClasses(sb).then((value) => {
+      if (current && version === listVersion.current) { setClasses(value); setLoaded(true); }
+    }, (e) => { if (current && version === listVersion.current) { setErr(msg(e)); setLoaded(true); } });
+    return () => { current = false; active.current = false; };
+  }, [user, sb]);
 
+  async function refresh() {
+    const version = ++listVersion.current;
+    const value = await getMyClasses(sb);
+    if (active.current && version === listVersion.current) { setClasses(value); setLoaded(true); }
+  }
   async function openClass(c: ClassRow) {
-    setOpen(c);
-    setRows(await getClassDashboard(sb, c.id));
+    const version = ++dashboardVersion.current;
+    setOpen(c); setRows([]); setErr(''); setDashboardLoading(true);
+    try {
+      const value = await getClassDashboard(sb, c.id);
+      if (active.current && version === dashboardVersion.current) setRows(value);
+    } catch (e) { if (active.current && version === dashboardVersion.current) setErr(msg(e)); }
+    finally { if (active.current && version === dashboardVersion.current) setDashboardLoading(false); }
   }
   async function doCreate() {
-    if (!name.trim()) return;
+    if (!name.trim() || busy) return;
     setBusy(true); setErr('');
-    try { await createClass(sb, name, year); setName(''); await refresh(); }
-    catch (e) { setErr(msg(e)); } finally { setBusy(false); }
+    try { await createClass(sb, name, year); if (!active.current) return; setName(''); await refresh(); }
+    catch (e) { if (active.current) setErr(msg(e)); } finally { if (active.current) setBusy(false); }
   }
   async function doJoin() {
-    if (joinCode.length < 6) return;
+    if (joinCode.length < 6 || busy) return;
     setBusy(true); setErr('');
-    try { await joinClass(sb, joinCode); setJoinCode(''); await refresh(); }
-    catch (e) { setErr(msg(e)); } finally { setBusy(false); }
+    try { await joinClass(sb, joinCode); if (!active.current) return; setJoinCode(''); await refresh(); }
+    catch (e) { if (active.current) setErr(msg(e)); } finally { if (active.current) setBusy(false); }
   }
 
   if (!loading && !user) {
@@ -59,7 +83,7 @@ export default function ClassesPage() {
     const totalDmg = rows.reduce((s, r) => s + Number(r.boss_damage), 0);
     return (
       <Shell>
-        <button onClick={() => setOpen(null)} className="text-sm text-muted underline">← All classes</button>
+        <button onClick={() => { dashboardVersion.current += 1; setOpen(null); setErr(''); }} className="text-sm text-muted underline">← All classes</button>
         <div className="mt-2 flex items-center justify-between">
           <H>{open.name}</H>
           {open.is_teacher && <span className="text-xs rounded-full bg-parchment-deep px-2 py-1">code {open.code}</span>}
@@ -68,6 +92,7 @@ export default function ClassesPage() {
           <Stat label="class XP this week" value={totalXp} />
           <Stat label="boss damage this week" value={totalDmg} />
         </div>
+        {err && <p className="mt-4 text-brick text-sm" role="alert">{err}</p>}
         <div className="mt-5 text-sm text-muted">Members ({rows.length})</div>
         <ol className="mt-2 space-y-2">
           {rows.map((r, i) => (
@@ -76,7 +101,8 @@ export default function ClassesPage() {
               <span className="text-sm text-inksoft">🔥{r.streak} · ⚔{r.boss_damage} · <span className="text-ink font-bold">{r.weekly_xp} XP</span></span>
             </li>
           ))}
-          {!rows.length && <p className="text-muted text-sm">No members yet.</p>}
+          {dashboardLoading && <li className="text-muted text-sm">Loading members…</li>}
+          {!dashboardLoading && !err && !rows.length && <li className="text-muted text-sm">No members yet.</li>}
         </ol>
       </Shell>
     );
@@ -99,7 +125,8 @@ export default function ClassesPage() {
             </div>
           </button>
         ))}
-        {!classes.length && (
+        {!loaded && !err && <p className="text-muted text-sm">Loading classes…</p>}
+        {loaded && !err && !classes.length && (
           <div className="flex flex-col items-center text-center py-2">
             <ClassSpot className="w-48 h-auto" />
             <p className="text-muted text-sm mt-2">No classes yet — create one or join with a code.</p>

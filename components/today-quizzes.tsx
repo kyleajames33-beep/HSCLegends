@@ -10,25 +10,34 @@ import { getDailyDone } from '@/lib/daily';
 // The directed daily pathway: the student's prescribed quizzes (their subjects,
 // their year), with done/todo status.
 export default function TodayQuizzes() {
-  const sb = useMemo(() => createClient(), []);
   const { user, loading } = useUser();
+  return !loading && user ? <AccountQuizzes key={user.id} userId={user.id} /> : null;
+}
+
+function AccountQuizzes({ userId }: { userId: string }) {
+  const sb = useMemo(() => createClient(), []);
   const [year, setYear] = useState<number | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [done, setDone] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!user) { setReady(false); return; }
+    let active = true;
     (async () => {
-      const { data } = await sb.from('user_profiles').select('year, subjects').eq('user_id', user.id).maybeSingle();
+      const { data, error } = await sb.from('user_profiles').select('year, subjects').eq('user_id', userId).maybeSingle();
+      if (error) throw error;
+      if (!active) return;
       setYear(data?.year ?? null);
       setSubjects(((data?.subjects ?? []) as string[]).filter((s) => SUBJECTS.some((x) => x.id === s)) as Subject[]);
-      setDone(await getDailyDone(sb).catch(() => []));
-      setReady(true);
-    })();
-  }, [user, sb]);
+      const completed = await getDailyDone(sb);
+      if (active) { setDone(completed); setReady(true); }
+    })().catch(() => { if (active) setError(true); });
+    return () => { active = false; };
+  }, [userId, sb]);
 
-  if (loading || !user || !ready) return null;
+  if (error) return <p role="status" className="mt-5 text-sm text-brick">Today’s quizzes are unavailable right now. Please try again later.</p>;
+  if (!ready) return null;
 
   if (!year || subjects.length === 0) {
     return (

@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useSparksAward } from '@/lib/use-sparks-award';
 import { useUser } from '@/lib/use-user';
 import { getQuizQuestions, SUBJECTS, type Question, type Subject } from '@/lib/questions';
 import { recordQuickGame, STREAK_MSG, type QuickResult } from '@/lib/progress';
@@ -15,7 +16,7 @@ import ShareButton from '@/components/share-button';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
 import { useJuice, atEvent, StreakFlame, type JuiceAt } from '@/components/juice';
-import { getPowerups, usePowerup, QUICKGAME_POWERUPS, type Powerup } from '@/lib/powerups';
+import { getPowerups, usePowerup as consumePowerup, QUICKGAME_POWERUPS, type Powerup } from '@/lib/powerups';
 
 // Earn→spend: correct answers bank Energy (capped), spent on free in-run boosts.
 const MAX_ENERGY = 6;
@@ -23,11 +24,15 @@ const MAX_ENERGY = 6;
 type Phase = 'pick' | 'loading' | 'play' | 'done' | 'error';
 type Sel = { subject: Subject; year: 11 | 12 };
 const PENDING_KEY = 'legends_pending_quick';
-
 export default function QuickGame() {
   const sb = useMemo(() => createClient(), []);
   const router = useRouter();
   const { user } = useUser();
+  const sparks = useSparksAward(sb, user?.id);
+  const [runVersion, setRunVersion] = useState(0);
+  const [runOwner, setRunOwner] = useState<string | undefined>(undefined);
+  const gameRun = useRef(0);
+  const saveStarted = useRef<number | null>(null);
   const [phase, setPhase] = useState<Phase>('pick');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [i, setI] = useState(0);
@@ -54,44 +59,69 @@ export default function QuickGame() {
   // Juice Kit FX — bursts/floats anchor to the tapped tile.
   const juice = useJuice();
   const lastTap = useRef<JuiceAt | undefined>(undefined);
+  useEffect(() => () => { gameRun.current += 1; }, []);
 
-  // Daily mode: ?daily=1&subject=…&year=… auto-starts the prescribed quiz.
-  useEffect(() => {
+  // Start daily mode after its questions arrive. A manual start or unmount
+  // invalidates the pending load before it can replace the current run.
+  const loadDaily = useEffectEvent((isActive: () => boolean) => {
     const p = new URLSearchParams(window.location.search);
     if (p.get('daily') !== '1') return;
     const subject = p.get('subject') as Subject;
     const year = Number(p.get('year')) as 11 | 12;
-    if (subject && (year === 11 || year === 12)) {
+    if (!SUBJECTS.some((s) => s.id === subject) || (year !== 11 && year !== 12)) return;
+    const previousRun = gameRun.current;
+    void getQuizQuestions(sb, { subject, year, count: 10 }).then((qs) => {
+      if (!isActive() || gameRun.current !== previousRun) return;
+      if (!qs.length) throw new Error('No questions found for that selection.');
+      const run = sparks.reset(); gameRun.current = run; setRunVersion(run); setRunOwner(user?.id);
+      saveStarted.current = null;
       setDaily({ subject, year });
-      start(subject, year);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      applyQuestions(qs, subject, year, run);
+    }).catch((e) => {
+      if (!isActive() || gameRun.current !== previousRun) return;
+      setErr(e instanceof Error ? e.message : 'Something went wrong.'); setPhase('error');
+    });
+  });
+  useEffect(() => {
+    let active = true;
+    loadDaily(() => active);
+    return () => { active = false; };
   }, []);
 
+  function applyQuestions(qs: Question[], subject: Subject, year: 11 | 12, run: number) {
+    setQuestions(qs);
+    setSel({ subject, year });
+    setTotal(qs.length);
+    setI(0);
+    setScore(0);
+    setCombo(0); setMaxCombo(0); setEnergy(0);
+    setResult(null);
+    setPicked(null);
+    setEliminated([]); setHintShown(false); setDoubleActive(false); setBonusSparks(0);
+    if (user) getPowerups(sb).then((items) => { if (gameRun.current === run) setPowerups(items); }, () => {});
+    setPhase('play');
+  }
+
   async function start(subject: Subject, year: 11 | 12) {
+    const run = sparks.reset(); gameRun.current = run; setRunVersion(run); setRunOwner(user?.id);
+    saveStarted.current = null;
     setPhase('loading');
     try {
       const qs = await getQuizQuestions(sb, { subject, year, count: 10 });
+      if (gameRun.current !== run) return;
       if (!qs.length) throw new Error('No questions found for that selection.');
-      setQuestions(qs);
-      setSel({ subject, year });
-      setTotal(qs.length);
-      setI(0);
-      setScore(0);
-      setCombo(0); setMaxCombo(0); setEnergy(0);
-      setResult(null);
-      setPicked(null);
-      setEliminated([]); setHintShown(false); setDoubleActive(false); setBonusSparks(0);
-      if (user) getPowerups(sb).then(setPowerups, () => {});
-      setPhase('play');
+      applyQuestions(qs, subject, year, run);
     } catch (e) {
+      if (gameRun.current !== run) return;
       setErr(e instanceof Error ? e.message : 'Something went wrong.');
       setPhase('error');
     }
   }
 
   // Save result for a signed-in player (auto on finish, or resumed after login).
-  async function save(subject: Subject, year: 11 | 12, correct: number, tot: number) {
+  async function save(subject: Subject, year: 11 | 12, correct: number, tot: number, run = runVersion) {
+    if (!sparks.isCurrent(run) || saveStarted.current === run) return;
+    saveStarted.current = run;
     setSaveErr('');
     try {
       // Whether this round earns Sparks/quest credit. Daily replays that don't re-count
@@ -99,41 +129,61 @@ export default function QuickGame() {
       let earns = true;
       if (daily) {
         const r = await recordDailyQuiz(sb, subject, year, correct, tot);
+        if (!sparks.isCurrent(run)) return;
         setDailyCounted(r.counted);
         setResult({ xp_awarded: r.xp_awarded, total_xp: r.total_xp, streak: r.streak, streak_event: r.streak_event });
         earns = r.counted;
       } else {
-        setResult(await recordQuickGame(sb, subject, year, correct, tot));
+        const r = await recordQuickGame(sb, subject, year, correct, tot);
+        if (!sparks.isCurrent(run)) return;
+        setResult(r);
       }
       // Earn Sparks for the round (+ any Double Sparks bonus) + advance the daily-quiz quest.
       if (earns) {
-        sb.rpc('credit_coins', { p_amount: correct * 2 + 5 + bonusSparks, p_reason: 'quick_game', p_meta: null }).then(undefined, () => {});
+        void sparks.claim(correct * 2 + 5 + bonusSparks, 'quick_game', run);
         if (daily) sb.rpc('increment_quest', { p_metric: 'daily_quiz', p_amount: 1 }).then(undefined, () => {});
       }
     } catch (e) {
-      setSaveErr(e instanceof Error ? e.message : 'Could not save.');
+      if (sparks.isCurrent(run)) {
+        saveStarted.current = null;
+        setSaveErr(e instanceof Error ? e.message : 'Could not save.');
+      }
     }
   }
 
   // Auto-save the moment a signed-in player finishes.
-  useEffect(() => {
+  const autoSaveFinishedRun = useEffectEvent(() => {
     if (phase === 'done' && user && sel && !result) save(sel.subject, sel.year, score, total);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      autoSaveFinishedRun();
+    });
+    return () => { active = false; };
   }, [phase, user]);
 
   // Resume a save deferred across the login redirect.
-  useEffect(() => {
+  const resumePendingSave = useEffectEvent(() => {
     if (!user) return;
     const raw = typeof window !== 'undefined' ? localStorage.getItem(PENDING_KEY) : null;
     if (!raw || result) return;
     localStorage.removeItem(PENDING_KEY);
     try {
       const p = JSON.parse(raw) as Sel & { correct: number; total: number };
+      const run = sparks.reset(); gameRun.current = run; setRunVersion(run); setRunOwner(user.id); saveStarted.current = null;
       setScore(p.correct); setTotal(p.total); setSel({ subject: p.subject, year: p.year });
       setPhase('done');
-      save(p.subject, p.year, p.correct, p.total);
+      save(p.subject, p.year, p.correct, p.total, run);
     } catch { /* ignore */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (active) resumePendingSave();
+    });
+    return () => { active = false; };
   }, [user]);
 
   function saveAfterLogin() {
@@ -189,6 +239,7 @@ export default function QuickGame() {
   }
 
   function next() {
+    if (gameRun.current !== runVersion) return;
     if (i + 1 >= questions.length) setPhase('done');
     else {
       setI((n) => n + 1);
@@ -221,7 +272,7 @@ export default function QuickGame() {
     const have = powerups.find((p) => p.id === id);
     if (!have || have.count <= 0 || picked !== null) return;
     setPowerups((ps) => ps.map((p) => (p.id === id ? { ...p, count: p.count - 1 } : p)));
-    usePowerup(sb, id).then(undefined, () =>
+    consumePowerup(sb, id).then(undefined, () =>
       setPowerups((ps) => ps.map((p) => (p.id === id ? { ...p, count: p.count + 1 } : p))),
     );
     const q = questions[i];
@@ -287,9 +338,11 @@ export default function QuickGame() {
         {result ? (
           <div className="lg-pop lg-card mt-5 px-4 py-4 text-center" style={{ boxShadow: '0 4px 0 #6b9b7c' }}>
             <div className="text-leaf font-display font-extrabold text-lg">+<CountUp to={result.xp_awarded} /> XP</div>
-            {(!daily || dailyCounted) && (
-              <div className="text-golddeep font-display font-extrabold text-sm mt-0.5">+<CountUp to={score * 2 + 5 + bonusSparks} /> ✨ Sparks</div>
-            )}
+            {(!daily || dailyCounted) && (sparks.state.status === 'confirmed' ? (
+              <div className="text-golddeep font-display font-extrabold text-sm mt-0.5">+<CountUp to={sparks.state.amount} /> ✨ Sparks</div>
+            ) : sparks.state.status === 'unconfirmed' ? (
+              <p className="mt-1 text-brick text-sm">Sparks could not be confirmed. Check your wallet before trying again.</p>
+            ) : sparks.state.status === 'pending' ? <p className="mt-1 text-inksoft text-sm">Confirming Sparks…</p> : <p className="mt-1 text-inksoft text-sm">No Sparks recorded for this account.</p>)}
             {maxCombo >= 3 && (
               <div className="lg-pop text-coraldeep font-display font-bold text-sm">🔥 {maxCombo} best streak this round</div>
             )}
@@ -325,6 +378,8 @@ export default function QuickGame() {
               </button>
             )}
           </div>
+        ) : user && runOwner !== user.id ? (
+          <p className="mt-5 text-muted text-sm text-center">This game began under a different account. Start a new game to save progress.</p>
         ) : user ? (
           <p className="mt-5 text-muted text-sm text-center">Saving…</p>
         ) : (
@@ -343,7 +398,7 @@ export default function QuickGame() {
         )}
 
         <div className="mt-6 space-y-3">
-          <button onClick={() => setPhase('pick')} className="lg-btn lg-btn-primary block w-full px-4 py-4">
+          <button onClick={() => { gameRun.current = sparks.reset(); saveStarted.current = null; setPhase('pick'); }} className="lg-btn lg-btn-primary block w-full px-4 py-4">
             Play again
           </button>
           <Link href="/" className="lg-card block w-full px-4 py-3.5 text-center font-display font-bold text-ink">

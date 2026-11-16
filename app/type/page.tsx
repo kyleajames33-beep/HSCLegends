@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useSparksAward } from '@/lib/use-sparks-award';
 import { useUser } from '@/lib/use-user';
 import { getQuizQuestions, SUBJECTS, type Question, type Subject } from '@/lib/questions';
 import { isCloseEnough } from '@/lib/fuzzy';
@@ -29,6 +30,9 @@ function typeable(q: Question): boolean {
 export default function TypeGame() {
   const sb = useMemo(() => createClient(), []);
   const { user } = useUser();
+  const sparks = useSparksAward(sb, user?.id);
+  const [runVersion, setRunVersion] = useState(0);
+  const gameRun = useRef(0);
   const [phase, setPhase] = useState<Phase>('pick');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [i, setI] = useState(0);
@@ -39,11 +43,14 @@ export default function TypeGame() {
   const [thin, setThin] = useState(false); // fewer than TARGET typeable questions
   const [err, setErr] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => () => { gameRun.current += 1; }, []);
 
   async function start(subject: Subject, year: 11 | 12) {
+    const run = sparks.reset(); gameRun.current = run; setRunVersion(run);
     setPhase('loading');
     try {
       const raw = await getQuizQuestions(sb, { subject, year, count: 12 });
+      if (gameRun.current !== run) return;
       const usable = raw.filter(typeable).slice(0, TARGET);
       if (!usable.length) throw new Error('No short-answer questions found for that selection. Try another.');
       setQuestions(usable);
@@ -55,6 +62,7 @@ export default function TypeGame() {
       setWasCorrect(false);
       setPhase('play');
     } catch (e) {
+      if (gameRun.current !== run) return;
       setErr(e instanceof Error ? e.message : 'Something went wrong.');
       setPhase('error');
     }
@@ -83,6 +91,7 @@ export default function TypeGame() {
   }
 
   function next() {
+    if (gameRun.current !== runVersion) return;
     if (i + 1 >= questions.length) setPhase('done');
     else {
       setI((n) => n + 1);
@@ -97,7 +106,7 @@ export default function TypeGame() {
     if (phase !== 'done') return;
     celebrate(score === questions.length && questions.length > 0);
     if (user) {
-      sb.rpc('credit_coins', { p_amount: score * 3 + 5, p_reason: 'type_game', p_meta: null }).then(undefined, () => {});
+      void sparks.claim(score * 3 + 5, 'type_game', runVersion);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
@@ -154,16 +163,17 @@ export default function TypeGame() {
         </p>
 
         <div className="lg-card mt-5 px-4 py-4 text-center" style={{ boxShadow: '0 4px 0 #6b9b7c' }}>
-          <div className="text-golddeep font-display font-extrabold text-sm">+{score * 3 + 5} ✨ Sparks</div>
-          {user ? (
-            <p className="text-xs text-inksoft mt-1">Wrong answers become review cards.</p>
-          ) : (
+          {user ? sparks.state.status === 'confirmed' ? (
+            <><div className="text-golddeep font-display font-extrabold text-sm">+{sparks.state.amount} ✨ Sparks</div><p className="text-xs text-inksoft mt-1">Wrong answers become review cards.</p></>
+          ) : sparks.state.status === 'unconfirmed' ? (
+            <p className="text-brick text-sm">Sparks could not be confirmed. Check your wallet before trying again.</p>
+          ) : sparks.state.status === 'pending' ? <p className="text-inksoft text-sm">Confirming Sparks…</p> : <p className="text-inksoft text-sm">No Sparks recorded for this account.</p> : (
             <p className="text-xs text-muted mt-1">Sign in to bank Sparks and save progress.</p>
           )}
         </div>
 
         <div className="mt-6 space-y-3">
-          <button onClick={() => setPhase('pick')} className="lg-btn lg-btn-primary block w-full px-4 py-4">
+          <button onClick={() => { gameRun.current = sparks.reset(); setPhase('pick'); }} className="lg-btn lg-btn-primary block w-full px-4 py-4">
             Play again
           </button>
           <Link href="/" className="lg-card block w-full px-4 py-3.5 text-center font-display font-bold text-ink">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/use-user';
@@ -19,7 +19,7 @@ type Phase = 'pick' | 'playing' | 'done' | 'ladder';
 export default function DuelPage() {
   const sb = useMemo(() => createClient(), []);
   const { user, loading } = useUser();
-  const [phase, setPhase] = useState<Phase>('pick');
+  const [storedPhase, setPhase] = useState<Phase>('pick');
   const [subject, setSubject] = useState<Subject>('biology');
   const [year, setYear] = useState<11 | 12>(12);
   const [ranked, setRanked] = useState(true);
@@ -30,71 +30,97 @@ export default function DuelPage() {
   const [q, setQ] = useState<DuelQ | null>(null);
   const [answered, setAnswered] = useState<{ correct: boolean; correct_index: number } | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
-  const [score, setScore] = useState(0);
   const [result, setResult] = useState<DuelResult | null>(null);
   const [ladder, setLadder] = useState<LadderRow[]>([]);
-  const [myElo, setMyElo] = useState<{ elo: number; wins: number; losses: number } | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
+  const [eloSnapshot, setMyElo] = useState<{ owner: string; subject: Subject; year: number; data: { elo: number; wins: number; losses: number } | null } | null>(null);
+  const [storedBusy, setBusy] = useState(false);
+  const [storedErr, setErr] = useState('');
 
-  // Your division badge on the pick screen — refetched per subject/year and after a result.
-  // (No synchronous reset: the pick screen early-returns the sign-in view when !user.)
+  const [owner, setOwner] = useState<string | null>(null);
+  const requestRef = useRef(0);
+  const actionLock = useRef(false);
+  const activeOwner = useRef<string | null>(null);
+  const questionKey = useRef('');
+  const questionStatus = useRef<'open' | 'sending' | 'answered'>('open');
+  const [duelRun, setDuelRun] = useState(0);
+  const busy = owner === user?.id ? storedBusy : false;
+  const err = owner === user?.id ? storedErr : '';
+  const phase: Phase = owner === user?.id && !loading ? storedPhase : 'pick';
+  const myElo = eloSnapshot && eloSnapshot.owner === user?.id && eloSnapshot.subject === subject && eloSnapshot.year === year ? eloSnapshot.data : null;
+
+  useEffect(() => {
+    activeOwner.current = user?.id ?? null; actionLock.current = false;
+    return () => { requestRef.current += 1; actionLock.current = false; activeOwner.current = null; questionKey.current = ''; };
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
     let live = true;
-    duelMyElo(sb, user.id, subject, year).then((e) => { if (live) setMyElo(e); }).catch(() => {});
+    const account = user.id;
+    duelMyElo(sb, account, subject, year).then(data => { if (live) setMyElo({ owner: account, subject, year, data }); }, () => {});
     return () => { live = false; };
   }, [user, subject, year, sb, result]);
 
-  useEffect(() => {
-    if (!result) return;
-    if (result.outcome === 'win') {
-      celebrate(true);
-      sb.rpc('increment_quest', { p_metric: 'duel_win', p_amount: 1 }).then(undefined, () => {});
-    }
-    // promotion to a new division is worth its own celebration even on a draw
-    if (ranked && result.my_delta != null && result.outcome !== 'win') {
-      const up = duelTier(result.my_elo).min > duelTier(result.my_elo - result.my_delta).min;
-      if (up) celebrate(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result]);
+  function goPick() {
+    requestRef.current += 1; actionLock.current = false; questionKey.current = '';
+    setOwner(user?.id ?? null); setPhase('pick'); setBusy(false); setResult(null); setErr('');
+  }
 
   async function find() {
-    setBusy(true); setErr('');
+    if (!user || loading || activeOwner.current !== user.id || actionLock.current) return;
+    const request = ++requestRef.current, account = user.id;
+    actionLock.current = true; setOwner(account); setBusy(true); setErr(''); setResult(null);
     try {
       const m = await duelFindOrCreate(sb, subject, year, ranked);
-      sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {});
-      setDuel(m); setScore(0); setIndex(0); setAnswered(null); setPicked(null);
+      if (requestRef.current !== request) return;
       const first = await duelQuestion(sb, m.duel_id, 0);
-      setQ(first); setTotal(first.total);
-      setPhase('playing');
-    } catch (e) { setErr(msg(e)); } finally { setBusy(false); }
+      if (requestRef.current !== request) return;
+      sb.rpc('increment_quest', { p_metric: 'arena_game', p_amount: 1 }).then(undefined, () => {});
+      questionKey.current = `${request}:${m.duel_id}:0`; questionStatus.current = 'open'; setDuelRun(request);
+      setDuel(m); setIndex(0); setAnswered(null); setPicked(null); setQ(first); setTotal(first.total); setPhase('playing');
+    } catch (e) { if (requestRef.current === request) setErr(msg(e)); }
+    finally { if (requestRef.current === request) { actionLock.current = false; setBusy(false); } }
   }
   async function answer(choice: number) {
-    if (!duel || answered) return;
-    setBusy(true); setPicked(choice);
+    if (!user || owner !== user.id || activeOwner.current !== user.id || !duel || phase !== 'playing' || answered || actionLock.current || questionKey.current !== `${duelRun}:${duel.duel_id}:${index}` || questionStatus.current !== 'open') return;
+    const request = requestRef.current;
+    actionLock.current = true; questionStatus.current = 'sending'; setBusy(true); setPicked(choice); setErr('');
     try {
       const r = await duelAnswer(sb, duel.duel_id, index, choice);
-      setAnswered(r);
-      if (r.correct) setScore((s) => s + 1);
-    } catch (e) { setErr(msg(e)); } finally { setBusy(false); }
+      if (requestRef.current === request) { questionStatus.current = 'answered'; setAnswered(r); }
+    } catch (e) { if (requestRef.current === request) { questionStatus.current = 'open'; setErr(msg(e)); } }
+    finally { if (requestRef.current === request) { actionLock.current = false; setBusy(false); } }
   }
   async function next() {
-    if (!duel) return;
-    if (index + 1 >= total) {
-      setBusy(true);
-      try { setResult(await duelResult(sb, duel.duel_id)); setPhase('done'); }
-      finally { setBusy(false); }
-      return;
-    }
-    setBusy(true);
-    try { const nq = await duelQuestion(sb, duel.duel_id, index + 1); setQ(nq); setIndex(index + 1); setAnswered(null); setPicked(null); }
-    finally { setBusy(false); }
+    if (!user || owner !== user.id || activeOwner.current !== user.id || !duel || phase !== 'playing' || !answered || actionLock.current || questionKey.current !== `${duelRun}:${duel.duel_id}:${index}` || questionStatus.current !== 'answered') return;
+    const request = requestRef.current;
+    actionLock.current = true; setBusy(true); setErr('');
+    try {
+      if (index + 1 >= total) {
+        const r = await duelResult(sb, duel.duel_id);
+        if (requestRef.current !== request) return;
+        questionKey.current = ''; setResult(r); setPhase('done');
+        if (r.outcome === 'win') {
+          celebrate(true); sb.rpc('increment_quest', { p_metric: 'duel_win', p_amount: 1 }).then(undefined, () => {});
+        } else if (ranked && r.my_delta != null && duelTier(r.my_elo).min > duelTier(r.my_elo - r.my_delta).min) celebrate(true);
+      } else {
+        const nq = await duelQuestion(sb, duel.duel_id, index + 1);
+        if (requestRef.current !== request) return;
+        questionKey.current = `${duelRun}:${duel.duel_id}:${index + 1}`; questionStatus.current = 'open';
+        setQ(nq); setIndex(index + 1); setAnswered(null); setPicked(null);
+      }
+    } catch (e) { if (requestRef.current === request) setErr(msg(e)); }
+    finally { if (requestRef.current === request) { actionLock.current = false; setBusy(false); } }
   }
   async function openLadder() {
-    setLadder(await getDuelLadder(sb, subject, year));
-    setPhase('ladder');
+    if (!user || loading || activeOwner.current !== user.id || actionLock.current) return;
+    const request = ++requestRef.current;
+    actionLock.current = true; setOwner(user.id); setBusy(true); setErr('');
+    try {
+      const rows = await getDuelLadder(sb, subject, year);
+      if (requestRef.current === request) { setLadder(rows); setPhase('ladder'); }
+    } catch (e) { if (requestRef.current === request) setErr(msg(e)); }
+    finally { if (requestRef.current === request) { actionLock.current = false; setBusy(false); } }
   }
 
   // ---------- PICK ----------
@@ -116,26 +142,26 @@ export default function DuelPage() {
         {myElo && <RankCard elo={myElo.elo} wins={myElo.wins} losses={myElo.losses} label={`${SUBJECTS.find((s) => s.id === subject)?.label} · Y${year}`} />}
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           {SUBJECTS.map((s) => (
-            <button key={s.id} onClick={() => setSubject(s.id)}
+            <button key={s.id} disabled={busy} onClick={() => setSubject(s.id)}
               className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold ${subject === s.id ? 'bg-plum text-white' : 'bg-parchment-deep text-ink'}`}>{s.label}</button>
           ))}
         </div>
         <div className="mt-2 flex gap-2">
           {[11, 12].map((y) => (
-            <button key={y} onClick={() => setYear(y as 11 | 12)}
+            <button key={y} disabled={busy} onClick={() => setYear(y as 11 | 12)}
               className={`rounded-full px-3 py-1 text-sm font-semibold ${year === y ? 'bg-berry text-white' : 'bg-parchment-deep text-ink'}`}>Year {y}</button>
           ))}
           <div className="ml-auto flex gap-1 rounded-full bg-parchment-deep p-1">
             {[['Ranked', true], ['Casual', false]].map(([lbl, val]) => (
-              <button key={lbl as string} onClick={() => setRanked(val as boolean)}
+              <button key={lbl as string} disabled={busy} onClick={() => setRanked(val as boolean)}
                 className={`rounded-full px-3 py-1 text-sm font-semibold ${ranked === val ? 'bg-plum text-white' : 'text-ink'}`}>{lbl}</button>
             ))}
           </div>
         </div>
-        <button onClick={find} disabled={busy} className="lg-btn lg-btn-primary mt-6 w-full px-6 py-5 text-lg disabled:opacity-40">
+        <button onClick={find} disabled={busy || loading} className="lg-btn lg-btn-primary mt-6 w-full px-6 py-5 text-lg disabled:opacity-40">
           {busy ? 'Finding…' : '⚔️ Find a Duel'}
         </button>
-        <button onClick={openLadder} className="lg-card mt-3 flex items-center justify-between px-4 py-3.5">
+        <button onClick={openLadder} disabled={busy || loading} className="lg-card mt-3 flex items-center justify-between px-4 py-3.5">
           <span className="font-display font-bold text-ink">🏆 Duel ladder</span>
           <span className="text-sm text-muted">ELO rankings</span>
         </button>
@@ -216,8 +242,9 @@ export default function DuelPage() {
               )}
             </>
           )}
-          <button onClick={() => setPhase('pick')} className="lg-btn lg-btn-primary mt-8 w-full px-6 py-4">Find another</button>
-          <button onClick={openLadder} className="mt-3 text-sm text-berrydeep underline">View ladder</button>
+          {err && <Err>{err}</Err>}
+          <button onClick={goPick} className="lg-btn lg-btn-primary mt-8 w-full px-6 py-4">Find another</button>
+          <button onClick={openLadder} disabled={busy || loading} className="mt-3 text-sm text-berrydeep underline">View ladder</button>
         </div>
       </Shell>
     );
@@ -228,7 +255,7 @@ export default function DuelPage() {
     <Shell>
       <div className="flex items-center justify-between">
         <H>🏆 Duel ladder</H>
-        <button onClick={() => setPhase('pick')} className="text-sm text-muted underline">Back</button>
+        <button onClick={goPick} className="text-sm text-muted underline">Back</button>
       </div>
       <p className="mt-1 font-display font-bold text-ink">{SUBJECTS.find((s) => s.id === subject)?.label} · Year {year}</p>
       <ol className="mt-3 space-y-2">
@@ -244,6 +271,7 @@ export default function DuelPage() {
         ))}
         {!ladder.length && <p className="text-muted text-sm">No ranked duels played yet. Be the first to climb.</p>}
       </ol>
+      {err && <Err>{err}</Err>}
       <Home />
     </Shell>
   );
