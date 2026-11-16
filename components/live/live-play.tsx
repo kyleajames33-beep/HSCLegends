@@ -69,7 +69,8 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
       writeTab(SEAT_KEY, next); setSeat(next);
     } catch (e) {
       const c = e instanceof LiveError ? e.code : 'UNKNOWN';
-      setError(c === 'ROOM_UNAVAILABLE' ? "We couldn't find that game. Check the code. You can only join before the game starts."
+      setError(c === 'ROOM_UNAVAILABLE' ? "We couldn't find that game. Check the code, or the game may have finished."
+        : c === 'ALIAS_TAKEN' ? 'Someone in this game already has that name. Pick another.'
         : c === 'INVALID_ALIAS' ? 'Pick a name between 1 and 40 characters.'
         : 'Could not join. Check your connection and try again.');
     }

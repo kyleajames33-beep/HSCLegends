@@ -25,7 +25,7 @@ export type PlayerView = {
   receipt: PlayerReceipt | null;
 };
 
-const KNOWN = ['FORBIDDEN', 'ROOM_UNAVAILABLE', 'STALE_QUESTION', 'OUTSIDE_WINDOW', 'INVALID_CHOICE', 'INVALID_ALIAS', 'INVALID_SETUP', 'INVALID_CONTENT'] as const;
+const KNOWN = ['FORBIDDEN', 'ROOM_UNAVAILABLE', 'STALE_QUESTION', 'OUTSIDE_WINDOW', 'INVALID_CHOICE', 'INVALID_ALIAS', 'INVALID_SETUP', 'INVALID_CONTENT', 'ALIAS_TAKEN'] as const;
 export type LiveErrorCode = (typeof KNOWN)[number] | 'UNKNOWN';
 
 export class LiveError extends Error {

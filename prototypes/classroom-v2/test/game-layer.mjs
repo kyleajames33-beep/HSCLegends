@@ -43,3 +43,16 @@ ok(pv2.rank===2 && pv2.streak===0, 'loser rank/streak');
 await as(H, `select public.classroom_v2_next($1,$2)`, [room.room_id, host.version]);
 pv = (await as(S1, `select public.classroom_v2_game_player($1,$2) v`, [room.room_id,p1.player_id]))[0].v;
 ok(pv.question.index===1 && pv.streak===1 && pv.receipt===null, 'Q2 open, streak kept while unanswered');
+let taken=null; try { await as('00000000-0000-4000-8000-0000000000b3', `select * from public.classroom_v2_game_join($1,'ann')`, [host.short_code]); } catch(e){ taken=e.message }
+ok(/ALIAS_TAKEN/.test(taken||''), 'duplicate name rejected (case-insensitive)');
+const [late] = await as('00000000-0000-4000-8000-0000000000b4', `select * from public.classroom_v2_game_join($1,'Late Lily')`, [host.short_code]);
+ok(late.state==='active', 'late join while active');
+const lv = (await as('00000000-0000-4000-8000-0000000000b4', `select public.classroom_v2_game_player($1,$2) v`, [room.room_id, late.player_id]))[0].v;
+ok(lv.question && lv.score===0 && lv.player_count===3, 'late joiner sees current question');
+const [again] = await as(S1, `select * from public.classroom_v2_game_join($1,'Different name')`, [host.short_code]);
+ok(again.player_id===p1.player_id, 'same actor rejoin keeps player');
+host = (await as(H, `select public.classroom_v2_game_host($1) v`, [room.room_id]))[0].v;
+await as(H, `select public.classroom_v2_finish($1,$2)`, [room.room_id, host.version]);
+let closed=null; try { await as('00000000-0000-4000-8000-0000000000b5', `select * from public.classroom_v2_game_join($1,'Too late')`, [host.short_code]); } catch(e){ closed=e.message }
+ok(/ROOM_UNAVAILABLE/.test(closed||''), 'cannot join a finished game');
+

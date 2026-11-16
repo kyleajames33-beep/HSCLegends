@@ -163,3 +163,30 @@ grant execute on function public.classroom_v2_game_join(text,text), public.class
 -- create or replace keeps prior grants, but restate them for the replaced function.
 revoke all on function public.classroom_v2_answer(uuid,uuid,uuid,smallint) from public, anon;
 grant execute on function public.classroom_v2_answer(uuid,uuid,uuid,smallint) to authenticated;
+
+-- Late joins and unique names (replaces the first version above).
+-- New players may join while the game is in the lobby or active (not once it
+-- is complete). A late joiner starts on 0 and plays from the current question.
+-- Names must be unique within a room (case-insensitive); the same actor
+-- rejoining always gets their existing player back.
+create or replace function public.classroom_v2_game_join(p_code text, p_alias text)
+returns table(room_id uuid, player_id uuid, state text)
+language plpgsql security definer set search_path = '' as $$
+declare v_actor uuid := auth.uid(); room classroom_v2_private.rooms%rowtype; player classroom_v2_private.players%rowtype; v_alias text := btrim(coalesce(p_alias, ''));
+begin
+  if v_actor is null then raise exception using errcode='42501', message='FORBIDDEN'; end if;
+  if p_code is null or upper(btrim(p_code)) !~ '^[A-HJKMNP-Z2-9]{6}$' then raise exception using errcode='P0001', message='ROOM_UNAVAILABLE'; end if;
+  select * into room from classroom_v2_private.rooms r where r.short_code = upper(btrim(p_code)) for update;
+  if not found or clock_timestamp() >= room.expires_at or room.state = 'complete' then raise exception using errcode='P0001', message='ROOM_UNAVAILABLE'; end if;
+  select * into player from classroom_v2_private.players p where p.room_id=room.id and p.actor=v_actor;
+  if not found then
+    if length(v_alias) not between 1 and 40 then raise exception using errcode='22023', message='INVALID_ALIAS'; end if;
+    if exists(select 1 from classroom_v2_private.players p where p.room_id=room.id and lower(p.alias)=lower(v_alias)) then
+      raise exception using errcode='P0001', message='ALIAS_TAKEN';
+    end if;
+    insert into classroom_v2_private.players(room_id,actor,alias) values(room.id,v_actor,v_alias) returning * into player;
+  end if;
+  return query select room.id, player.id, room.state;
+end $$;
+revoke all on function public.classroom_v2_game_join(text,text) from public, anon;
+grant execute on function public.classroom_v2_game_join(text,text) to authenticated;
