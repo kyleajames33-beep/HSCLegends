@@ -1,0 +1,46 @@
+# Live classroom game (staging)
+
+A Kahoot-style live game. The teacher hosts from a projector and students play on their phones. It runs only against the dedicated **HSC Legends Staging** Supabase project (`xkqeigruzvnudtnmggis`), never the shared HSCScienceSyd project.
+
+## Routes
+
+| Route | Who | What it does |
+|---|---|---|
+| `/live/host` | Teacher | Sign in, choose the sample set or upload a CSV/JSON file, create the game. Then the lobby (code + QR), questions with a countdown, the reveal with answer counts, the leaderboard, and the podium. |
+| `/live` | Students | Join with a 6-character code and a name (one step, no account). Then the answer tiles, the result after each question (points, streak, rank), and the final place. |
+
+Both routes are disabled unless the four `CLASSROOM_STAGING_*` variables are set (see `docs/CLASSROOM_STAGING_LAB.md`). Locally they live in `.env.local`, which is gitignored.
+
+## Running a test game
+
+1. `npm run dev`, then open `/live/host` and sign in with an approved teacher account.
+2. Open `/live` in other tabs. Each tab is a separate player, so no incognito window is needed.
+3. Hosting needs an approved account: insert its auth user id into `classroom_v2_private.hosts`. Clients cannot approve themselves.
+
+## How it works
+
+- **Server.** `prototypes/classroom-v2/staging-candidate.sql` is the engine: rooms, frozen questions, answer windows, receipts, host-only transitions. `prototypes/classroom-v2/staging-game-layer.sql` adds:
+  - short codes;
+  - speed scoring: 1000 points for an instant correct answer, falling linearly to 500 at the deadline; wrong answers score 0;
+  - late joins and unique names;
+  - two JSON views, `classroom_v2_game_host` and `classroom_v2_game_player`.
+- **What the server guarantees.** It decides scores and deadlines. A student never receives the answer key for a question they haven't answered, and cannot read another student's view or the host view.
+- **Client.** `lib/live-game.ts` provides the client, polling (1 s, stale responses dropped) and the clock offset. `lib/live-sound.ts` holds the synthesized sound cues. The screens are in `components/live/`. Sessions are stored per tab.
+- **When results appear.** The reveal shows when time runs out or every player has answered. Students who answer early see "Locked in" until then, so they can't tell their neighbours the answer.
+- **Your own questions.** `/live/host` accepts the same CSV/JSON as `/question-import`. Example file: `docs/examples/live-game-questions.csv`. A game holds at most 20 questions. Explanations show to students only after they answer.
+
+## Tests
+
+- `node prototypes/classroom-v2/test/game-layer.mjs`: the SQL rules in an in-memory Postgres with a mock `auth.uid()`.
+- `tests/browser/live-host.smoke.mjs`: the projector screens against a mocked network.
+- Verified once against the real staging project (16 November 2026): real anonymous auth, a host and two guests, the permission checks, a full game, and a headless-browser student run.
+
+## Known limits
+
+- The teacher cannot skip the timer. That would reveal answers while students could still submit, and the server's answer windows are immutable.
+- A student who closes their tab loses their seat. Rejoining creates a new player.
+- Updates come from 1-second polling, not Supabase Realtime. That's fine for one class; revisit before large-scale use.
+- There are no rate limits or abuse controls on anonymous sign-in or joins yet.
+- Questions are text only (no images).
+- The main app's Home → "Host a game" / "Join a game" still point to the old, locked-down live mode.
+- Production rollout needs: a reviewed migration path, a decision about the shared database, and real-device testing over the internet. A codespace port is private to your GitHub login.
