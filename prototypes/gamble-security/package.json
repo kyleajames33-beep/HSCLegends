@@ -1,0 +1,7 @@
+{
+  "name": "hsc-gamble-security-lab",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/*.test.mjs" },
+  "dependencies": { "@electric-sql/pglite": "0.5.14" }
+}

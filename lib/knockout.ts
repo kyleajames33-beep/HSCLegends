@@ -35,10 +35,15 @@ export async function koJoin(sb: SupabaseClient, code: string, alias: string) {
 
 // Drop recovery: restore an existing player (score/alive intact) after a
 // refresh or crash. Returns null when no matching player is found.
-export async function koRejoin(sb: SupabaseClient, code: string, alias: string) {
+export async function koRejoin(sb: SupabaseClient, code: string, alias: string, expected: { room: string; player: string }) {
   const { data, error } = await sb.rpc('ko_rejoin', { p_code: code.toUpperCase(), p_alias: alias });
   if (error) throw new Error(error.message);
-  return (data?.[0] ?? null) as { room_id: string; player_id: string; alive: boolean; score: number } | null;
+  const player = (data?.[0] ?? null) as { room_id: string; player_id: string; alive: boolean; score: number } | null;
+  // This prevents accidental identity switching; it is not server authorization.
+  if (player && (player.room_id !== expected.room || player.player_id !== expected.player)) {
+    throw new Error('Your saved player could not be matched. Please join a new game.');
+  }
+  return player;
 }
 
 export async function koState(sb: SupabaseClient, room: string): Promise<KoState> {

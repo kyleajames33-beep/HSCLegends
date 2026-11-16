@@ -66,10 +66,15 @@ export async function gambleJoin(sb: SupabaseClient, code: string, alias: string
   return data[0] as { room_id: string; player_id: string };
 }
 
-export async function gambleRejoin(sb: SupabaseClient, code: string, alias: string) {
+export async function gambleRejoin(sb: SupabaseClient, code: string, alias: string, expected: { room: string; player: string }) {
   const { data, error } = await sb.rpc('gamble_rejoin', { p_code: code.toUpperCase(), p_alias: alias });
   if (error) throw new Error(error.message);
-  return (data?.[0] ?? null) as { room_id: string; player_id: string; points: number } | null;
+  const player = (data?.[0] ?? null) as { room_id: string; player_id: string; points: number } | null;
+  // This prevents accidental identity switching; it is not server authorization.
+  if (player && (player.room_id !== expected.room || player.player_id !== expected.player)) {
+    throw new Error('Your saved player could not be matched. Please join a new game.');
+  }
+  return player;
 }
 
 export async function gambleState(sb: SupabaseClient, room: string): Promise<GambleState> {
