@@ -1,0 +1,43 @@
+// Optional browser acceptance: use the same setup as solo-arena.smoke.mjs.
+import assert from 'node:assert/strict';
+import { pathToFileURL } from 'node:url';
+const modulePath = process.env.HSC_PLAYWRIGHT_MODULE;
+const { chromium } = modulePath ? await import(pathToFileURL(modulePath).href) : await import('playwright');
+const base = process.env.HSC_BASE_URL || 'http://localhost:3000';
+const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
+try {
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.clock.install();
+  await page.goto(`${base}/arena`, { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'ENTER ARENA' }).click();
+  await page.getByRole('button', { name: /Shield · 2 energy/ }).click();
+  await page.waitForFunction(() => sessionStorage.getItem('hsclegends.knockout-solo.session.v1')?.includes('shield'));
+  await page.clock.fastForward(5000);
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: /Resume previous game/ }).click();
+  assert.equal(await page.getByRole('button', { name: /Shield armed/ }).isDisabled(), true);
+  const remainingSeconds = Number.parseInt(await page.getByRole('timer').innerText(), 10);
+  assert.ok(remainingSeconds > 0 && remainingSeconds <= 15, `Unexpected remaining time: ${remainingSeconds}`);
+  await page.clock.fastForward(16000);
+  await page.getByRole('heading', { name: 'Shield saved you.' }).waitFor();
+  assert.equal(await page.getByLabel('3 of 3 hearts').count(), 1);
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: /Resume previous game/ }).click();
+  await page.getByRole('heading', { name: 'Shield saved you.' }).waitFor();
+  await page.getByRole('button', { name: 'NEXT ROUND' }).click();
+  await page.waitForFunction(() => JSON.parse(sessionStorage.getItem('hsclegends.knockout-solo.session.v1') || '{}').actions?.some(a => a.type === 'next'));
+  await page.goto(`${base}/games`, { waitUntil: 'networkidle' });
+  await page.clock.fastForward(21000);
+  await page.goto(`${base}/arena`, { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: /Resume previous game/ }).click();
+  await page.getByRole('heading', { name: 'Time ran out.' }).waitFor();
+  assert.equal(await page.getByLabel('2 of 3 hearts').count(), 1);
+  await page.evaluate(() => sessionStorage.setItem('hsclegends.knockout-solo.session.v1', 'invalid'));
+  await page.reload({ waitUntil: 'networkidle' });
+  assert.equal(await page.getByRole('button', { name: /Resume previous game/ }).count(), 0);
+  await page.getByRole('button', { name: 'ENTER ARENA' }).click();
+  assert.equal(await page.getByRole('timer').count(), 1);
+  assert.deepEqual(errors, []);
+  console.log('Arena recovery: refresh, deadline, shield, receipts, navigation and corrupt saves passed');
+} finally { await browser.close(); }
