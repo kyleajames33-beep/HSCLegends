@@ -132,4 +132,34 @@ For consistency:
 
 ## Locked style
 
-_Not chosen yet. When the owner picks, paste the exact style prompt block here._
+**Chosen 16 November 2026 from `art/style-test/contact-sheet.png`.** The style is split by asset type:
+
+- **Bosses, characters and key art: Style 1 (stylised hero).** Cel-shaded with crisp dark outlines and sharp angular silhouettes. Deep navy and charcoal forms, with one glowing subject-accent colour. Painterly texture kept light. Dramatic but readable at card size.
+- **Icons, currency, UI emblems and badges: Style 2 (graphic emblem).** Flat geometric vector shapes with thick dark outlines, two or three tones, one accent colour. Hexagonal or angular frames. Must read clearly at 24px.
+
+Style block for bosses, characters and key art:
+
+```
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+<SUBJECT ACCENT HEX> accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+```
+
+Style block for icons, currency and UI emblems:
+
+```
+Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base
+with a single <ACCENT HEX> accent, angular/hexagonal framing, no gradients beyond one
+subtle highlight, readable at 24px. Original design.
+```
+
+### Feedback on the round 2 test (apply it to everything that follows)
+
+- **Each boss must clearly belong to its subject.** The test boss was a generic spiky lava golem and could have come from any fantasy game. Build each boss from that subject's own ideas:
+  - **Chemistry:** reaction vessels, crystal lattices, flames in element flame-test colours.
+  - **Biology:** a cell or organism that mutates; membranes, helices, spores.
+  - **Physics:** fields, coils, orbiting charges, a gravity well.
+  - **Maths:** fractal or geometric constructs, glowing equations as abstract shapes (no readable text).
+- **Do not use a lightning bolt for the Spark currency.** It reads as Physics. Use a neutral four-point spark or star crystal.
+- **Vary pose and silhouette between bosses.** Not every boss should be a humanoid golem standing upright.
