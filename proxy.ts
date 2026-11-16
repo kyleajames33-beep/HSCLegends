@@ -8,7 +8,7 @@ export async function proxy(request: NextRequest) {
 
   // The staging page enforces its own separate configuration and does not use
   // the shared application's session. This exact-path bypass is not authorization.
-  const publicSamples = ['/arena', '/demo', '/lab-rush.html', '/offline.html', '/question-import', '/classroom-staging'];
+  const publicSamples = ['/arena', '/demo', '/lab-rush.html', '/offline.html', '/question-import', '/classroom-staging', '/live', '/live/host'];
   if ((request.method === 'GET' || request.method === 'HEAD') && publicSamples.includes(request.nextUrl.pathname)) {
     return response;
   }
