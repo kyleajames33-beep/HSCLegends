@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, SHAPES, liveClient, msRemaining, ordinal, readTab, rpc, useNow, usePoll, useSession, writeTab, type PlayerView } from '@/lib/live-game';
+import { useOnChange, useSound } from '@/lib/live-sound';
 import s from './live.module.css';
 
 const SEAT_KEY = 'hsc-live-seat';
@@ -34,6 +35,18 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
   const poll = usePoll(fetcher, 1000);
   const now = useNow(200);
   const view = poll.data;
+  const sound = useSound('player', false);
+
+  // Sound cues for the result and final screens.
+  const pq = view?.question ?? null, pr = view?.receipt ?? null;
+  const pLeft = msRemaining(view?.closes_at ?? null, now, poll.offset);
+  const pAll = !!view && view.player_count > 0 && view.answered >= view.player_count;
+  const resultKey = !view ? null : view.state === 'complete' ? 'complete'
+    : view.state === 'active' && pq && (pLeft <= 0 || (pr && pAll)) ? `result-${pq.id}` : 'other';
+  useOnChange(resultKey, () => {
+    if (resultKey === 'complete') sound.cue(view && view.rank <= 3 ? 'fanfare' : 'reveal');
+    else if (resultKey?.startsWith('result-')) sound.cue(pr?.correct ? 'correct' : 'wrong');
+  });
 
   useEffect(() => {
     if (poll.error === 'ROOM_UNAVAILABLE' || poll.error === 'FORBIDDEN') { writeTab(SEAT_KEY, null); setSeat(null); setError('That game has ended or is no longer available.'); }
@@ -65,7 +78,7 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
 
   async function answer(questionId: string, choice: number) {
     if (!seat || sending?.questionId === questionId) return;
-    setSending({ questionId, choice }); setError('');
+    setSending({ questionId, choice }); setError(''); sound.cue('lock');
     try {
       await rpc(client, 'classroom_v2_answer', { p_room: seat.roomId, p_player: seat.playerId, p_question: questionId, p_choice: choice });
     } catch (e) {
@@ -80,7 +93,8 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
 
   const shell = (body: React.ReactNode, right?: React.ReactNode) => (
     <div className={s.stage}>
-      <header className={s.top}><span className={s.brand}><b>HSC Legends</b> · Live</span>{right}</header>
+      <header className={s.top}><span className={s.brand}><b>HSC Legends</b> · Live</span>
+        <span className={s.row}><button className={s.link} onClick={sound.toggle} aria-pressed={sound.on}>Sound {sound.on ? 'on' : 'off'}</button>{right}</span></header>
       <main className={`${s.main}`}>{body}{error && <p className={`${s.error} ${s.narrow}`} role="alert">{error}</p>}</main>
     </div>
   );

@@ -6,6 +6,7 @@ import { LiveError, SAMPLE_SET, SHAPES, liveClient, msRemaining, readTab, rpc, u
 import { validateTeacherQuestions } from '@/lib/teacher-question-import.mjs';
 import { prepareTeacherDraftRequest } from '@/lib/classroom-v2/teacher-drafts.mjs';
 import type { QuestionDraft } from '@/lib/classroom-v2';
+import { useOnChange, useSound } from '@/lib/live-sound';
 import s from './live.module.css';
 
 type QuestionSet = { name: string; questions: readonly QuestionDraft[] };
@@ -64,6 +65,22 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
   const poll = usePoll(fetcher, 1000);
   const now = useNow(200);
   const view = poll.data;
+  const sound = useSound('host', true);
+
+  // Sound cues, derived from what the projector is showing.
+  const hq = view?.question ?? null;
+  const hLeft = msRemaining(view?.closes_at ?? null, now, poll.offset);
+  const hAll = !!view && view.players.length > 0 && view.answered >= view.players.length;
+  const phaseKey = !view ? null : view.state === 'lobby' ? 'lobby' : view.state === 'complete' ? 'complete'
+    : !hq ? null : boardFor === hq.id ? `board-${hq.id}` : hLeft <= 0 || hAll ? `reveal-${hq.id}` : `q-${hq.id}`;
+  useOnChange(phaseKey, () => {
+    if (phaseKey?.startsWith('q-')) sound.cue('start');
+    else if (phaseKey?.startsWith('reveal-')) sound.cue('reveal');
+    else if (phaseKey === 'complete') sound.cue('fanfare');
+  });
+  useOnChange(view?.state === 'lobby' ? String(view.players.length) : null, () => sound.cue('join'));
+  const tickSecs = Math.ceil(hLeft / 1000);
+  useOnChange(phaseKey?.startsWith('q-') ? `${phaseKey}-${tickSecs}` : null, () => { if (tickSecs > 0 && tickSecs <= 5) sound.cue('tick'); });
 
   useEffect(() => {
     if (poll.error === 'ROOM_UNAVAILABLE' || poll.error === 'FORBIDDEN') { writeTab(ROOM_KEY, null); setRoomId(null); }
@@ -113,7 +130,8 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
 
   const shell = (body: React.ReactNode, right?: React.ReactNode) => (
     <div className={s.stage}>
-      <header className={s.top}><span className={s.brand}><b>HSC Legends</b> · Live</span>{right}</header>
+      <header className={s.top}><span className={s.brand}><b>HSC Legends</b> · Live</span>
+        <span className={s.row}><button className={s.link} onClick={sound.toggle} aria-pressed={sound.on}>Sound {sound.on ? 'on' : 'off'}</button>{right}</span></header>
       <main className={s.main}>{body}{error && <p className={s.error} role="alert">{error}</p>}</main>
     </div>
   );
