@@ -8,6 +8,7 @@ import { prepareTeacherDraftRequest } from '@/lib/classroom-v2/teacher-drafts.mj
 import type { QuestionDraft } from '@/lib/classroom-v2';
 import { useOnChange, useSound } from '@/lib/live-sound';
 import QRCode from 'qrcode';
+import { Icon } from './icon';
 import s from './live.module.css';
 
 type QuestionSet = { name: string; questions: readonly QuestionDraft[] };
@@ -141,8 +142,8 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
     setBusy(false);
   }
 
-  const shell = (body: React.ReactNode, right?: React.ReactNode) => (
-    <div className={s.stage}>
+  const shell = (body: React.ReactNode, right?: React.ReactNode, backdrop = false) => (
+    <div className={`${s.stage} ${backdrop ? s.lobbyArt : ''}`}>
       <header className={s.top}><span className={s.brand}><b>HSC Legends</b> · Live</span>
         <span className={s.row}><button className={s.link} onClick={sound.toggle} aria-pressed={sound.on}>Sound {sound.on ? 'on' : 'off'}</button>{right}</span></header>
       <main className={s.main}>{body}{error && <p className={s.error} role="alert">{error}</p>}</main>
@@ -209,23 +210,24 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
           {origin && <JoinQr url={`${origin}/live?code=${view.short_code}`} />}
         </div>
       </div>
-      <p className={s.h2}>{players.length} {players.length === 1 ? 'player' : 'players'}</p>
+      <p className={`${s.h2} ${s.iconRow}`}><Icon name="players-group" size={32} />{players.length} {players.length === 1 ? 'player' : 'players'}</p>
       <div className={s.names}>{players.length === 0 ? <p className={s.dim}>Waiting for players…</p> : players.map(p => <span key={p.id} className={s.name}>{p.alias}</span>)}</div>
       <div className={s.row}>
         <button className={s.btn} disabled={busy || players.length === 0} onClick={() => void command('classroom_v2_start')}>Start game</button>
       </div>
       <p className={s.dim}>Testing on your own? Open <b>{origin}/live</b> in another tab. Each tab is a separate player.</p>
-    </>, endBtn);
+    </>, endBtn, true);
   }
 
   // Podium
   if (view.state === 'complete') {
     const [first, second, third] = players;
     return shell(<>
-      <h1 className={s.h1}>Final results</h1>
+      <h1 className={`${s.h1} ${s.iconRow}`}><Icon name="trophy" size={48} />Final results</h1>
       <div className={s.podium}>
         {[{ p: second, cls: s.block2, n: 2 }, { p: first, cls: s.block1, n: 1 }, { p: third, cls: s.block3, n: 3 }].map(({ p, cls, n }) => (
           <div key={n} className={s.step}>
+            {n === 1 && p && <Icon name="crown" size={56} label="Winner" />}
             <span className={s.podName}>{p?.alias ?? ''}</span>
             <span className={s.dim}>{p ? p.score.toLocaleString() : ''}</span>
             <div className={cls}>{p ? n : ''}</div>
@@ -284,7 +286,7 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
             <span className={s.shape}>{SHAPES[i]}</span>
             <span className={s.tileText}>{opt}</span>
             {reveal && <span className={s.count}>{counts[i] ?? 0}</span>}
-            {reveal && right && <span className={s.tick} aria-label="correct answer">✓</span>}
+            {reveal && right && <span className={s.tick}><Icon name="correct-tick" size={40} label="Correct answer" /></span>}
             {reveal && <span className={s.bar} style={{ width: `${((counts[i] ?? 0) / maxCount) * 100}%` }} />}
           </div>
         );

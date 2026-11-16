@@ -10,7 +10,7 @@
   display: flex; flex-direction: column;
 }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 1200px; width: 100%; margin: 0 auto 16px; }
-.brand { font-family: var(--font-display, inherit); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: .85rem; color: var(--dim); }
+.brand { white-space: nowrap; font-family: var(--font-display, inherit); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: .85rem; color: var(--dim); }
 .brand b { color: var(--text); }
 .pill { background: var(--surface2); border-radius: 999px; padding: 6px 12px; font-weight: 700; font-size: .85rem; white-space: nowrap; }
 .main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; max-width: 1200px; width: 100%; margin: 0 auto; }
@@ -35,7 +35,12 @@
 .link { color: var(--dim); text-decoration: underline; font-size: .9rem; background: none; cursor: pointer; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
+/* Icons */
+.iconRow { display: inline-flex; align-items: center; gap: 10px; }
+.result img { display: block; margin: 0 auto 6px; }
+
 /* Lobby */
+.lobbyArt { background: url('/art/keyart/live-lobby.webp') center bottom / cover no-repeat, var(--bg); }
 .joinBox { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; background: var(--surface); border: 1px solid var(--surface2); border-radius: 16px; padding: 24px 28px; width: 100%; }
 .joinUrl { font-size: clamp(1rem, 2.2vw, 1.4rem); color: var(--dim); }
 .joinUrl b { color: var(--text); }
@@ -93,6 +98,9 @@ button.tile:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1p
 .podName { font-size: 1.2rem; text-align: center; word-break: break-word; }
 
 @media (max-width: 640px) {
+  .brand { font-size: .72rem; letter-spacing: .05em; }
+  .top .row { gap: 8px; flex-wrap: nowrap; }
+  .top .pill { font-size: .78rem; padding: 5px 10px; }
   .tiles { grid-template-columns: 1fr; }
   .tile { min-height: 72px; }
   .joinBox { grid-template-columns: 1fr; text-align: center; }

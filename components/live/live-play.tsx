@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, SHAPES, liveClient, msRemaining, ordinal, readTab, rpc, useNow, usePoll, useSession, writeTab, type PlayerView } from '@/lib/live-game';
 import { useOnChange, useSound } from '@/lib/live-sound';
+import { Icon } from './icon';
 import s from './live.module.css';
 
 const SEAT_KEY = 'hsc-live-seat';
@@ -123,7 +124,7 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
 
   if (!view) return shell(<p className={s.dim}>{poll.error ? 'Reconnecting…' : 'Joining…'}</p>);
 
-  const scorePill = <span className={s.pill}>{view.alias} · {view.score.toLocaleString()}</span>;
+  const scorePill = <span className={`${s.pill} ${s.iconRow}`}><Icon name="spark" size={18} />{view.alias} · {view.score.toLocaleString()}</span>;
 
   if (view.state === 'lobby') {
     return shell(<div className={`${s.narrow} ${s.center}`}>
@@ -139,6 +140,7 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
   if (view.state === 'complete') {
     return shell(<div className={`${s.narrow} ${s.center}`}>
       <div className={`${s.result} ${view.rank <= 3 ? s.good : s.neutral}`}>
+        <Icon name={view.rank <= 3 ? 'trophy' : 'star'} size={64} />
         <p>Final place</p>
         <p className={s.points}>{ordinal(view.rank)}</p>
         <p>of {view.player_count} · {view.score.toLocaleString()} points</p>
@@ -174,6 +176,7 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
   if (r && remaining > 0 && !everyone) {
     return shell(<div className={`${s.narrow} ${s.center}`}>
       <div className={`${s.result} ${s.neutral}`}>
+        <Icon name="lock" size={56} />
         <p className={s.points}>Locked in</p>
         <p className={s.dim}>Waiting for everyone else… ({view.answered}/{view.player_count})</p>
       </div>
@@ -184,17 +187,20 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
   return shell(<div className={`${s.narrow} ${s.center}`}>
     {!r ? (
       <div className={`${s.result} ${s.bad}`}>
+        <Icon name="timer" size={56} />
         <p className={s.points}>Time&apos;s up</p>
         <p>No answer this round.</p>
       </div>
     ) : r.correct ? (
       <div className={`${s.result} ${s.good}`}>
+        <Icon name="correct-tick" size={64} />
         <p>Correct</p>
         <p className={s.points}>+{r.points}</p>
-        {view.streak >= 2 && <p>{view.streak} in a row</p>}
+        {view.streak >= 2 && <p className={s.iconRow} style={{ justifyContent: 'center' }}><Icon name="streak-flame" size={28} />{view.streak} in a row</p>}
       </div>
     ) : (
       <div className={`${s.result} ${s.bad}`}>
+        <Icon name="wrong-cross" size={64} />
         <p className={s.points}>Not quite</p>
         <p>Answer: {q.options[r.correct_index]}</p>
       </div>
