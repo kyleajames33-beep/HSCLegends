@@ -7,6 +7,7 @@ import { validateTeacherQuestions } from '@/lib/teacher-question-import.mjs';
 import { prepareTeacherDraftRequest } from '@/lib/classroom-v2/teacher-drafts.mjs';
 import type { QuestionDraft } from '@/lib/classroom-v2';
 import { useOnChange, useSound } from '@/lib/live-sound';
+import QRCode from 'qrcode';
 import s from './live.module.css';
 
 type QuestionSet = { name: string; questions: readonly QuestionDraft[] };
@@ -31,6 +32,18 @@ function loadSet(fileName: string, text: string): { set: QuestionSet } | { error
 }
 
 const ROOM_KEY = 'hsc-live-host-room';
+
+/** QR code for the join link, rendered locally as SVG (no network). */
+function JoinQr({ url }: { url: string }) {
+  const [svg, setSvg] = useState('');
+  useEffect(() => {
+    let alive = true;
+    QRCode.toString(url, { type: 'svg', margin: 1, errorCorrectionLevel: 'M', color: { dark: '#0e1020', light: '#ffffff' } })
+      .then(out => { if (alive) setSvg(out); }).catch(() => {});
+    return () => { alive = false; };
+  }, [url]);
+  return svg ? <div className={s.qr} aria-label="QR code to join" role="img" dangerouslySetInnerHTML={{ __html: svg }} /> : null;
+}
 const DURATIONS = [10, 20, 30, 45] as const;
 
 /** Teacher / projector screen for a live classroom game (staging). */
@@ -191,7 +204,10 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
           <p className={s.joinUrl}>Join at <b>{origin.replace(/^https?:\/\//, '')}/live</b></p>
           <p className={s.joinUrl}>with game code</p>
         </div>
-        <div className={s.bigCode}>{view.short_code}</div>
+        <div className={s.codeWrap}>
+          <div className={s.bigCode}>{view.short_code}</div>
+          {origin && <JoinQr url={`${origin}/live?code=${view.short_code}`} />}
+        </div>
       </div>
       <p className={s.h2}>{players.length} {players.length === 1 ? 'player' : 'players'}</p>
       <div className={s.names}>{players.length === 0 ? <p className={s.dim}>Waiting for players…</p> : players.map(p => <span key={p.id} className={s.name}>{p.alias}</span>)}</div>
