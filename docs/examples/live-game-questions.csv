@@ -1,0 +1,3 @@
+id,stem,option_a,option_b,option_c,option_d,answer,explanation,subject,year,module,syllabus_version,source
+chem-1,"Which particle has a negative charge?",Proton,Neutron,Electron,Nucleus,C,"Electrons carry a charge of -1; protons are +1 and neutrons are neutral.",chemistry,11,module-1,2017,Teacher-created example
+chem-2,"What is the pH of 0.01 mol/L HCl?",1,2,7,12,B,"HCl is a strong acid, so [H+] = 0.01 mol/L and pH = -log(0.01) = 2.",chemistry,12,module-6,2017,Teacher-created example

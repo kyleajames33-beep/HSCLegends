@@ -3,7 +3,31 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, SAMPLE_SET, SHAPES, liveClient, msRemaining, readTab, rpc, useNow, usePoll, useSession, writeTab, type HostView } from '@/lib/live-game';
+import { validateTeacherQuestions } from '@/lib/teacher-question-import.mjs';
+import { prepareTeacherDraftRequest } from '@/lib/classroom-v2/teacher-drafts.mjs';
+import type { QuestionDraft } from '@/lib/classroom-v2';
 import s from './live.module.css';
+
+type QuestionSet = { name: string; questions: readonly QuestionDraft[] };
+const SAMPLE: QuestionSet = { name: 'Sample: 8 mixed HSC questions (unreviewed, for testing)', questions: SAMPLE_SET };
+
+/** Validate a teacher CSV/JSON file with the same rules as /question-import. */
+function loadSet(fileName: string, text: string): { set: QuestionSet } | { errors: string[] } {
+  const format = /\.csv$/i.test(fileName) ? 'csv' : /\.json$/i.test(fileName) ? 'json' : null;
+  if (!format) return { errors: ['Choose a .csv or .json file.'] };
+  try {
+    const checked = validateTeacherQuestions(text, format);
+    if (!checked.valid || !checked.draft) {
+      const errors = checked.results.filter(r => r.errors.length).slice(0, 4).map(r => `Row ${r.row}: ${r.errors.join(' ')}`);
+      return { errors: errors.length ? errors : ['The file could not be used.'] };
+    }
+    const revision = `teacher-draft-${new Date().toISOString().slice(0, 10)}`;
+    const request = prepareTeacherDraftRequest(JSON.stringify(checked.draft), crypto.randomUUID(), 20, revision);
+    return { set: { name: `${fileName} (${request.questions.length} questions, unreviewed)`, questions: request.questions } };
+  } catch (e) {
+    return { errors: [e instanceof Error && e.message !== 'INVALID_TEACHER_DRAFT' ? e.message : 'The file could not be used.'] };
+  }
+}
 
 const ROOM_KEY = 'hsc-live-host-room';
 const DURATIONS = [10, 20, 30, 45] as const;
@@ -20,6 +44,16 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
   const [password, setPassword] = useState('');
   const [boardFor, setBoardFor] = useState<string | null>(null); // question id whose leaderboard is showing
   const [origin, setOrigin] = useState('');
+  const [questionSet, setQuestionSet] = useState<QuestionSet>(SAMPLE);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+
+  async function pickFile(file: File | undefined) {
+    setImportErrors([]);
+    if (!file) return;
+    if (file.size > 1_000_000) { setImportErrors(['Choose a file under 1 MB.']); return; }
+    const result = loadSet(file.name, await file.text());
+    if ('set' in result) setQuestionSet(result.set); else { setImportErrors(result.errors); setQuestionSet(SAMPLE); }
+  }
 
   useEffect(() => { setOrigin(window.location.origin); setRoomId(readTab<string>(ROOM_KEY)); }, []);
 
@@ -48,7 +82,7 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
   async function create() {
     setBusy(true); setError('');
     try {
-      const rows = await rpc<{ room_id: string }[]>(client, 'classroom_v2_create', { p_request_id: crypto.randomUUID(), p_questions: SAMPLE_SET, p_seconds: seconds });
+      const rows = await rpc<{ room_id: string }[]>(client, 'classroom_v2_create', { p_request_id: crypto.randomUUID(), p_questions: questionSet.questions, p_seconds: seconds });
       const id = rows?.[0]?.room_id;
       if (!id) throw new LiveError('UNKNOWN');
       writeTab(ROOM_KEY, id); setRoomId(id); setBoardFor(null);
@@ -104,7 +138,17 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
     return shell(
       <div className={`${s.card} ${s.narrow}`}>
         <h1 className={s.h2}>Host a live game</h1>
-        <p className={s.dim}>Sample set: 8 mixed HSC questions (unreviewed, for testing).</p>
+        <p className={s.field} style={{ marginBottom: 4 }}>Questions</p>
+        <p className={s.dim} style={{ marginBottom: 10 }}>{questionSet.name}</p>
+        <div className={s.row} style={{ justifyContent: 'flex-start', marginBottom: 14 }}>
+          <label className={`${s.btn} ${s.ghost}`} style={{ fontSize: '.95rem', padding: '10px 14px' }}>
+            Use my own file (CSV or JSON)
+            <input type="file" accept=".csv,.json,text/csv,application/json" hidden onChange={e => { void pickFile(e.target.files?.[0]); e.target.value = ''; }} />
+          </label>
+          {questionSet !== SAMPLE && <button className={s.link} onClick={() => { setQuestionSet(SAMPLE); setImportErrors([]); }}>Use sample instead</button>}
+        </div>
+        {importErrors.length > 0 && <div className={s.error} role="alert" style={{ marginBottom: 14 }}>{importErrors.map((m, i) => <p key={i}>{m}</p>)}</div>}
+        <p className={s.dim} style={{ fontSize: '.85rem', marginBottom: 14 }}>Up to 20 questions per game. Get the CSV template and check a file on the <a href="/question-import" style={{ textDecoration: 'underline' }}>Question import</a> page.</p>
         <label className={s.field}>Time per question
           <select className={s.input} value={seconds} onChange={e => setSeconds(Number(e.target.value))}>
             {DURATIONS.map(d => <option key={d} value={d}>{d} seconds</option>)}
