@@ -1,43 +1,51 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 type BIPEvent = Event & { prompt: () => void; userChoice: Promise<{ outcome: string }> };
 const DISMISS_KEY = 'legends_install_dismissed';
+
+function dismissed() {
+  try { return localStorage.getItem(DISMISS_KEY) === '1'; } catch { return false; }
+}
+
+function standalone() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
+}
+
+function iosInstallAvailable() {
+  return !dismissed() && !standalone() && /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function subscribeStorage(notify: () => void) {
+  window.addEventListener('storage', notify);
+  return () => window.removeEventListener('storage', notify);
+}
 
 // "Add to Home Screen" nudge. Android/Chrome uses the native prompt; iOS shows
 // manual instructions (Safari has no install event). Dismissal is remembered.
 export default function InstallPrompt() {
   const [deferred, setDeferred] = useState<BIPEvent | null>(null);
-  const [show, setShow] = useState(false);
-  const [ios, setIos] = useState(false);
+  const [closed, setClosed] = useState(false);
+  const ios = useSyncExternalStore(subscribeStorage, iosInstallAvailable, () => false);
 
   useEffect(() => {
-    if (localStorage.getItem(DISMISS_KEY)) return;
-    const standalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    if (standalone) return;
-
-    if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
-      setIos(true);
-      setShow(true);
-      return;
-    }
     const handler = (e: Event) => {
+      if (dismissed() || standalone()) return;
       e.preventDefault();
       setDeferred(e as BIPEvent);
-      setShow(true);
     };
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  if (!show) return null;
+  if (closed || (!ios && !deferred)) return null;
 
   function dismiss() {
-    localStorage.setItem(DISMISS_KEY, '1');
-    setShow(false);
+    try { localStorage.setItem(DISMISS_KEY, '1'); } catch { /* Hide for this session when storage is unavailable. */ }
+    setClosed(true);
+    setDeferred(null);
   }
   async function install() {
     if (!deferred) return;

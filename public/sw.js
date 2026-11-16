@@ -1,51 +1,64 @@
-// Minimal service worker: cache the app shell so Legends opens instantly / offline.
-const CACHE = 'legends-shell-v2';
-const SHELL = ['/', '/play', '/manifest.webmanifest', '/icon-192.png'];
+// Cache only self-contained public play. Account pages and live-room responses
+// must always come from the network and never become an offline snapshot.
+const CACHE = 'legends-offline-v3';
+const PUBLIC_FILES = ['/offline.html', '/lab-rush.html'];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(PUBLIC_FILES)).then(() => self.skipWaiting()));
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
+self.addEventListener('activate', event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(
+    keys.filter(key => (key.startsWith('legends-shell-') || key.startsWith('legends-offline-')) && key !== CACHE)
+      .map(key => caches.delete(key))
+  )).then(() => self.clients.claim()));
 });
 
-// Network-first for navigations (fresh content), cache fallback when offline.
-self.addEventListener('fetch', (e) => {
-  const { request } = e;
-  if (request.method !== 'GET') return;
-  if (request.mode === 'navigate') {
-    e.respondWith(fetch(request).catch(() => caches.match('/') || fetch(request)));
-    return;
-  }
+self.addEventListener('fetch', event => {
+  const { request } = event;
+  if (request.method !== 'GET' || request.mode !== 'navigate') return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(request);
+      if (response.ok && PUBLIC_FILES.includes(url.pathname)) {
+        try {
+          const cache = await caches.open(CACHE);
+          await cache.put(url.pathname, response.clone());
+        } catch { /* Cache limits must not discard a successful network response. */ }
+      }
+      return response;
+    } catch {
+      let fallback;
+      try {
+        const cache = await caches.open(CACHE);
+        fallback = await cache.match(url.pathname === '/demo' || url.pathname === '/lab-rush.html' ? '/lab-rush.html' : '/offline.html');
+      } catch { /* Storage can be unavailable in private or limited browsers. */ }
+      return fallback || new Response('You are offline. Reconnect to open HSC Legends.', {
+        status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      });
+    }
+  })());
 });
 
-// Web Push: show the notification.
-self.addEventListener('push', (e) => {
+self.addEventListener('push', event => {
   let data = {};
-  try { data = e.data ? e.data.json() : {}; } catch { data = {}; }
-  e.waitUntil(
-    self.registration.showNotification(data.title || 'HSC Legends', {
-      body: data.body || '',
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      data: { url: data.url || '/' },
-    })
-  );
+  try { data = event.data ? event.data.json() : {}; } catch { /* Show a generic notification. */ }
+  event.waitUntil(self.registration.showNotification(data.title || 'HSC Legends', {
+    body: data.body || '', icon: '/icon-192.png', badge: '/icon-192.png', data: { url: data.url || '/' },
+  }));
 });
 
-// Focus/open the app when a notification is tapped.
-self.addEventListener('notificationclick', (e) => {
-  e.notification.close();
-  const url = (e.notification.data && e.notification.data.url) || '/';
-  e.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then((list) => {
-      for (const c of list) if ('focus' in c) return c.focus();
-      return self.clients.openWindow(url);
-    })
-  );
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  let url = new URL('/', self.location.origin);
+  try {
+    const target = new URL(event.notification.data?.url || '/', self.location.origin);
+    if (target.origin === self.location.origin) url = target;
+  } catch { /* Keep the home destination. */ }
+  event.waitUntil(self.clients.matchAll({ type: 'window' }).then(list => {
+    for (const client of list) if (client.url === url.href && 'focus' in client) return client.focus();
+    return self.clients.openWindow(url.href);
+  }));
 });

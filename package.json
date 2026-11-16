@@ -17,6 +17,7 @@
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.2",
     "canvas-confetti": "^1.9.4",
+    "codex": "^0.2.3",
     "katex": "^0.17.0",
     "lottie-react": "^2.4.1",
     "lucide-react": "^1.18.0",
