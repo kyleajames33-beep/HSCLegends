@@ -242,21 +242,37 @@ export default function ClassroomStaging({config}: {config:StagingConfig}) {
   }
   function hostLogin() { if(!sb.current || authLocked.current || actor.current.status!=='signed-out')return; const owner=epoch.current, secret=password;authLocked.current=true; setPassword(''); setBusy(true); setMessage(''); void sb.current.auth.signInWithPassword({email,password:secret}).then(({error})=>{if(owner===epoch.current&&error)setMessage('Sign-in failed. Check the staging teacher account.');}).catch(()=>{if(owner===epoch.current)setMessage('Staging sign-in unavailable.');}).finally(()=>{if(owner===epoch.current){authLocked.current=false;setBusy(false);}}); }
   function guestLogin() { if(!auth.current||authLocked.current||actor.current.status!=='signed-out')return; const owner=epoch.current;authLocked.current=true; setBusy(true); setMessage(''); void auth.current.signIn().then(result=>{if(owner===epoch.current&&(result==='failed'||result==='unavailable'))setMessage('Guest sign-in unavailable.');}).catch(()=>{if(owner===epoch.current)setMessage('Guest sign-in unavailable.');}).finally(()=>{if(owner===epoch.current){authLocked.current=false;setBusy(false);}}); }
-  return <main className="mx-auto max-w-2xl px-5 py-8">
+  return <main className="staging-lab mx-auto max-w-2xl px-5 py-8">
+    <style>{STAGING_CSS}</style>
     <h1 className="text-2xl font-bold">Classroom staging lab</h1>
-    <p className="mt-2">Test project {config.projectRef}. Synthetic questions only; this is not the live classroom.</p>
+    <p className="mt-2 dim">Test game on project {config.projectRef}. Sample questions only; this is not the live classroom.</p>
+    <ol className="howto">
+      <li><strong>Teacher window:</strong> sign in as teacher, then create a sample room. A join link appears.</li>
+      <li><strong>Student window (incognito):</strong> open this same page, join as a test guest, then paste the link.</li>
+      <li><strong>Teacher window:</strong> press Start, then Next question after each one.</li>
+    </ol>
     {temporarySession && <p role="status">Browser storage is unavailable. This sign-in is temporary and cannot be restored after refreshing.</p>}
     {identity.status==='checking' && <p role="status">Checking staging session…</p>}
     {identity.status==='unavailable' && <div role="alert"><p>Staging authentication is unavailable.</p><button type="button" onClick={()=>auth.current?.retry()}>Retry sign-in check</button></div>}
     {identity.status==='signed-out' && <section className="mt-6 space-y-3">
-      <button type="button" disabled={busy} onClick={guestLogin}>Join as a test guest</button>
-      <p>For a staging teacher account:</p>
-      <label>Email <input value={email} type="email" onChange={e=>setEmail(e.target.value)} /></label>
-      <label>Password <input value={password} type="password" onChange={e=>setPassword(e.target.value)} /></label>
-      <button type="button" disabled={busy||!email||!password} onClick={hostLogin}>Sign in as teacher</button>
+      <div className="card">
+        <h2>I&apos;m a student</h2>
+        <p className="dim">No account needed.</p>
+        <button type="button" disabled={busy} onClick={guestLogin}>Join as a test guest</button>
+      </div>
+      <div className="card">
+        <h2>I&apos;m the teacher</h2>
+        <p className="dim">Use the staging teacher account.</p>
+        <label>Email <input value={email} type="email" onChange={e=>setEmail(e.target.value)} /></label>
+        <label>Password <input value={password} type="password" onChange={e=>setPassword(e.target.value)} /></label>
+        <button type="button" disabled={busy||!email||!password} onClick={hostLogin}>Sign in as teacher</button>
+      </div>
     </section>}
     {identity.status==='ready' && !room && <section className="mt-6 space-y-3">
       <p>Signed in to staging{identity.isAnonymous?' as a guest':''}.</p>
+      {identity.isAnonymous===true
+        ? <p className="callout">Next: get the join link from the teacher&apos;s screen (it appears after they click <strong>Create sample room</strong>). Paste it below, type a name, then click <strong>Join room</strong>.</p>
+        : <p className="callout">Next: pick a time per question and click <strong>Create sample room</strong>.</p>}
       <button type="button" disabled={busy} onClick={()=>{if(!activeRoom.current&&actor.current.actorId===identity.actorId&&actor.current.generation===identity.generation&&actor.current.status==='ready')void sb.current?.auth.signOut();}}>Sign out of staging</button>
       {identity.isAnonymous!==true && <><label>Time per question <select value={questionSeconds} disabled={busy||attemptKind!==null} onChange={event=>{const value=Number(event.target.value);if(!locked.current&&!requestKind.current&&!activeRoom.current&&actor.current.status==='ready'&&actor.current.isAnonymous!==true&&durations.some(seconds=>seconds===value))setQuestionSeconds(value);}}>{durations.map(seconds=><option key={seconds} value={seconds}>{seconds} seconds</option>)}</select></label>
       <button type="button" disabled={busy||attemptKind==='draft'} onClick={()=>host('sample')}>Create sample room</button>
@@ -264,7 +280,8 @@ export default function ClassroomStaging({config}: {config:StagingConfig}) {
       <p>Teacher drafts are unreviewed and contain answer keys. Preview the draft in this tab first. If creation is unconfirmed, retry the same choice.</p>
       <button type="button" disabled={busy} onClick={resumeHost}>Resume previous hosted game</button>
       <p>The host must be enabled in the staging server allowlist.</p></>}
-      <label>Join code or link <input value={code} onChange={e=>setCode(e.target.value)} /></label>
+      <h2 className="mt-4">{identity.isAnonymous===true?'Join a game':'Students only: join a game'}</h2>
+      <label>Join code or link<input value={code} onChange={e=>setCode(e.target.value)} /></label>
       <label>Player name <input value={alias} maxLength={40} onChange={e=>setAlias(e.target.value)} /></label>
       <button type="button" disabled={busy||!code.trim()||!alias.trim()} onClick={join}>Join room</button>
       <button type="button" disabled={busy} onClick={resume}>Resume previous test game</button>
@@ -273,7 +290,8 @@ export default function ClassroomStaging({config}: {config:StagingConfig}) {
       <p role="status">Room updates: {status}. <button type="button" onClick={()=>{if(actor.current.generation===identity.generation&&actor.current.actorId===identity.actorId&&activeRoom.current?.id===room.id)polling.current?.refresh();}}>Refresh</button></p>
       <button type="button" onClick={leaveRoom}>Leave room on this device</button>
       {room.kind==='host' && <>
-        <p>Join code: <strong>{room.code}</strong></p>
+        <p className="callout">Next: click <strong>Copy join link</strong>, open this page in an incognito window, click <strong>Join as a test guest</strong>, paste the link and join. When the student shows up below, click <strong>Start</strong>.</p>
+        <p className="dim">Join code: <strong>{room.code}</strong></p>
         {room.codeVerified && <button type="button" onClick={()=>{void copyInvite();}}>Copy join link</button>}
         {!room.codeVerified && <p>The join code was restored from this tab and has not been verified by the server.</p>}
         {!room.snapshot ? <p>Loading room…</p> : <>
@@ -291,7 +309,7 @@ export default function ClassroomStaging({config}: {config:StagingConfig}) {
         <p>Game: {room.snapshot.state}. Score: {room.snapshot.score}</p>
         {room.snapshot.state==='complete' && !room.snapshot.question && <p>The host ended the lobby before the game started.</p>}
         {room.snapshot.state==='complete' && room.snapshot.finalRank!=null && <p>Final place: {room.snapshot.finalRank} (ties share a place)</p>}
-        {room.snapshot.question && <><p>Question {room.snapshot.question.index+1}{room.snapshot.questionTotal!=null?` of ${room.snapshot.questionTotal}`:''}</p><p>{room.snapshot.question.stem}</p>{room.snapshot.state==='active' && <p role="timer">{studentRemaining===null?'Timer unavailable. Refresh the room to sync.':studentRemaining===0?'Time is up (estimate). Wait for the host.':`${studentRemaining} seconds remaining (estimate)`}</p>}<div>{room.snapshot.question.options.map((option,index)=><button type="button" key={index} disabled={busy||pendingQuestion===room.snapshot?.question?.id||!!room.snapshot?.receipt||studentRemaining===0||room.snapshot?.state!=='active'} onClick={()=>answer(index)}>{option}</button>)}</div></>}
+        {room.snapshot.question && <><p>Question {room.snapshot.question.index+1}{room.snapshot.questionTotal!=null?` of ${room.snapshot.questionTotal}`:''}</p><p>{room.snapshot.question.stem}</p>{room.snapshot.state==='active' && <p role="timer">{studentRemaining===null?'Timer unavailable. Refresh the room to sync.':studentRemaining===0?'Time is up (estimate). Wait for the host.':`${studentRemaining} seconds remaining (estimate)`}</p>}<div className="answers">{room.snapshot.question.options.map((option,index)=><button type="button" key={index} disabled={busy||pendingQuestion===room.snapshot?.question?.id||!!room.snapshot?.receipt||studentRemaining===0||room.snapshot?.state!=='active'} onClick={()=>answer(index)}>{option}</button>)}</div></>}
         {room.snapshot.receipt && <p>{room.snapshot.receipt.correct?'Correct':'Incorrect'} · {room.snapshot.receipt.points} points</p>}
         {room.snapshot.receipt && room.snapshot.explanation && <p>Explanation: {room.snapshot.explanation}</p>}
         {room.snapshot.state==='complete' && room.snapshot.review && <section aria-label="Review your answers"><h2>Review your answers</h2>{room.snapshot.review.length===0?<p>No answers were submitted.</p>:<ol>{room.snapshot.review.map(item=><li key={item.id}><p>Question {item.index+1}: {item.stem}</p><p>Your answer: {item.options[item.choice]} · {item.correct?'Correct':'Incorrect'}</p>{!item.correct&&<p>Correct answer: {item.options[item.correctIndex]}</p>}{item.explanation&&<p>Explanation: {item.explanation}</p>}</li>)}</ol>}</section>}
@@ -300,3 +318,28 @@ export default function ClassroomStaging({config}: {config:StagingConfig}) {
     {message && <p role="status" className="mt-4">{message}</p>}
   </main>;
 }
+
+// Scoped styling for the test-only lab so controls are visibly clickable.
+const STAGING_CSS = `
+.staging-lab{color:#F2F2FA;background:#0E1020;min-height:100vh;line-height:1.5}
+.staging-lab .dim{color:#9A9CC0}
+.staging-lab h2{font-size:1.1rem;font-weight:700;margin:0 0 .25rem}
+.staging-lab .howto{margin:1rem 0 0;padding:1rem 1rem 1rem 2rem;list-style:decimal;background:#171A31;border-radius:12px}
+.staging-lab .howto li{margin:.25rem 0}
+.staging-lab .card{background:#171A31;border:1px solid #22264A;border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:.6rem}
+.staging-lab .callout{background:#22264A;border-left:4px solid #6E5BFF;border-radius:8px;padding:.75rem 1rem}
+.staging-lab label{display:flex;flex-direction:column;gap:.3rem;font-weight:600;margin:.5rem 0}
+.staging-lab input,.staging-lab select{background:#0E1020;color:#F2F2FA;border:2px solid #22264A;border-radius:8px;padding:.6rem .75rem;font-size:1rem}
+.staging-lab input:focus,.staging-lab select:focus{outline:none;border-color:#6E5BFF}
+.staging-lab button{display:inline-block;background:#6E5BFF;color:#fff;font-weight:700;border-radius:10px;padding:.7rem 1.1rem;margin:.25rem .5rem .25rem 0;box-shadow:0 3px 0 #07080F;cursor:pointer}
+.staging-lab button:active{transform:translateY(2px);box-shadow:0 1px 0 #07080F}
+.staging-lab button:disabled{opacity:.4;cursor:not-allowed}
+.staging-lab ul,.staging-lab ol{padding-left:1.25rem}
+.staging-lab .answers{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin:.75rem 0}
+.staging-lab .answers button{margin:0;padding:1.2rem 1rem;font-size:1.05rem;text-align:left}
+.staging-lab .answers button:nth-child(4n+1){background:#E8445F}
+.staging-lab .answers button:nth-child(4n+2){background:#2F7BEA}
+.staging-lab .answers button:nth-child(4n+3){background:#F2B530;color:#1a1300}
+.staging-lab .answers button:nth-child(4n+4){background:#1FB070}
+@media (max-width:480px){.staging-lab .answers{grid-template-columns:1fr}}
+`;
