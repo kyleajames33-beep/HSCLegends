@@ -22,6 +22,7 @@ export class LiveHostController {
   private unsubscribe: (() => void) | null = null;
   private record: HostRecovery | null = null;
   private accountResolved = false;
+  private creatingEpoch: number | null = null;
   constructor(private sb: SupabaseClient, private storage = browserStorage()) {}
   getSnapshot = () => this.state;
   getServerSnapshot = () => initial;
@@ -44,10 +45,15 @@ export class LiveHostController {
   async create(subject: Subject, year: 11 | 12) {
     const owner = this.state.ownerId;
     if (!owner || this.state.authLoading) { this.update({ err: 'Sign in before hosting a game.' }); return; }
+    // A retained setup button can fire again before React renders it disabled.
+    // Keep one create RPC in flight per account context to avoid extra rooms.
+    if (this.creatingEpoch === this.epoch) return;
     const epoch = ++this.epoch; this.stop();
+    this.creatingEpoch = epoch;
     this.update({ busy: true, ready: false, err: '' });
     try {
       const game = await createGame(this.sb, subject, year, 10);
+      if (this.creatingEpoch === epoch) this.creatingEpoch = null;
       if (!this.current(epoch, owner)) return;
       const record: HostRecovery = { version: 1, sessionId: game.session_id, code: game.code, ownerId: owner, ts: Date.now(), teams: {}, teamMode: false };
       this.record = record; this.persist(record); this.update({ resume: record });
@@ -59,7 +65,7 @@ export class LiveHostController {
       this.listen(record, epoch, owner);
       await this.refreshCreatedLobbyPlayers(record, epoch, owner);
     } catch (e) { this.fail(e, epoch, owner); }
-    finally { if (this.current(epoch, owner)) this.update({ busy: false }); }
+    finally { if (this.creatingEpoch === epoch) this.creatingEpoch = null; if (this.current(epoch, owner)) this.update({ busy: false }); }
   }
   async restore() {
     const record = this.state.resume ?? this.record;

@@ -1,0 +1,64 @@
+# Classroom v2: isolated Postgres contract lab
+
+This is an executable **synthetic local design experiment**, not an application feature, production migration or a fix for the existing classroom regression. The real app does not import or select it. Do not apply either SQL file to production, staging with real data, or any shared database. Nothing in this directory changes the current lockdown.
+
+## Run
+
+Node 24 is used for its native TypeScript support. PGlite is pinned locally; tests run offline after installation:
+
+```sh
+cd prototypes/classroom-v2
+npm ci --ignore-scripts --no-audit --no-fund
+npm test
+```
+
+The PGlite tests run PostgreSQL-compatible SQL in an in-memory WASM instance. They use fixture-only actors, rooms and questions. Install requires npm registry access unless the exact package is cached. The app's dependencies and lockfile are not modified.
+
+The opt-in `test/local-api-smoke.mjs` additionally targets a real Supabase Auth and PostgREST stack using anonymous test identities. It refuses to run without `HSC_LAB_ALLOW_DISPOSABLE=1`, `HSC_LAB_LOCAL_URL` set exactly to either `http://127.0.0.1:54321` or `http://[::1]:54321`, and the local project's public anon/publishable key in `HSC_LAB_ANON_KEY`. It rejects secret/service-role keys, requires the exact named and labelled `hsc-classroom-local-lab` containers under `/tmp/hsc-classroom-local-lab`, verifies the gateway port and address family, rejects non-loopback fetches and redirects, and only provisions a freshly created anonymous host in that disposable database. It leaves synthetic users and rooms in that disposable lab. Run it only after installing this candidate into that empty local lab and enabling anonymous sign-ins. The script prints neither keys nor tokens. Its safety tests run without network or credentials via `node --test prototypes/classroom-v2/test/local-api-safety.test.mjs`.
+
+For actual multi-connection PostgreSQL, with a local `postgres:17` Docker image already present:
+
+```sh
+node prototypes/classroom-v2/test/postgres-concurrency.mjs
+node prototypes/classroom-v2/test/postgres-concurrency.mjs --staging-candidate
+```
+
+Run that command from the repository root. It clears inherited Docker endpoint selectors, uses the local Unix socket, starts one uniquely named temporary container using `--network none` with a synthetic password and no published ports, and removes **only that container** on normal success or failure. An interrupted or force-killed process may leave a container named `hsc-classroom-v2-…` with label `hsc.classroom-v2.lab=true`; inspect it before removing it. It never connects to Supabase. The test requires a working local Docker daemon and permission to create containers. No user or production data is loaded.
+
+## What is implemented
+
+- Private, separate `lab_private` tables for rooms, participants, frozen questions and immutable receipts; composite references bind both participant and question to the receipt's room. Question options, correct index, revision and deadlines are fixed after insertion. Deletion is rejected in this lab; an actual retention policy is still needed.
+- `lab_api.snapshot(uuid, uuid)` and `lab_api.answer(uuid, uuid, uuid, smallint)` return explicitly typed tables. The participant actor must own the player within the room; the snapshot returns no key or receipt for an unanswered question. Once answered it returns only that participant's receipt. The original score after acceptance is frozen into the receipt, separate from the current score.
+- `answer` locks the room before checking the current question and database clock. It checks the actor, active instance, deadline and option bounds; a unique receipt and score update occur in the same transaction. A retry with a different choice returns the first committed receipt and its original score. This lab uses 100 points for a correct answer and 0 otherwise, without a speed bonus or persistent XP.
+- `lab_api.finish(uuid, bigint)` is host-actor-bound and uses the same room lock plus expected room version, preventing a stale host action from ending the room after a newer answer. Only the current question and completion are modelled.
+- `lab_client` is granted usage only on `lab_api` and execute only on the three API functions. Neither it nor `lab_anon` is granted private-schema/table access. This is a lab role exercise, not a Supabase role deployment.
+- `client.ts` is an optional standalone **lab-only** typed transport adapter. It consumes an injected query function, verifies response shape, binds room/player identity locally, ignores older snapshots and rejects stale answer callbacks after replacement, question change or disposal. It never sets or accepts a server actor. It is not imported by the actual app; no production/non-production switch was added to the legacy classroom flow.
+- `staging-candidate.sql` is a separate, transaction-wrapped **staging-only draft** using new `public.classroom_v2_*` APIs, a private RLS-enabled schema and `auth.uid()` for actor binding. It grants those new functions only to `authenticated`, revokes `PUBLIC` and `anon`, grants no private table access, and does not alter legacy RPCs or grants. It implements host create and host-only roster snapshot, actor-bound join/rejoin, lobby, start, participant snapshot/answer, host next/finish, and 6-hour room expiry. `staging-client.mjs` plus its type declaration maps those operations to an injected RPC transport; it contains no credentials and is not imported by the real app. The caller must dispose it on every auth-context change. It is an implementation candidate, not a reviewed or deployed migration.
+
+### Staging defaults and scope
+
+- A verified actor must also appear as enabled in a private, server-provisioned host allowlist; no client can self-grant hosting. There is no production host-provisioning workflow in this prototype. The authorized host supplies 1–20 custom questions as validated JSON; their text, options, key and supplied revision are frozen at creation. The revision and content are **not** science/syllabus certification. No production question bank is read. An idempotent host request ID returns the same room for the same payload and rejects a conflicting payload.
+- The host receives a randomly generated UUID join code. A verified actor joining by that code gets one player per room; retry by that actor returns the same player, including in an active or completed room, until it expires. New participants may join only in the lobby. This is not the six-digit join flow in the current app.
+- Only the owning host may read the host projection, start, advance or finish. The host projection includes aliases, scores, current question and observed answer count; it does not include the key. The expected room version is mandatory and stale or null transitions do nothing. Each transition and submitted answer shares the room row lock. Join itself does not change the room version; a production roster version/realtime strategy is still required.
+- The enabled owning host can separately read frozen questions, answer keys and any unreviewed teacher metadata while the room is unexpired. Other actors, anonymous callers, revoked hosts and expired rooms are rejected. This is a sensitive host-only question readback, not a student endpoint or a reviewed content archive.
+- The server opens an immutable answer window at start/advance. Default scoring is 100 for correct and 0 otherwise, with no speed or persistent-wallet award. The timer is authoritative on the server; a host may advance early. A timed-out room does not auto-advance: the host must advance or finish.
+- An answered participant sees their own correct index and committed receipt immediately; unanswered participants do not receive that answer through the new API. After completion, their snapshot includes only their own submitted-answer review. The host sees aggregate correct/submitted counts and unplayed questions, not an individual assessment report. Existing question keys may nevertheless be public elsewhere or shared by players.
+- An existing actor can rejoin until the six-hour room expiry; this does not itself provide identity recovery across browsers/devices. Supabase anonymous Auth configuration, linking/recovery, abuse controls and a complete room lifecycle are unimplemented.
+
+The actor helper `lab_auth.uid()` is a **forgeable test double** backed by a caller-settable SQL setting. It is unsafe as real authentication. The staging candidate calls `auth.uid()` directly, but the standalone Postgres harness supplies a similarly forgeable mock `auth.uid()`; its tests therefore do not prove JWT verification. A real Supabase environment must supply verified request context after the host/guest and reconnect design has been independently reviewed. Anonymous Supabase Auth, account linking, revocation, credential transfer and rate limits are not implemented here.
+
+## Verification and limitations
+
+PGlite tests exercise the smaller lab SQL functions and local adapter: actor/role denial, own-receipt visibility, hidden unanswered key, invalid choice, wrong instance, deadline, rollback after an intentionally failing receipt insert, immutable question/receipt, retries, host version guards and stale client callbacks. The optional real-Postgres test exercises either SQL file. It establishes an overlapping two-connection duplicate-answer and host-finish/next race: both contenders wait on the first transaction's room lock; the duplicate returns the first receipt, the stale host transition fails, and exactly one score is awarded. In candidate mode the opposite ordering is tested too: a waiting old-question answer fails after host next commits. A deadline race observes an answer waiting before expiry, then confirms it is rejected when the lock clears after expiry. It also checks role/foreign-actor denial, an unanswered projection, immutable receipt deletion and rollback following an injected insert error. Candidate mode additionally tests the two-question host/student lifecycle, host-only roster, duplicate create/join, reconnect, expiry, host revocation, version guards, RLS, role grants and that a locked legacy-function fixture remains locked. Its fake actor is still forgeable.
+
+The smaller `schema.sql` lab has one fixed active question and host finish only. The staging candidate adds the bounded lifecycle above, but neither implements guest credential issuance, pause/resume, teams, a production reconnect transport, realtime, classroom reports, offline UI, durable XP, account recovery, cleanup or data migration. No browser or production-client end-to-end test is claimed. Postgres role tests do not emulate PostgREST, Supabase JWT verification or Realtime. PGlite uses a single connection; only the optional Docker test covers the stated real multi-connection races.
+
+The current shared `public.questions` table exposes `correct_index` through the observed public-read policy. **This experiment does not make those existing answers secret**. Its hidden keys are synthetic and isolated. A real system needs a separately reviewed, versioned content pipeline and shared-app dependency plan; even a private key store cannot prevent human sharing of an answer.
+
+## Path to integration
+
+1. Use [the deployed metadata review](../../docs/CLASSROOM_DEPLOYED_METADATA_2026-11-03.md) and obtain authorized deployed function bodies/consumer dependencies without reading student rows. Establish a separate disposable Supabase staging environment and schema-only baseline.
+2. Choose and implement verified host/guest identities, recovery and revocation. Replace the test actor helper with verified request context. Explicitly handle existing nullable legacy player identities; no alias, room code, bare player ID, browser cache or user-editable metadata proves ownership.
+3. Review and adapt the proposed tables, transactional functions, schema visibility, roles, default privileges, question freezing, retention, host controls and realtime to that baseline. Perform independent security review. The synthetic SQL is not a migration and must not be copied unchanged into production.
+4. Test real guest and signed-in JWTs, table/function grants, cross-room ownership, hidden versioned content, simultaneous reads/submits/finish/advance, rollback, deadline races, disconnects, same/cross-device receipts and multiple devices under Supabase/Postgres. Include existing hscscience consumers in shared-question impact testing.
+5. After staging passes, define a reviewed feature flag and transport implementation for the real application. Bind every asynchronous operation to the current owner/session/question and preserve existing lockdown until an authorized cutover and rollback plan are approved. The existing `classroom-known-bugs` uncached receipt regression remains red until the actual path is implemented and verified.

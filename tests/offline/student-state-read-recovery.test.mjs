@@ -77,7 +77,8 @@ test('ACTUAL STUDENT: a replacement connection owns busy after the failed read r
       let tree = await harness.render();
       assert.ok(elements(tree).filter((e) => e.type === 'button').every((e) => e.props.disabled), 'old completion must not release the new connection lock');
       assert.doesNotMatch(textContent(tree), /obsolete initial failure/);
-      replacement.resolve({ data: [{ session_id: 'replacement-room', player_id: 'replacement-player', status: 'active' }], error: null }); await retry;
+      // A rejoin must recover the saved player; a fresh join may return a new one.
+      replacement.resolve({ data: [{ session_id: operation === 'rejoin' ? 'synthetic-room-1' : 'replacement-room', player_id: operation === 'rejoin' ? 'synthetic-player-1' : 'replacement-player', status: 'active' }], error: null }); await retry;
       tree = await harness.render(); assert.match(textContent(tree), /Question 1\/2/);
     } finally { harness.unmount(); }
   }

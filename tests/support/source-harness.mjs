@@ -75,8 +75,8 @@ export function pageHarness(path, sb, storage = memoryStorage(), auth = { user: 
     },
   };
   const window = options.scheduler ?? { setInterval: () => 0, clearInterval: () => {}, setTimeout: () => 0, clearTimeout: () => {} };
-  const document = { visibilityState: 'visible', addEventListener: () => {}, removeEventListener: () => {} };
-  const globals = { ...window, window, document, localStorage: storage };
+  const document = options.document ?? { visibilityState: 'visible', addEventListener: () => {}, removeEventListener: () => {} };
+  const globals = { ...window, window, document, localStorage: storage, URL: options.URL ?? URL, URLSearchParams, Blob };
   const cache = loadSourceModule('lib/live-session-cache.ts', {}, globals);
   const learning = loadSourceModule('lib/classroom-learning.ts');
   const dependencies = {
@@ -88,7 +88,10 @@ export function pageHarness(path, sb, storage = memoryStorage(), auth = { user: 
     '@/lib/use-user': { useUser: () => auth },
     '@/lib/use-countdown': { useCountdown: () => options.countdown ?? ({ remaining: 15, frac: 1, expired: false }) },
     '@/lib/questions': loadSourceModule('lib/questions.ts'),
-    '@/lib/live': loadSourceModule('lib/live.ts'),
+    '@/lib/live': loadSourceModule('lib/live.ts', {}, globals),
+    '@/lib/classroom-v2/invite': loadSourceModule('lib/classroom-v2/invite.ts', {}, globals),
+    '@/lib/classroom-v2/report': loadSourceModule('lib/classroom-v2/report.ts', {}, globals),
+    '@/lib/classroom-v2/session-storage': loadSourceModule('lib/classroom-v2/session-storage.ts', {}, globals),
     '@/lib/live-session-cache': cache,
     '@/lib/classroom-learning': learning,
     '@/lib/live-host-controller': loadSourceModule('lib/live-host-controller.ts', { './live': loadSourceModule('lib/live.ts'), './live-session-cache': cache }, globals),
@@ -96,6 +99,7 @@ export function pageHarness(path, sb, storage = memoryStorage(), auth = { user: 
     '@/components/answer-tile': { default: 'AnswerTile' },
     '@/components/math-text': { default: ({ text }) => text },
     '@/components/avatar': { default: 'Avatar' },
+    ...options.dependencies,
   };
   const Page = loadSourceModule(path, dependencies, globals).default;
   return {
@@ -103,7 +107,7 @@ export function pageHarness(path, sb, storage = memoryStorage(), auth = { user: 
     async render() {
       let tree;
       for (let pass = 0; pass < 8; pass++) {
-        cursor = 0; dirty = false; tree = Page();
+        cursor = 0; dirty = false; tree = Page(options.props);
         const effects = pending; pending = [];
         for (const effect of effects) effect();
         await Promise.resolve(); await Promise.resolve();

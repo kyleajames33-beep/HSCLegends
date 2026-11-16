@@ -14,6 +14,29 @@ export type LiveQuestion = {
 
 export type Player = { id: string; alias: string; score: number };
 
+export function normalizeGameCode(value: string): string | null {
+  const code = value.trim().toUpperCase();
+  return /^[A-Z0-9]{6}$/.test(code) ? code : null;
+}
+
+export function gameCodeFromSearch(search: string): string | null {
+  try {
+    const values = new URLSearchParams(search).getAll('code');
+    return values.length === 1 ? normalizeGameCode(values[0]) : null;
+  } catch { return null; }
+}
+
+export function makeGameInvite(origin: string, code: string): string | null {
+  const normalized = normalizeGameCode(code);
+  if (!normalized) return null;
+  try {
+    const url = new URL('/join', origin);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    url.searchParams.set('code', normalized);
+    return url.href;
+  } catch { return null; }
+}
+
 export async function createGame(
   sb: SupabaseClient,
   subject: Subject,

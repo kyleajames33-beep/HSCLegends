@@ -142,6 +142,27 @@ test('ACTUAL HOST: teacher pacing defaults off for automatic advance and cancels
   } finally { page.unmount(); }
 });
 
+test('ACTUAL HOST: a manual advance prevents a delayed automatic duplicate even after an ambiguous failure', async () => {
+  const sb = liveClientDouble(); const rpc = sb.rpc; let advances = 0, rejectFirst;
+  sb.rpc = (name, args) => {
+    if (name !== 'next_question') return rpc(name, args);
+    advances++;
+    if (advances === 1) return new Promise(resolve => { rejectFirst = () => resolve({ data: null, error: { message: 'Connection lost' } }); });
+    return Promise.resolve({ data: null, error: null });
+  };
+  const timers = scheduler(); const page = await startHost(sb, { scheduler: timers, countdown: { remaining: 0, expired: true, frac: 0 } });
+  try {
+    await click(page, 'Enable automatic advance'); assert.equal(timers.pendingTimeouts(), 1);
+    await click(page, 'Next question'); assert.equal(advances, 1);
+    timers.runTimeouts(); await settle(); assert.equal(advances, 1);
+    rejectFirst(); await settle(); const failed = await page.render();
+    assert.match(textContent(failed), /Connection lost/);
+    timers.runTimeouts(); await settle(); assert.equal(advances, 1);
+    await click(page, 'Resume game'); timers.runTimeouts(); await settle(); assert.equal(advances, 1);
+    await click(page, 'Next question'); assert.equal(advances, 2, 'teacher can deliberately retry');
+  } finally { page.unmount(); }
+});
+
 test('ACTUAL HOST: hide names removes aliases from the visible scoreboard and avatar seeds', async () => {
   const sb = liveClientDouble(); const page = await startHost(sb);
   try {

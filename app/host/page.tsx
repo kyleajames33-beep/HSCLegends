@@ -8,7 +8,7 @@ import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
 import Avatar from '@/components/avatar';
 import { SUBJECTS } from '@/lib/questions';
-import { liveAnswerCount, type Player } from '@/lib/live';
+import { liveAnswerCount, makeGameInvite, normalizeGameCode, type Player } from '@/lib/live';
 import { arenaPresences, isPresent } from '@/lib/presence';
 import { useUser } from '@/lib/use-user';
 import { LiveHostController } from '@/lib/live-host-controller';
@@ -26,6 +26,7 @@ export default function HostPage() {
   const [autoAdvance, setAutoAdvance] = useState(false);
   const [hideNames, setHideNames] = useState(false);
   const [observations, setObservations] = useState<QuestionObservation[]>([]);
+  const [copiedInvite, setCopiedInvite] = useState<{ sessionId: string; ownerId: string; message: string } | null>(null);
   const presence = presenceSnapshot?.sessionId === sessionId && !presenceSnapshot.error ? presenceSnapshot.entries : null;
   const count = ac?.sessionId === sessionId && ac.index === q?.index && !ac.error ? ac : null;
   const ownerId = user?.id ?? null;
@@ -50,14 +51,22 @@ export default function HostPage() {
   // Teacher-paced by default. This holds advancement, not the server answer clock.
   const timer = useCountdown(q?.question_started_at ?? null, q?.per_question_seconds ?? 15);
   const advancedFor = useRef('');
+  function advanceCurrent(room: string, index: number) {
+    const current = controller.getSnapshot();
+    if (!canControl || current.ownerId !== ownerId || current.authLoading || current.busy || current.phase !== 'active' || current.sessionId !== room || current.q?.index !== index) return;
+    // A failed request can still have committed on the server. Never let the
+    // automatic timer repeat a manual or automatic attempt for this question.
+    advancedFor.current = `${room}:${index}`;
+    void controller.advance(room, index);
+  }
   useEffect(() => {
-    if (!canControl || !autoAdvance || phase !== 'active' || !q) return;
+    if (!canControl || !autoAdvance || busy || phase !== 'active' || !q) return;
     if (timer.expired && advancedFor.current !== `${sessionId}:${q.index}`) {
-      const t = setTimeout(() => { advancedFor.current = `${sessionId}:${q.index}`; void controller.advance(sessionId, q.index); }, 2000);
+      const t = setTimeout(() => advanceCurrent(sessionId, q.index), 2000);
       return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timer.expired, q?.index, phase, canControl, controller, sessionId, autoAdvance]);
+  }, [timer.expired, q?.index, phase, canControl, controller, sessionId, autoAdvance, busy]);
 
   // Host: poll how many players have answered the current question.
   useEffect(() => {
@@ -83,11 +92,26 @@ export default function HostPage() {
     <p className="mt-2 text-inksoft">{autoAdvance ? 'Automatic advance is on.' : 'Teacher-paced: choose Next or Finish when ready.'} The answer clock still runs; this does not pause or extend answer time.</p>
   </section>;
 
+  async function copyInvite() {
+    if (!canControl || !ownerId) return;
+    const invite = makeGameInvite(window.location.origin, code);
+    if (!invite) return;
+    const room = sessionId, owner = ownerId;
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(invite);
+      setCopiedInvite({ sessionId: room, ownerId: owner, message: 'Join link copied.' });
+    } catch {
+      setCopiedInvite({ sessionId: room, ownerId: owner, message: 'Could not copy the link. Students can enter the code above.' });
+    }
+  }
+
   if (phase === 'setup' || !canControl) {
     return (
       <Shell>
         <H>Host a game</H>
         <p className="text-inksoft text-sm mt-1">Pick a subject. Students join with the code on their phones.</p>
+        <Link href="/question-import" prefetch={false} className="mt-2 inline-block text-sm font-semibold text-plum underline">Prepare a question draft</Link>
         {loading ? <p role="status" className="mt-4 text-sm">Checking your sign-in…</p> : !user && <Link href="/login?next=/host" className="mt-4 underline">Sign in to host or resume a game</Link>}
         {resume && <div className="mt-5 rounded-xl border border-rule p-4">
           <p className="font-semibold">Saved game {resume.code}</p>
@@ -120,6 +144,8 @@ export default function HostPage() {
       <Shell>
         <p className="text-berrydeep text-sm font-semibold">JOIN AT /join</p>
         <div className="mt-2 text-6xl font-black tracking-[0.2em] text-center py-6">{code}</div>
+        <div className="text-center"><button type="button" onClick={copyInvite} disabled={!normalizeGameCode(code)} className="rounded-lg border border-rule px-4 py-2 text-sm font-semibold underline disabled:opacity-40">Copy join link</button></div>
+        {copiedInvite?.sessionId === sessionId && copiedInvite.ownerId === ownerId && <p role="status" className="mt-2 text-center text-sm text-inksoft">{copiedInvite.message}</p>}
         <p className="text-center text-inksoft">
           {(() => {
             if (!presence) return <>{players.length} joined · presence unavailable</>;
@@ -207,7 +233,7 @@ export default function HostPage() {
           <div className="text-sm text-muted mb-2">Live scores</div>
           <Scoreboard players={players} teams={teamMode ? teams : undefined} hideNames={hideNames} />
         </div>
-        <button disabled={busy} onClick={() => controller.advance()}
+        <button disabled={busy} onClick={() => advanceCurrent(sessionId, q.index)}
           className="mt-6 w-full rounded-xl bg-plum hover:bg-plumdeep text-white px-4 py-4 font-semibold disabled:opacity-40">
           {q.index + 1 >= q.total ? 'Finish' : 'Next question'}
         </button>

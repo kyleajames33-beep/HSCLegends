@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -9,7 +9,7 @@ import { useCountdown } from '@/lib/use-countdown';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
 import {
-  joinGame, liveRejoin, getLiveQuestion, submitAnswer, fetchPlayers, subscribeGame, claimGameXp,
+  joinGame, liveRejoin, getLiveQuestion, submitAnswer, fetchPlayers, subscribeGame, claimGameXp, gameCodeFromSearch, normalizeGameCode,
   type LiveQuestion,
 } from '@/lib/live';
 import { readAcknowledgedAnswer, writeAcknowledgedAnswer, readPendingClaim, writePendingClaim, clearConfirmedClaim, cacheMessage, type PendingClaim } from '@/lib/live-session-cache';
@@ -20,13 +20,23 @@ type Phase = 'form' | 'lobby' | 'question' | 'answered' | 'finishing' | 'complet
 type Result = { is_correct: boolean; correct_index: number; points: number };
 type ViewConnection = { epoch: number; ownerId: string | null; sessionId: string; playerId: string };
 
+function subscribeLocation(listener: () => void) {
+  if (typeof window.addEventListener !== 'function') return () => {};
+  window.addEventListener('popstate', listener);
+  return () => window.removeEventListener('popstate', listener);
+}
+function locationSearch() { return window.location?.search ?? ''; }
+function serverSearch() { return ''; }
+
 export default function JoinPage() {
   const sb = useMemo(() => createClient(), []);
   const router = useRouter();
   const { user, loading: userLoading } = useUser();
   const [xp, setXp] = useState<{ awarded: number; total: number } | null>(null);
   const [phase, setPhase] = useState<Phase>('form');
-  const [code, setCode] = useState('');
+  const [editedCode, setCode] = useState<string | null>(null);
+  const search = useSyncExternalStore(subscribeLocation, locationSearch, serverSearch);
+  const code = editedCode ?? (search ? gameCodeFromSearch(search) : null) ?? '';
   const [alias, setAlias] = useState('');
   const [viewConnection, setViewConnection] = useState<ViewConnection | null>(null);
   const [playerId, setPlayerId] = useState('');
@@ -45,6 +55,7 @@ export default function JoinPage() {
   const loadVersion = useRef(0);
   const activeQuestion = useRef(-1);
   const answerInFlight = useRef('');
+  const joinInFlight = useRef<{ epoch: number; ownerId: string | null } | null>(null);
   const [viewOwner, setViewOwner] = useState<string | null>(null);
   const ownerId = user?.id ?? null;
   const timer = useCountdown(q?.question_started_at ?? null, q?.per_question_seconds ?? 15);
@@ -103,6 +114,12 @@ export default function JoinPage() {
       const r = await liveRejoin(sb, s.code, s.alias);
       if (!currentRequest(epoch, owner)) return;
       if (!r) throw new Error('Could not find your player in that game.');
+      // The legacy server looks up by code and alias, which can select a
+      // different player with the same alias. The saved IDs are not proof of
+      // ownership, but they prevent silently adopting that other identity.
+      if (r.session_id !== s.room || r.player_id !== s.player) {
+        throw new Error('Your saved player could not be matched to this game. Ask your host for help or join again.');
+      }
       setAlias(s.alias); setCode(s.code);
       connect(r.session_id, r.player_id, epoch, owner);
       const request = loadState(r.session_id, r.player_id, epoch, owner); stateVersion = loadVersion.current;
@@ -243,19 +260,29 @@ export default function JoinPage() {
   useEffect(() => { loadRef.current = loadState; });
 
   async function join(e: React.FormEvent) {
-    e.preventDefault(); if (userLoading) return;
+    e.preventDefault(); if (userLoading || busy) return;
+    const normalizedCode = normalizeGameCode(code), cleanAlias = alias.trim();
+    if (!normalizedCode || !cleanAlias || cleanAlias.length > 20) return;
+    if (joinInFlight.current && joinInFlight.current.ownerId === ownerId && currentRequest(joinInFlight.current.epoch, ownerId)) return;
     const epoch = beginConnection(); const owner = ownerId;
+    const attempt = { epoch, ownerId: owner }; joinInFlight.current = attempt;
     let stateVersion: number | null = null;
     setBusy(true); setErr('');
     try {
-      const j = await joinGame(sb, code, alias);
+      const j = await joinGame(sb, normalizedCode, cleanAlias);
+      // The player creation itself has settled. A later question read may
+      // fail or hang, and must not prevent a deliberate replacement join.
+      if (joinInFlight.current === attempt) joinInFlight.current = null;
       if (!currentRequest(epoch, owner)) return;
-      saveArenaSession('live', { code, room: j.session_id, player: j.player_id, alias });
+      saveArenaSession('live', { code: normalizedCode, room: j.session_id, player: j.player_id, alias: cleanAlias });
       connect(j.session_id, j.player_id, epoch, owner);
       const request = loadState(j.session_id, j.player_id, epoch, owner); stateVersion = loadVersion.current;
       await request;
     } catch (e) { if (currentRequest(epoch, owner) && (stateVersion === null || stateVersion === loadVersion.current)) setErr(msg(e)); }
-    finally { if (currentRequest(epoch, owner) && (stateVersion === null || stateVersion === loadVersion.current) && !answerInFlight.current) setBusy(false); }
+    finally {
+      if (joinInFlight.current === attempt) joinInFlight.current = null;
+      if (currentRequest(epoch, owner) && (stateVersion === null || stateVersion === loadVersion.current) && !answerInFlight.current) setBusy(false);
+    }
   }
 
   async function answer(choice: number) {
@@ -297,7 +324,7 @@ export default function JoinPage() {
           <input value={alias} onChange={(e) => setAlias(e.target.value)}
             aria-label="Your name" placeholder="Your name" maxLength={20}
             className="w-full rounded-xl bg-panel border border-rule px-4 py-3 outline-none focus:border-plum" />
-          <button disabled={busy || userLoading || code.length < 6 || !alias.trim()}
+          <button disabled={busy || userLoading || !normalizeGameCode(code) || !alias.trim()}
             className="w-full rounded-xl bg-plum hover:bg-plumdeep text-white px-4 py-4 font-semibold disabled:opacity-40">
             Join
           </button>

@@ -9,8 +9,16 @@ const button = (tree, label) => elements(tree).find((node) => node.type === 'but
 const firstAnswer = (tree) => elements(tree).find((node) => node.type === 'AnswerTile' && node.props.index === 0);
 const store = (storage) => storage.setItem('legends_arena_live', JSON.stringify({ code: 'LAB001', room: 'synthetic-room-1', player: 'synthetic-player-1', alias: 'Test Finch', ts: Date.now() }));
 async function connect(page) {
-  const rejoin = elements(await page.render()).find((node) => node.type === 'button' && /Rejoin game/.test(textContent(node)));
-  assert.ok(rejoin); await rejoin.props.onClick(); return { rejoin, tree: await page.render() };
+  const initial = await page.render();
+  const rejoin = elements(initial).find((node) => node.type === 'button' && /Rejoin game/.test(textContent(node)));
+  assert.ok(rejoin);
+  // Capture a valid fresh-join handler before rejoining. A different room is
+  // created via join_game, rather than an invalid mismatched rejoin response.
+  elements(initial).find((node) => node.type === 'input' && node.props['aria-label'] === 'Game code').props.onChange({ target: { value: 'LAB001' } });
+  elements(initial).find((node) => node.type === 'input' && node.props['aria-label'] === 'Your name').props.onChange({ target: { value: 'Test Finch' } });
+  const form = elements(await page.render()).find((node) => node.type === 'form');
+  assert.ok(form);
+  await rejoin.props.onClick(); return { rejoin, form, tree: await page.render() };
 }
 
 // Fixture-only response switching; there is no server ownership or receipt API.
@@ -45,11 +53,11 @@ test('ACTUAL RECOVERY: refresh remains available while an answer hangs, and late
 test('ACTUAL CALLBACK OWNERSHIP: retained answer and refresh callbacks cannot adopt a replacement connection', async () => {
   for (const target of ['different-room', 'same-room-new-generation']) {
     const storage = memoryStorage(); store(storage); const sb = liveClientDouble({ status: 'active' }); const rpc = sb.rpc;
-    let joins = 0; const mutations = []; const reads = [];
+    const mutations = []; const reads = [];
     sb.rpc = async (name, args) => {
-      if (name === 'live_rejoin') {
-        const response = await rpc(name, args); joins++;
-        if (joins > 1 && target === 'different-room') Object.assign(response.data[0], { session_id: 'replacement-room', player_id: 'replacement-player' });
+      if (name === 'live_rejoin' || name === 'join_game') {
+        const response = await rpc(name, args);
+        if (name === 'join_game' && target === 'different-room') Object.assign(response.data[0], { session_id: 'replacement-room', player_id: 'replacement-player' });
         return response;
       }
       if (name === 'get_live_question') {
@@ -61,9 +69,11 @@ test('ACTUAL CALLBACK OWNERSHIP: retained answer and refresh callbacks cannot ad
     };
     const page = pageHarness('app/join/page.tsx', sb, storage, { user: { id: 'same-student' }, loading: false });
     try {
-      const { tree, rejoin } = await connect(page);
+      const { tree, rejoin, form } = await connect(page);
       const oldAnswer = firstAnswer(tree); const oldRefresh = button(tree, 'Refresh game state');
-      await rejoin.props.onClick(); const replacement = await page.render();
+      if (target === 'different-room') await form.props.onSubmit({ preventDefault() {} });
+      else await rejoin.props.onClick();
+      const replacement = await page.render();
       assert.match(textContent(replacement), /Question 1\/2/);
       const before = { mutations: mutations.length, reads: reads.length, text: textContent(replacement) };
       await oldAnswer.props.onClick(); await oldRefresh.props.onClick(); await settle();
@@ -96,11 +106,11 @@ test('ACTUAL CALLBACK OWNERSHIP: retained buttons do not issue requests after ac
 test('ACTUAL CALLBACK OWNERSHIP: a held refresh settles only for its originating connection', async () => {
   for (const outcome of ['success', 'error']) {
     const storage = memoryStorage(); store(storage); const sb = liveClientDouble({ status: 'active' }); const rpc = sb.rpc;
-    const held = deferred(); let joins = 0; let holdRead = false;
+    const held = deferred(); let holdRead = false;
     sb.rpc = async (name, args) => {
-      if (name === 'live_rejoin') {
+      if (name === 'join_game') {
         const response = await rpc(name, args);
-        if (++joins > 1) Object.assign(response.data[0], { session_id: 'room-B', player_id: 'player-B' });
+        Object.assign(response.data[0], { session_id: 'room-B', player_id: 'player-B' });
         return response;
       }
       if (name === 'get_live_question' && args.p_session_id === 'synthetic-room-1' && holdRead) return held.promise;
@@ -110,9 +120,9 @@ test('ACTUAL CALLBACK OWNERSHIP: a held refresh settles only for its originating
     };
     const page = pageHarness('app/join/page.tsx', sb, storage);
     try {
-      const { tree, rejoin } = await connect(page); holdRead = true;
+      const { tree, form } = await connect(page); holdRead = true;
       const request = button(tree, 'Refresh game state').props.onClick(); await settle();
-      await rejoin.props.onClick(); const text = textContent(await page.render()); assert.match(text, /Current room-B/);
+      await form.props.onSubmit({ preventDefault() {} }); const text = textContent(await page.render()); assert.match(text, /Current room-B/);
       if (outcome === 'error') held.reject(new Error('old refresh failed'));
       else { const response = await rpc('get_live_question', { p_session_id: 'synthetic-room-1' }); response.data[0].status = 'complete'; held.resolve(response); }
       await request; await settle();

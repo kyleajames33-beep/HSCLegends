@@ -1,0 +1,55 @@
+# Classroom: read-only deployed metadata and staging compatibility
+
+Observed 2026-11-03 through the connected Supabase project's read-only catalog/metadata tools. Scope: schema columns, constraints, indexes, policies, grants, function signatures/attributes and migration history only. No student/question rows, credentials, function bodies, SQL writes, migration execution or connected game actions were accessed. Results describe a point-in-time catalog, not a proof of behavior; recheck before implementing against any environment.
+
+## Existing structure relevant to receipts
+
+- `public.game_sessions`: UUID `id` primary key, unique text `code`, nullable UUID `host_id` referencing `auth.users`, subject/year, **text[] `question_ids`**, `status`, `current_index`, `question_started_at`, `per_question_seconds`, expiration and double-points index. The status check allows only `lobby`, `active`, `complete`; there is no stored reading/reveal/pause phase or question instance ID. No FK from the `question_ids` array to versioned content is established by the catalog.
+- `public.game_players`: UUID `id` primary key, `session_id` FK, nullable `user_id` FK to `auth.users`, alias, score and joined time. No participant credential or guest-ownership field exists in this table. A null user ID is not a server-verifiable owner.
+- `public.game_answers`: UUID `id`, `session_id`, `player_id`, `question_index`, `choice`, `is_correct`, `points` and `answered_at`; unique `(player_id, question_index)`. The independent session and player foreign keys do not by themselves assert the referenced player belongs to the row's session. The row stores no immutable question ID/revision, correct index, explanation or content revision. Thus reconstructing a historical correct index from a mutable shared question row would need an explicit integrity policy and cannot be assumed safe.
+- `public.questions`: text ID, subject/year/module, stem, JSONB options, correct index and explanation, among other columns. There is no observed syllabus-tier column. A legacy `verified` field exists; it does not itself demonstrate scientific review.
+
+These observations do not establish how the current code uses or mutates rows. In particular, the unique answer key does not alone establish transactional award idempotency or authorization.
+
+## Access and client compatibility
+
+The following metadata pertains to `anon` and `authenticated` roles on this date; effective behavior also depends on all other permissions, RLS, JWT and role context.
+
+- `game_sessions`, `game_players`, and `game_answers` have RLS enabled. Each has one observed SELECT policy for both roles with `USING (true)`, but both roles currently have **no table SELECT or INSERT privilege**. A blanket SELECT grant would make those permissive policies dangerous; do not grant it to restore the existing client.
+- The `supabase_realtime` publication includes `game_sessions` and `game_players`. Publication membership by itself does not establish Realtime access under the current role permissions.
+- `questions` has RLS enabled, a SELECT policy to `anon` and `authenticated` with `USING (true)`, and both roles have SELECT privileges on `id`, `stem`, `options`, `correct_index`, and `explanation`. The shared question data is therefore not a suitable secret answer-key store for competitive play under the observed policy and grants. This is catalog analysis; no row was queried.
+- Observed classroom RPCs below are all `SECURITY DEFINER`, owned by `postgres`, with `search_path=public`. Their implementation bodies and ownership checks were not inspected in this work. Function EXECUTE is not equivalent to correct object-level authorization.
+
+| Function | Identity arguments | Return | `anon` execute | `authenticated` execute |
+| --- | --- | --- | --- | --- |
+| `create_game` | `p_subject text, p_year smallint, p_count integer, p_module text` | code and session ID | no | yes |
+| `join_game` | `p_code text, p_alias text` | session ID, player ID, status | no | yes |
+| `get_live_question` | `p_session_id uuid` | index, count, status, stem, options, start time, duration, double flag | no | yes |
+| `submit_answer` | `p_player_id uuid, p_index smallint, p_choice smallint` | correctness, correct index, points | no | no |
+| `live_rejoin` | `p_code text, p_alias text` | session ID, player ID, status, score | no | yes |
+| `start_game`, `next_question` | `p_session_id uuid` | void | no | yes |
+| `claim_game_xp` | `p_player_id uuid` | awarded, total XP | no | yes |
+| `live_answer_count` | `p_session uuid, p_index smallint` | answered, total, correct | no | yes |
+
+`create_game` has default `p_count=10` and `p_module=NULL`; its four-argument signature is compatible with the existing wrapper omitting `p_module`. By contrast, the current client directly SELECTs `game_players`, offers unauthenticated guest entry, and invokes `submit_answer`; the observed grants do not support those operations for their assumed roles. `get_live_question` and `live_rejoin` expose no accepted-answer receipt in their declared return shapes. The existing API therefore cannot establish cross-device answered state from catalog signatures alone. Real failure behavior must be verified in a disposable staging environment.
+
+The local uncached-rejoin regression reproduces this gap: its mock records a receipt internally, but neither mocked RPC sends it to `app/join/page.tsx`. With no device cache the page cannot distinguish an unanswered player from one whose answer earned zero points, nor reconstruct the accepted choice, correctness or points. Aggregate answer counts and the player's total score do not resolve that ambiguity. Returning a fabricated result or reopening answer submission would not recover the server's receipt. The test remains failing until an actor-bound server snapshot provides the participant's actual current-question receipt and the real app is safely integrated with that contract; the separate v2 candidate demonstrates this only with synthetic data and mock authentication. The same limitation applies if browser storage is unavailable or the original response was lost before caching.
+
+Migration history includes `20260530064909 legends_live_game_tables`, `20260530113737 legends_live_game_rpcs`, `20260705035339 arena_robustness`, `20260705040355 arena_robustness_fix_live_rejoin`, and `20260922210008 sec_lockdown_unused_game_estate`. Migration names/history are not proof of current function bodies. The observed latest migration in the returned history is `20261014095642 restrict_review_rpc_access`; it is not evidence of a classroom-specific change.
+
+## Staging design proposal — no SQL approved or executed
+
+The existing shared database serves other applications. A safe migration cannot simply regrant `submit_answer`, the three tables, or `questions.correct_index`. Those grants would not create participant ownership, immutable answer receipts or content secrecy, and changing the shared question policy could break other products.
+
+A concrete implementation sequence for an isolated disposable Postgres/Supabase staging project:
+
+1. **Freeze a schema-only baseline.** Review exact bodies, privileges, policy dependencies and client consumers in an authorized environment. Create synthetic fixtures; never copy real student records or credentials.
+2. **Choose guest identity.** Evaluate Supabase anonymous Auth versus a separate expiring high-entropy participant credential. Define issuance, room binding, replay protection, reconnect, cross-device transfer, revocation, abuse limits and any sign-up configuration. Do not treat room code, alias, a UUID, or `user_metadata` as proof. Decide how null legacy player ownership is handled without guessing.
+3. **Introduce a separate versioned contract**, leaving existing protected functions and grants untouched until a reviewed cutover. Record room, host, participant ownership, stable question-instance IDs, frozen option order/correct answer/content revision, server-owned deadline/state, and an append-only accepted receipt. Unique participant + question instance and a transactionally idempotent score/award must protect retries. Bind the player's session and receipt session with a consistent composite reference or an equivalent server-enforced invariant. Lock state and serialize submission against host advance. Define terminal/paused timing, receipt retention, tie/scoring rules and report population first.
+4. **Separate question projection from secret keys.** Return stems/options through authorized room snapshots; retain keys/explanations in an inaccessible versioned store until the participant has answered or the room has entered an explicitly authorized reveal phase. Assess any change to the shared `questions` grants/policy against all existing hscscience consumers. Avoid relying on the legacy answer-key table being secret.
+5. **Replace broad reads with narrowly authorized projections.** Host-only roster and aggregate results; participant-only own receipt. Use least-privilege grants and owner/participant predicates, explicit error semantics and pinned search paths for any reviewed privileged functions. Define a private or carefully scoped Realtime channel rather than opening existing permissive policies.
+6. **Client and rollout.** Integrate a typed, versioned snapshot and submit adapter only after staging contract exists. Reject stale callbacks and mismatched identity; recover only real server receipts. Feature-flag the new flow separately, test migration rollback, and preserve the old lockdown until the new design passes security review and staging acceptance. No production change follows from this document.
+
+Suggested staging tests must prove: anonymous/no identity and foreign identity cannot read/submit; keys are absent before reveal; player A cannot receive B's receipt; host cannot operate another host's room; changed/retried/delayed submissions return the first committed result and add points once; concurrent submissions and advance respect deadlines/locking; refresh, missed events and fresh-device recovery retain the receipt; errors do not invent a result; untrusted sessions cannot join another player; role grants and RLS deny direct table/key access. Run real two-connection Postgres tests and browser/device tests; the SQLite prototype is useful only for exploring behavior.
+
+The metadata-backed plan above is intentionally **not a runnable migration**. A separate [staging-only classroom candidate](../prototypes/classroom-v2/README.md) now exercises a bounded host/student lifecycle and correctness-only scoring against synthetic fixtures. It remains disabled in the real app and is not approved for a shared database. Its standalone `auth.uid()` test double is forgeable; verified guest identity/recovery, host provisioning, shared-question dependency analysis, actual deployed function-body review, isolated Supabase JWT/Realtime testing and an approved rollout remain prerequisites. Applying speculative SQL or changing production permissions would risk breaking a shared service and exposing student/game data.

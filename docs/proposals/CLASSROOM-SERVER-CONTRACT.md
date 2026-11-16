@@ -2,6 +2,8 @@
 
 Date: 2026-10-04. This is an API proposal, not an implemented migration or a claim about the deployed database. Do not execute it. No SQL, RPC, grant, authorization or schema was changed in this programme branch.
 
+> **2026-11-03 metadata update:** A separate read-only production inspection reported migration `20260922210008 sec_lockdown_unused_game_estate` among the latest migrations. Its reported execute-access flags were `authenticated=true, anon=false` for `get_live_question` and `live_rejoin`, and `authenticated=false, anon=false` for `submit_answer`. This limited observation does not establish function bodies, ownership, receipt semantics, all overloads or end-to-end behavior. Restoring classroom play requires an authorized server design and implementation for participant/guest ownership and receipt recovery; broadening grants alone is not a safe fix. No production write was made. See the [isolated receipt prototype](../../prototypes/classroom-receipts/README.md) for its separate synthetic-test scope.
+
 ## Why client work stops here
 
 The repository omits the complete foundational definitions for `game_sessions`, `game_players`, `game_answers`, `create_game`, `start_game`, `next_question`, `get_live_question`, `submit_answer` and `claim_game_xp`. TypeScript return types do not establish runtime semantics. Retained migrations are incomplete/additive and are not a verified database snapshot.

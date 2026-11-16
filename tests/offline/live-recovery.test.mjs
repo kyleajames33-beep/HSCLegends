@@ -338,7 +338,12 @@ test('ACTUAL HOST: create, restore and mutation success/error/finally cannot tou
       return rpc(name, args);
     };
     const pending = operation === 'create' ? controller.create('biology', 12) : controller[operation]();
-    if (change === 'new-room') await controller.create('biology', 12);
+    if (change === 'new-room') {
+      // A pending create suppresses duplicate requests. Explicitly abandon the
+      // old context before testing a replacement room.
+      if (operation === 'create') controller.forget();
+      await controller.create('biology', 12);
+    }
     else if (change === 'switch') controller.setAccount('different-owner', false);
     else controller.dispose();
     const before = JSON.stringify(controller.getSnapshot()); const saved = storage.getItem(cache.HOST_RECOVERY_KEY);
@@ -426,7 +431,13 @@ test('ACTUAL STUDENT: late join/rejoin success/error/finally cannot change a new
     sb.rpc = (name, args) => name === operation && ++joins === 1 ? delayed.promise : rpc(name, args);
     const auth = { user: { id: 'student-A' }, loading: false }; const harness = pageHarness('app/join/page.tsx', sb, storage, auth);
     try {
-      const start = await harness.render(); const button = elements(start).find((e) => e.type === 'button' && /Rejoin game/.test(textContent(e)));
+      let start = await harness.render();
+      if (operation === 'join_game') {
+        elements(start).find(e => e.type === 'input' && e.props['aria-label'] === 'Game code').props.onChange({ target: { value: 'LAB001' } });
+        elements(start).find(e => e.type === 'input' && e.props['aria-label'] === 'Your name').props.onChange({ target: { value: 'Test Finch' } });
+        start = await harness.render();
+      }
+      const button = elements(start).find((e) => e.type === 'button' && /Rejoin game/.test(textContent(e)));
       const pending = operation === 'live_rejoin' ? button.props.onClick() : elements(start).find((e) => e.type === 'form').props.onSubmit({ preventDefault() {} });
       if (change === 'switch') { auth.user = { id: 'student-B' }; await harness.render(); }
       else if (change === 'rejoin') await button.props.onClick();
@@ -473,7 +484,12 @@ test('ACTUAL STUDENT: connection cleanup cannot unlock an answer started by a ne
     };
     const harness = pageHarness('app/join/page.tsx', sb, storage);
     try {
-      const start = await harness.render();
+      let start = await harness.render();
+      if (operation === 'join') {
+        elements(start).find(e => e.type === 'input' && e.props['aria-label'] === 'Game code').props.onChange({ target: { value: 'LAB001' } });
+        elements(start).find(e => e.type === 'input' && e.props['aria-label'] === 'Your name').props.onChange({ target: { value: 'Test Finch' } });
+        start = await harness.render();
+      }
       const connection = operation === 'join' ? elements(start).find((e) => e.type === 'form').props.onSubmit({ preventDefault() {} }) : elements(start).find((e) => e.type === 'button' && /Rejoin game/.test(textContent(e))).props.onClick();
       await settle(); sb.emit('game_sessions'); await settle(); let tree = await harness.render();
       assert.match(textContent(tree), /Question 2/);

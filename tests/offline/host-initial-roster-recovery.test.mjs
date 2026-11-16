@@ -25,6 +25,32 @@ function finishInitial(first, outcome) {
   else first.resolve({ data: [], error: null });
 }
 
+test('ACTUAL HOST: repeated setup actions cannot create duplicate rooms while the create request is pending', async () => {
+  const sb = liveClientDouble(); const rpc = sb.rpc; const first = defer(); let creates = 0;
+  sb.rpc = (name, args) => name === 'create_game' ? (++creates === 1 ? first.promise : rpc(name, args)) : rpc(name, args);
+  const controller = new LiveHostController(sb, memoryStorage()); controller.setAccount('synthetic-host', false);
+  const creating = controller.create('biology', 12); await settle();
+  await controller.create('chemistry', 11);
+  assert.equal(creates, 1);
+  first.resolve({ data: [{ session_id: 'first-room', code: 'ABC123' }], error: null });
+  await creating;
+  assert.equal(controller.getSnapshot().sessionId, 'first-room');
+  controller.dispose();
+});
+
+test('ACTUAL HOST: a new account can create while an old account request remains unresolved', async () => {
+  const sb = liveClientDouble(); const rpc = sb.rpc; const first = defer(); let creates = 0;
+  sb.rpc = (name, args) => name === 'create_game' ? (++creates === 1 ? first.promise : rpc(name, args)) : rpc(name, args);
+  const controller = new LiveHostController(sb, memoryStorage()); controller.setAccount('old-host', false);
+  const creating = controller.create('biology', 12); await settle();
+  controller.setAccount('new-host', false); await controller.create('chemistry', 11);
+  assert.equal(creates, 2);
+  const currentRoom = controller.getSnapshot().sessionId;
+  first.resolve({ data: [{ session_id: 'old-room', code: 'ABC123' }], error: null }); await creating;
+  assert.equal(controller.getSnapshot().sessionId, currentRoom);
+  controller.dispose();
+});
+
 test('ACTUAL HOST PAGE: a join during the initial roster read reaches the lobby and enables Start', async () => {
   for (const outcome of ['success', 'error']) {
     const { sb, first, reads } = delayedInitialRoster();
