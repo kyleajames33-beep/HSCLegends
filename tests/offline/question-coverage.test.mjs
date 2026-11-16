@@ -8,6 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { assessQuestion } from '../../scripts/lib/question-integrity.mjs';
 import { identifySourceCurriculum } from '../../scripts/lib/source-curriculum.mjs';
+import { checkSeedInput } from '../../scripts/lib/seed-preflight.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const fixture = JSON.parse(fs.readFileSync(new URL('../fixtures/question-sources/pinned-rows.json', import.meta.url)));
@@ -29,6 +30,16 @@ function run(files) {
     return { ...result, questions: JSON.parse(fs.readFileSync(out)), audit: JSON.parse(fs.readFileSync(`${out}.audit.json`)) };
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 }
+
+test('COVERAGE: the normalizer binds its output to the seed audit and retains tier blockers', () => {
+  const clean = run({ [bankPath]: bank([valid]) });
+  assert.equal(clean.status, 0, clean.stderr);
+  assert.equal(checkSeedInput(JSON.stringify(clean.questions), clean.audit).rows.length, 1);
+  const tagged = run({ [bankPath]: bank([{ ...valid, syllabusTier: 'extension' }]) });
+  assert.equal(tagged.status, 0, tagged.stderr);
+  assert.equal(tagged.audit.questions[0].metadata.syllabusTier, 'extension');
+  assert.throws(() => checkSeedInput(JSON.stringify(tagged.questions), tagged.audit), /syllabusTier/);
+});
 
 test('COVERAGE: 18 pinned raw records preserve their source-declared keys', () => {
   assert.equal(fixture.rows.length, 18);

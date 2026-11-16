@@ -2,6 +2,12 @@
 const SCAFFOLD_STEM = /^\s*(?:Question\s+\d+\s+for\s+Lesson\s+\d+\b|Sample\s+question\s+\d+\b|Quiz\s+question\s+\d+\b)/i;
 const BARE_OPTION = /^\s*(?:Option\s+[A-D]|[A-D])\s*$/;
 const PLACEHOLDER_EXPLANATION = /^\s*(?:explanation(?:\s+for\s+(?:quiz\s+)?question\s+\d+)?|todo|tbd|n\/?a)\s*[.!]?\s*$/i;
+// MathText renders text and KaTeX, not markdown images or raw HTML/SVG.
+// A reference to an above/below figure needs editorial review even if the
+// source forgot to provide a media field. Never fetch embedded resources.
+const INLINE_MEDIA = /!\[[^\]]*\]\s*\(|<\s*(?:img|svg|picture|canvas|video|table|iframe)\b|data:image\//i;
+const EXTERNAL_FIGURE_REFERENCE = /\b(?:diagram|figure|graph|image|photograph|table|chart)\s+(?:shown\s+)?(?:below|above)\b|\b(?:diagram|figure|graph|image|photograph|table|chart)\s+shown\b/i;
+const renderedOptionKey = (value) => value.normalize('NFC').trim().replace(/\s+/gu, ' ');
 const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 // Retain JSON metadata as data only. No URLs or assets are fetched or rendered.
@@ -76,11 +82,14 @@ export function assessQuestion(raw) {
   if (!Array.isArray(options) || options.length < 2) reasons.push('invalid-options');
   else {
     if (Array.from(options).some((option) => typeof option !== 'string' || !option.trim())) reasons.push('invalid-option-text');
-    if (options.every((option) => typeof option === 'string') && new Set(options.map((option) => option.trim())).size !== options.length) reasons.push('duplicate-options');
+    if (options.every((option) => typeof option === 'string') && new Set(options.map(renderedOptionKey)).size !== options.length) reasons.push('duplicate-options');
     if (options.every((option) => typeof option === 'string' && BARE_OPTION.test(option))) reasons.push('label-only-options');
   }
   if (!Number.isInteger(correctIndex) || !Array.isArray(options) || correctIndex < 0 || correctIndex >= options.length) reasons.push('invalid-answer-index');
   if (typeof stem === 'string' && SCAFFOLD_STEM.test(stem)) reasons.push('scaffold-stem');
+  const questionText = [stem, ...(Array.isArray(options) ? options : [])].filter((value) => typeof value === 'string');
+  if (questionText.some((value) => INLINE_MEDIA.test(value))) reasons.push('inline-media-needs-supported-renderer');
+  if (questionText.some((value) => EXTERNAL_FIGURE_REFERENCE.test(value))) reasons.push('figure-reference-needs-review');
   if (isRecord(raw) && raw.excluded === true) reasons.push('source-excluded');
 
   const metadata = {};
@@ -95,6 +104,7 @@ export function assessQuestion(raw) {
   // Even an empty object is ambiguous, so only absent/null media is eligible here.
   if (metadata.media !== undefined && metadata.media !== null) reasons.push('media-needs-supported-renderer');
   const explanation = typeof raw?.explanation === 'string' ? raw.explanation : '';
+  if (INLINE_MEDIA.test(explanation) || EXTERNAL_FIGURE_REFERENCE.test(explanation)) reasons.push('explanation-visual-needs-supported-renderer');
   const explanationStatus = !explanation.trim() ? 'missing'
     : PLACEHOLDER_EXPLANATION.test(explanation) ? 'placeholder' : 'present';
   return {

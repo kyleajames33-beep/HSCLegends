@@ -3,13 +3,20 @@
 // only single quotes need doubling.
 import fs from 'node:fs';
 import path from 'node:path';
+import { checkSeedInput, planSeedBatches } from './lib/seed-preflight.mjs';
 
 const SRC = process.argv[2] || 'out/questions.json';
 const OUTDIR = process.argv[3] || 'out/seed';
 const BATCH = Number(process.argv[4] || 800);
 
-const rows = JSON.parse(fs.readFileSync(SRC, 'utf8'));
-fs.rmSync(OUTDIR, { recursive: true, force: true });
+const auditPath = `${SRC}.audit.json`;
+const { rows, warnings } = checkSeedInput(
+  fs.readFileSync(SRC, 'utf8'),
+  fs.existsSync(auditPath) ? JSON.parse(fs.readFileSync(auditPath, 'utf8')) : null,
+);
+warnings.forEach((warning) => console.warn(`SEED_PREFLIGHT: ${warning}`));
+const existing = fs.existsSync(OUTDIR) ? fs.readdirSync(OUTDIR) : [];
+planSeedBatches(rows.length, BATCH, existing);
 fs.mkdirSync(OUTDIR, { recursive: true });
 
 const q = (s) => `'${String(s).replace(/'/g, "''")}'`;

@@ -1,5 +1,7 @@
 # Question integrity: offline ingestion audit
 
+> **Local renderability update (2026-11-03):** The normalizer now quarantines questions or explanations that embed markdown images, HTML visual markup (including image, SVG and table tags) or image data URIs, and questions that refer to an above/below or shown figure, because the current text/KaTeX renderer cannot guarantee the missing visual is displayed. These conservative rules can flag legitimate self-contained questions: review the preserved question and source before changing them. Duplicate answer detection also treats collapsed whitespace and canonically equivalent Unicode as identical, matching rendered text while retaining case and compatibility distinctions such as `Co`/`CO` and `H₂O`/`H2O`. This is synthetic-test evidence, not an audit of current source or database rows, a scientific review, or complete detection of missing visuals.
+
 Date: 2026-10-04. Local candidate only. No database access, publication or deployment.
 
 ## Result
@@ -45,7 +47,7 @@ node --import ./tests/support/deny-network.mjs scripts/normalise-banks.mjs /path
 npm run test:all
 ```
 
-Only use trusted source checkouts. `node:vm` is not a security sandbox. The test preload is an accidental-network-use guard, not an OS firewall. No credentials or environment files are required. Do not run `seed-rest.mjs`: it still hardcodes a production write destination. Do not apply generated SQL or run legacy production scripts. Existing seed paths ignore audit fields and are outside this candidate's approved workflow.
+Only use trusted source checkouts. `node:vm` is not a security sandbox. The test preload is an accidental-network-use guard, not an OS firewall. No credentials or environment files are required for these checks. Since this audit, `seed-rest.mjs` has been changed to a dry run by default, with explicit target/apply checks and a guard for the known shared production host. Preflight also checks matching audit data where required; it does not establish scientific correctness, source rights or permission to publish. Do not apply generated SQL or seed this candidate before the content and staging gates are met.
 
 ## Verification
 

@@ -1,5 +1,7 @@
 # Question-source coverage and curriculum-identity contract
 
+> **Local seed preflight update (2026-11-03):** The normalizer now includes a SHA-256 fingerprint of its exact output in the audit sidecar. Both seed writers run a shared preflight before producing SQL or sending a request. Normalizer-marked rows require the matching fingerprinted audit; declared `syllabusTier` metadata, incomplete imports, and mismatched target identities are rejected. Existing SQL batch files are no longer deleted or overwritten. The writers still do not preserve syllabus-tier metadata, so tagged rows remain blocked. Historical sidecars lack the fingerprint and must be regenerated. Legacy unmarked inputs remain supported without an audit and trigger a warning: their source identity and missing metadata cannot be established. The fingerprint only pairs files; it is not a scientific review, a curriculum approval, or protection against a forged audit. No production data was read or changed; the REST writer still targets a shared production project, and these checks do not authorize a seed. The findings and pinned counts below are historical evidence.
+
 Original audit: 2026-10-04, against [PR #2](https://github.com/kyleajames33-beep/HSCLegends/pull/2) at `863b007d5d9ad7412292fc31fef23df8693f2b28`. This source-coverage change is now reconciled unchanged onto merged main `a75b2565455e9ed7857d077ec0d3e89407e252c0`; see [the reconciliation checks](./FOLLOW-ON-RECONCILIATION.md). The inventory below remains pinned historical evidence, not a fresh source census. No GitHub write, database read/write, schema/RPC/grant/auth change, deployment or connected gameplay test was performed by this follow-on.
 
 ## Scope and source evidence
@@ -43,7 +45,7 @@ A question must retain its source course, source year, unit path and source vers
 
 ## Remaining release blockers, not changed
 
-- `scripts/seed-rest.mjs` drops syllabus-tier audit metadata. The source adapter expressly separates extension material from core mastery. Importing the 430 tagged rows through that seed contract would not preserve this distinction. Do not seed this candidate; retain a reviewed tier contract first.
+- The current seed schema cannot preserve syllabus-tier metadata. The source adapter expressly separates extension material from core mastery, so preflight now rejects tagged rows instead of silently dropping that distinction. Do not seed this candidate; retain a reviewed tier contract first.
 - `lib/syllabus.ts` exposes only Modules 1–6 for Standard and Advanced Maths, while the emitted compatibility candidates include 246 rows in Modules 7–8 (Advanced: 88 + 3; Standard: 79 + 76). Their Topics tiles are not represented in that list. No UI or selector changes were made.
 - The complete foundational schema and live status/receipt/explanation RPC contracts are still absent. The uncached answer-receipt regression remains real and red. Scientific review requires explicit versioned evidence, not explanation length or a generic `verified` flag.
 - Legacy source repairs and default difficulty/Bloom conversions remain existing compatibility behavior. Raw metadata is retained, but these conversions are not a reviewed syllabus mapping. No database evidence was collected.

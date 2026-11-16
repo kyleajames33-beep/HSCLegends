@@ -11,6 +11,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import { createHash } from 'node:crypto';
 import { assessQuestion, diagnosticValue } from './lib/question-integrity.mjs';
 import { identifySourceCurriculum } from './lib/source-curriculum.mjs';
 
@@ -323,10 +324,11 @@ const summary = { emitted: out.length, quarantined: invalid.length, duplicateIds
   explanationPresent: out.filter((q) => q.explanationStatus === 'present').length,
   explanationMissing: out.filter((q) => q.explanationStatus === 'missing').length,
   explanationPlaceholder: out.filter((q) => q.explanationStatus === 'placeholder').length };
-const auditJSON = JSON.stringify({ schemaVersion: 2,
+const questionsJSON = JSON.stringify(out);
+const questionsSha256 = createHash('sha256').update(questionsJSON).digest('hex');
+const auditJSON = JSON.stringify({ schemaVersion: 2, questionsSha256,
   scope: 'Only the supplied checkout files; not a live database or scientific review',
   summary, invalid, duplicateIds: dupes, fileErrors, skippedFiles, sourceSelections, unsupportedQuestions, skippedQuestionTypes, questions: auditQuestions }, null, 2);
-const questionsJSON = JSON.stringify(out);
 // Serialize both before writing either. Invalid source data cannot leave an
 // apparently successful new canonical file with no diagnostic artifact.
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
