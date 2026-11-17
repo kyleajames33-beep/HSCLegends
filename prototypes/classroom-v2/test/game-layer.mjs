@@ -8,6 +8,7 @@ create function auth.uid() returns uuid language sql stable as $$ select nullif(
 await db.exec(fs.readFileSync(`${dir}/staging-candidate.sql`,'utf8'));
 await db.exec(fs.readFileSync(`${dir}/staging-game-layer.sql`,'utf8'));
 await db.exec(fs.readFileSync(`${dir}/staging-boss-battle.sql`,'utf8'));
+await db.exec(fs.readFileSync(`${dir}/staging-host-tools.sql`,'utf8'));
 const H='00000000-0000-4000-8000-0000000000a1', S1='00000000-0000-4000-8000-0000000000b1', S2='00000000-0000-4000-8000-0000000000b2';
 const as = async (uid, sql, params=[]) => { await db.exec(`select set_config('test.uid','${uid}',false)`); return (await db.query(sql, params)).rows; };
 const ok = (c,m)=>{ if(!c){console.error('FAIL',m);process.exitCode=1;} else console.log('ok',m); };
@@ -77,4 +78,18 @@ ok(bv.mode==='boss' && bv.boss.damage===hit.points && bv.boss.round_damage===hit
 ok(bv.question && !('correct_index' in bv.question), 'boss view still hides the key');
 const classic = (await as(H, `select public.classroom_v2_game_host($1) v`, [room.room_id]))[0].v;
 ok(classic.mode==='classic' && classic.boss===null, 'classic rooms unaffected');
+
+// Host tools: early close + report (uses boss room b, question bq; S1 answered, S2 has not)
+let nope=null; try { await as(S1, `select public.classroom_v2_game_close($1,$2)`, [b.room_id, bq.question.id]); } catch(e){ nope=e.message }
+ok(/FORBIDDEN/.test(nope||''), 'student cannot close a question');
+ok((await as(H, `select public.classroom_v2_game_close($1,$2) v`, [b.room_id, bq.question.id]))[0].v===true, 'host closes question early');
+let late2=null; try { await as(S2, `select * from public.classroom_v2_answer($1,$2,$3,0::smallint)`, [b.room_id,bp2.player_id,bq.question.id]); } catch(e){ late2=e.message }
+ok(/OUTSIDE_WINDOW/.test(late2||''), 'answer after early close rejected');
+const cv = (await as(S2, `select public.classroom_v2_game_player($1,$2) v`, [b.room_id,bp2.player_id]))[0].v;
+ok(Date.parse(cv.closes_at) <= Date.now() + 1000, 'player view shows the early deadline');
+const rep = (await as(H, `select public.classroom_v2_game_report($1) v`, [b.room_id]))[0].v;
+ok(rep.questions.length===2 && rep.players.length===2 && rep.players[0].answers.length===1 && rep.players[1].answers.length===0, 'report shape');
+ok(rep.questions[0].opened===true && rep.questions[1].opened===false, 'report marks unplayed questions');
+let rnope=null; try { await as(S1, `select public.classroom_v2_game_report($1)`, [b.room_id]); } catch(e){ rnope=e.message }
+ok(/FORBIDDEN/.test(rnope||''), 'student cannot read the report');
 

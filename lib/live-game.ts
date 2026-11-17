@@ -41,20 +41,56 @@ function codeOf(error: unknown): LiveErrorCode {
   return KNOWN.find(k => message.includes(k)) ?? 'UNKNOWN';
 }
 
-// Per-tab session storage: each browser tab is its own player, so a teacher
-// can test with extra tabs instead of incognito windows.
-function tabStorage(): Storage | undefined {
-  try { const s = window.sessionStorage; s.setItem('__hsc_live', '1'); s.removeItem('__hsc_live'); return s; } catch { return undefined; }
+export type LiveRole = 'host' | 'player';
+type AuthStorage = { getItem(k: string): string | null; setItem(k: string, v: string): void; removeItem(k: string): void };
+
+/**
+ * Per-tab session storage: each browser tab is its own player, so a teacher can
+ * test with extra tabs. Player sessions are also mirrored to localStorage so a
+ * student who closes the tab by accident can rejoin (see readPlayerRecovery).
+ */
+function tabStorage(mirror: boolean): AuthStorage | undefined {
+  let tab: Storage;
+  try { tab = window.sessionStorage; tab.setItem('__hsc_live', '1'); tab.removeItem('__hsc_live'); } catch { return undefined; }
+  const local = (): Storage | null => { try { return window.localStorage; } catch { return null; } };
+  return {
+    getItem: k => tab.getItem(k),
+    setItem: (k, v) => { tab.setItem(k, v); if (mirror) try { local()?.setItem(`${MIRROR}${k}`, v); } catch { /* optional */ } },
+    removeItem: k => { tab.removeItem(k); if (mirror) try { local()?.removeItem(`${MIRROR}${k}`); } catch { /* optional */ } },
+  };
+}
+const MIRROR = 'hsc-live-recover:';
+const storageKey = (config: StagingConfig, role: LiveRole) => `hsc-live-${config.projectRef}-${role}`;
+
+const cached = new Map<string, SupabaseClient>();
+export function liveClient(config: StagingConfig, role: LiveRole): SupabaseClient {
+  const key = storageKey(config, role);
+  const hit = cached.get(key);
+  if (hit) return hit;
+  const client = createClient(config.url, config.publicKey, {
+    auth: { storageKey: key, storage: tabStorage(role === 'player'), persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+  });
+  cached.set(key, client);
+  return client;
 }
 
-let cached: { ref: string; client: SupabaseClient } | null = null;
-export function liveClient(config: StagingConfig): SupabaseClient {
-  if (cached?.ref === config.projectRef) return cached.client;
-  const client = createClient(config.url, config.publicKey, {
-    auth: { storageKey: `hsc-live-${config.projectRef}`, storage: tabStorage(), persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
-  });
-  cached = { ref: config.projectRef, client };
-  return client;
+/** Last player seat + its session tokens, if saved in this browser within 6 hours. */
+export type PlayerRecovery = { seat: { roomId: string; playerId: string }; alias: string; tokens: { access_token: string; refresh_token: string } };
+const LAST_SEAT = 'hsc-live-last-seat';
+export function savePlayerSeat(seat: { roomId: string; playerId: string }, alias: string): void {
+  try { window.localStorage.setItem(LAST_SEAT, JSON.stringify({ seat, alias, at: Date.now() })); } catch { /* optional */ }
+}
+export function clearPlayerRecovery(config: StagingConfig): void {
+  try { window.localStorage.removeItem(LAST_SEAT); window.localStorage.removeItem(`${MIRROR}${storageKey(config, 'player')}`); } catch { /* optional */ }
+}
+export function readPlayerRecovery(config: StagingConfig): PlayerRecovery | null {
+  try {
+    const last = JSON.parse(window.localStorage.getItem(LAST_SEAT) ?? 'null');
+    const session = JSON.parse(window.localStorage.getItem(`${MIRROR}${storageKey(config, 'player')}`) ?? 'null');
+    if (!last?.seat?.roomId || !last?.seat?.playerId || typeof last.alias !== 'string' || !(Date.now() - last.at < 6 * 3600_000)) return null;
+    if (typeof session?.access_token !== 'string' || typeof session?.refresh_token !== 'string') return null;
+    return { seat: { roomId: last.seat.roomId, playerId: last.seat.playerId }, alias: last.alias, tokens: { access_token: session.access_token, refresh_token: session.refresh_token } };
+  } catch { return null; }
 }
 
 export async function rpc<T>(client: SupabaseClient, name: string, args: Record<string, unknown>): Promise<T> {

@@ -1,6 +1,7 @@
 // Live host (projector) screens rendered against a MOCKED network: no real auth or database.
 // Run with the dev server up: HSC_PLAYWRIGHT_MODULE=<path to playwright/index.mjs> node tests/browser/live-host.smoke.mjs
 // Renders /live/host against a MOCKED network (no real auth or database) to check the teacher screens visually.
+import fs from 'node:fs';
 const { chromium } = await import(process.env.HSC_PLAYWRIGHT_MODULE ?? 'playwright');
 const D=process.env.HSC_SCREENSHOT_DIR ?? '/tmp';
 const BASE=process.env.HSC_BASE_URL ?? 'http://localhost:3000';
@@ -28,9 +29,10 @@ function view(){
 }
 const browser=await chromium.launch();
 const ctx=await browser.newContext({viewport:{width:1366,height:768}});
-await ctx.addInitScript(([k,s,room])=>{ sessionStorage.setItem(k,s); sessionStorage.setItem('hsc-live-host-room',JSON.stringify(room)); },[`hsc-live-${REF}`,JSON.stringify(session),ROOM]);
+await ctx.addInitScript(([k,s,room])=>{ sessionStorage.setItem(k,s); sessionStorage.setItem('hsc-live-host-room',JSON.stringify(room)); },[`hsc-live-${REF}-host`,JSON.stringify(session),ROOM]);
 await ctx.route('**/auth/v1/**',r=>r.fulfill({json:user}));
 await ctx.route('**/rest/v1/rpc/classroom_v2_*',r=>r.fulfill({json:true}));
+await ctx.route('**/rest/v1/rpc/classroom_v2_game_report',r=>r.fulfill({json:{questions:[{index:0,stem:'Which base pairs, with adenine?',options:['C','G','U','T'],correct_index:3,opened:true},{index:1,stem:'Unplayed',options:['a','b'],correct_index:0,opened:false}],players:[{alias:'=Ava',score:940,answers:[{index:0,choice:3,correct:true,points:940}]},{alias:'Noah',score:0,answers:[]}]}}));
 await ctx.route('**/rest/v1/rpc/classroom_v2_game_host',r=>r.fulfill({json:view()}));
 const page=await ctx.newPage();
 const errs=[]; page.on('pageerror',e=>errs.push(e.message));
@@ -42,5 +44,9 @@ await shot('3-question','question');
 await shot('4-reveal','reveal');
 await page.getByRole('button',{name:'Show leaderboard'}).click(); await page.waitForTimeout(900); await page.screenshot({path:`${D}/${PFX}-5-board.png`});
 await shot('6-podium','complete');
+const [dl]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Download results (CSV)'}).click()]);
+const csv=fs.readFileSync(await dl.path(),'utf8');
+const expected='Name,Score,Correct,"Q1 (answer D): Which base pairs, with adenine?"\r\n"\'=Ava",940,1/1,D correct\r\nNoah,0,0/1,no answer\r\n';
+if(csv!==expected){console.error('CSV mismatch:',JSON.stringify(csv));process.exitCode=1;}
 if(errs.length){console.error('page errors:',errs);process.exitCode=1;} else console.log('live host smoke: ok');
 await browser.close();

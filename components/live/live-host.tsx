@@ -36,6 +36,24 @@ function loadSet(fileName: string, text: string): { set: QuestionSet } | { error
 
 const ROOM_KEY = 'hsc-live-host-room';
 
+type Report = {
+  questions: { index: number; stem: string; options: string[]; correct_index: number; opened: boolean }[];
+  players: { alias: string; score: number; answers: { index: number; choice: number; correct: boolean; points: number }[] }[];
+};
+const LETTERS = 'ABCDEF';
+const cell = (v: string | number) => { const t = String(v); return /[",\n\r]/.test(t) || /^[=+\-@]/.test(t) ? `"${t.replace(/^([=+\-@])/, "'$1").replace(/"/g, '""')}"` : t; };
+/** One row per student: score, number correct, then their answer to each played question. */
+function reportCsv(r: Report): string {
+  const played = r.questions.filter(q => q.opened);
+  const head = ['Name', 'Score', 'Correct', ...played.map(q => `Q${q.index + 1} (answer ${LETTERS[q.correct_index]}): ${q.stem}`)];
+  const rows = r.players.map(p => {
+    const by = new Map(p.answers.map(a => [a.index, a]));
+    return [p.alias, p.score, `${p.answers.filter(a => a.correct).length}/${played.length}`,
+      ...played.map(q => { const a = by.get(q.index); return a ? `${LETTERS[a.choice]} ${a.correct ? 'correct' : 'wrong'}` : 'no answer'; })];
+  });
+  return [head, ...rows].map(row => row.map(cell).join(',')).join('\r\n') + '\r\n';
+}
+
 /** QR code for the join link, rendered locally as SVG (no network). */
 function JoinQr({ url }: { url: string }) {
   const [svg, setSvg] = useState('');
@@ -51,7 +69,7 @@ const DURATIONS = [10, 20, 30, 45] as const;
 
 /** Teacher / projector screen for a live classroom game (staging). */
 export default function LiveHost({ config }: { config: StagingConfig }) {
-  const client = useMemo(() => liveClient(config), [config]);
+  const client = useMemo(() => liveClient(config, 'host'), [config]);
   const session = useSession(client);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [seconds, setSeconds] = useState<number>(20);
@@ -107,6 +125,27 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
   useEffect(() => {
     if (poll.error === 'ROOM_UNAVAILABLE' || poll.error === 'FORBIDDEN') { writeTab(ROOM_KEY, null); setRoomId(null); }
   }, [poll.error]);
+
+  async function endQuestion(questionId: string) {
+    if (!roomId) return;
+    setBusy(true); setError('');
+    try { await rpc<boolean>(client, 'classroom_v2_game_close', { p_room: roomId, p_question: questionId }); }
+    catch { setError('Could not end the question. Try again.'); }
+    poll.refresh(); setBusy(false);
+  }
+
+  async function downloadReport() {
+    if (!roomId) return;
+    setError('');
+    try {
+      const report = await rpc<Report>(client, 'classroom_v2_game_report', { p_room: roomId });
+      const blob = new Blob([reportCsv(report)], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `hsc-live-results-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch { setError('Could not download the results. Try again.'); }
+  }
 
   const leave = useCallback(() => { writeTab(ROOM_KEY, null); setRoomId(null); setBoardFor(null); }, []);
 
@@ -271,7 +310,10 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
       {players.length > 3 && <ol className={s.board} start={4}>{players.slice(3).map((p, i) => (
         <li key={p.id} className={s.boardRow}><span>{i + 4}</span><span>{p.alias}</span><span /><span>{p.score.toLocaleString()}</span></li>
       ))}</ol>}
-      <button className={s.btn} onClick={leave}>New game</button>
+      <div className={s.row}>
+        <button className={`${s.btn} ${s.ghost}`} onClick={() => void downloadReport()}>Download results (CSV)</button>
+        <button className={s.btn} onClick={leave}>New game</button>
+      </div>
     </>, signOut);
   }
 
@@ -335,5 +377,6 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
     </div>
     {reveal && q.explanation && <p className={s.explain}>{q.explanation}</p>}
     {reveal && <button className={s.btn} onClick={() => setBoardFor(q.id)}>Show leaderboard</button>}
+    {!reveal && <button className={s.link} disabled={busy} onClick={() => void endQuestion(q.id)}>End question now</button>}
   </>, header);
 }

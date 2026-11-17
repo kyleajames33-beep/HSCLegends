@@ -18,6 +18,15 @@ Both routes are disabled unless the four `CLASSROOM_STAGING_*` variables are set
 
 Students on laptops can answer with number keys 1–6.
 
+## Teacher tools
+
+- **End question now**: closes the current question immediately (`classroom_v2_game_close`, host-only). Answers arriving after the close are rejected, and both screens move to the reveal.
+- **Download results (CSV)** on the final screen: one row per student with their score, number correct, and their answer to each question played (`classroom_v2_game_report`, host-only). Cells that would start a spreadsheet formula are escaped.
+
+## Rejoining
+
+A student who closes the tab by accident can reopen `/live` in the same browser within 6 hours and click **Rejoin as <name>**. They keep the same player and score. The session is mirrored to localStorage for this; "Leave game" and finished games clear it.
+
 ## Running a test game
 
 1. `npm run dev`, then open `/live/host` and sign in with an approved teacher account.
@@ -26,7 +35,7 @@ Students on laptops can answer with number keys 1–6.
 
 ## How it works
 
-- **Server.** `prototypes/classroom-v2/staging-candidate.sql` is the engine: rooms, frozen questions, answer windows, receipts, host-only transitions. `prototypes/classroom-v2/staging-game-layer.sql` adds:
+- **Server.** `prototypes/classroom-v2/staging-candidate.sql` is the engine: rooms, frozen questions, answer windows, receipts, host-only transitions. `staging-game-layer.sql`, `staging-boss-battle.sql` and `staging-host-tools.sql` (same folder) add:
   - short codes;
   - speed scoring: 1000 points for an instant correct answer, falling linearly to 500 at the deadline; wrong answers score 0;
   - late joins and unique names;
@@ -44,8 +53,7 @@ Students on laptops can answer with number keys 1–6.
 
 ## Known limits
 
-- The teacher cannot skip the timer. That would reveal answers while students could still submit, and the server's answer windows are immutable.
-- A student who closes their tab loses their seat. Rejoining creates a new player.
+- Rejoining only works in the same browser. On a different laptop, the student has to join as a new player.
 - Updates come from 1-second polling, not Supabase Realtime. That's fine for one class; revisit before large-scale use.
 - There are no rate limits or abuse controls on anonymous sign-in or joins yet.
 - Questions are text only (no images).

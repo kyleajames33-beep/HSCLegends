@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
-import { LiveError, SHAPES, liveClient, msRemaining, ordinal, readTab, rpc, useNow, usePoll, useSession, writeTab, type PlayerView } from '@/lib/live-game';
+import { LiveError, SHAPES, clearPlayerRecovery, readPlayerRecovery, savePlayerSeat, liveClient, msRemaining, ordinal, readTab, rpc, useNow, usePoll, useSession, writeTab, type PlayerView } from '@/lib/live-game';
 import { useOnChange, useSound } from '@/lib/live-sound';
 import { Icon } from './icon';
 import { BOSSES, BossBar, bossLeft } from './boss';
@@ -13,20 +13,23 @@ type Seat = { roomId: string; playerId: string };
 
 /** Student phone screen for a live classroom game (staging). */
 export default function LivePlay({ config }: { config: StagingConfig }) {
-  const client = useMemo(() => liveClient(config), [config]);
+  const client = useMemo(() => liveClient(config, 'player'), [config]);
   const session = useSession(client);
   const [seat, setSeat] = useState<Seat | null>(null);
   const [code, setCode] = useState('');
   const [alias, setAlias] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [recovery, setRecovery] = useState<ReturnType<typeof readPlayerRecovery>>(null);
   const [sending, setSending] = useState<{ questionId: string; choice: number } | null>(null);
 
   useEffect(() => {
-    setSeat(readTab<Seat>(SEAT_KEY));
+    const own = readTab<Seat>(SEAT_KEY);
+    setSeat(own);
+    if (!own) setRecovery(readPlayerRecovery(config));
     const fromUrl = new URLSearchParams(window.location.search).get('code');
     if (fromUrl) setCode(fromUrl.toUpperCase().slice(0, 6));
-  }, []);
+  }, [config]);
 
   const fetcher = useMemo(
     () => (seat && (session === 'guest' || session === 'teacher')
@@ -51,8 +54,8 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
   });
 
   useEffect(() => {
-    if (poll.error === 'ROOM_UNAVAILABLE' || poll.error === 'FORBIDDEN') { writeTab(SEAT_KEY, null); setSeat(null); setError('That game has ended or is no longer available.'); }
-  }, [poll.error]);
+    if (poll.error === 'ROOM_UNAVAILABLE' || poll.error === 'FORBIDDEN') { writeTab(SEAT_KEY, null); setSeat(null); clearPlayerRecovery(config); setError('That game has ended or is no longer available.'); }
+  }, [poll.error, config]);
 
   // A session that disappears (e.g. storage cleared) cannot keep its seat.
   useEffect(() => { if (session === 'signed-out' && seat) { writeTab(SEAT_KEY, null); setSeat(null); } }, [session, seat]);
@@ -68,7 +71,7 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
       const row = rows?.[0];
       if (!row) throw new LiveError('UNKNOWN');
       const next = { roomId: row.room_id, playerId: row.player_id };
-      writeTab(SEAT_KEY, next); setSeat(next);
+      writeTab(SEAT_KEY, next); setSeat(next); savePlayerSeat(next, alias.trim()); setRecovery(null);
     } catch (e) {
       const c = e instanceof LiveError ? e.code : 'UNKNOWN';
       setError(c === 'ROOM_UNAVAILABLE' ? "We couldn't find that game. Check the code, or the game may have finished."
@@ -107,7 +110,16 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [keyTarget]);
 
-  const leave = () => { writeTab(SEAT_KEY, null); setSeat(null); setSending(null); };
+  async function rejoin() {
+    if (!recovery) return;
+    setBusy(true); setError('');
+    const { error: e } = await client.auth.setSession(recovery.tokens);
+    if (e) { clearPlayerRecovery(config); setRecovery(null); setError('That session has expired. Join again with the code.'); }
+    else { writeTab(SEAT_KEY, recovery.seat); setSeat(recovery.seat); setRecovery(null); }
+    setBusy(false);
+  }
+
+  const leave = () => { clearPlayerRecovery(config); writeTab(SEAT_KEY, null); setSeat(null); setSending(null); };
 
   const shell = (body: React.ReactNode, right?: React.ReactNode) => (
     <div className={s.stage}>
@@ -123,7 +135,11 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
     const ready = /^[A-HJKMNP-Za-hjkmnp-z2-9]{6}$/.test(code.trim()) && alias.trim().length > 0;
     return shell(
       <div className={`${s.card} ${s.narrow}`}>
-        <h1 className={s.h2}>Join a game</h1>
+        {recovery && <div className={s.explain} style={{ marginBottom: 16 }}>
+          <p style={{ marginBottom: 10 }}>You were in a game as <b>{recovery.alias}</b>.</p>
+          <button className={`${s.btn} ${s.block}`} disabled={busy} onClick={() => void rejoin()}>Rejoin as {recovery.alias}</button>
+        </div>}
+        <h1 className={s.h2}>{recovery ? 'Or join a new game' : 'Join a game'}</h1>
         <label className={s.field}>Game code
           <input className={`${s.input} ${s.code}`} value={code} maxLength={6} autoCapitalize="characters" autoComplete="off" spellCheck={false}
             onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} placeholder="ABC234" />
