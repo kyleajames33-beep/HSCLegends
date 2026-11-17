@@ -11,7 +11,8 @@ import { moveCircle, terminalLocked, terminalNear, BOSS_HP, MAX_ENERGY, PLAYER_R
 import { decodeSnapshot, lerpState, type Roster, type Snapshot } from '@/lib/clash/protocol';
 import { openClashChannel, type ClashNet } from '@/lib/clash/net';
 import { useSound } from '@/lib/live-sound';
-import { draw, followCam, loadSprites, TEAM_COLOR, type Cam, type Fx } from './render';
+import { draw, followCam, loadSprites, isClashSubject, TEAM_COLOR, type Cam, type ClashSubject, type Fx } from './render';
+import { BOSSES } from '../live/boss';
 import s from './clash.module.css';
 
 const SEAT_KEY = 'hsc-clash-seat';
@@ -37,6 +38,8 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   const [feed, setFeed] = useState<Feed[]>([]);
   const [live, setLive] = useState(false);
   const [ended, setEnded] = useState(false);
+  const [subject, setSubject] = useState<ClashSubject>('chemistry');
+  const bossName = BOSSES[subject].name;
 
   const snaps = useRef<{ g: ClashState; at: number }[]>([]);
   const names = useRef(new Map<string, string>());
@@ -52,7 +55,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   const seatRef = useRef(seat);
   useEffect(() => { seatRef.current = seat; }, [seat]);
 
-  useEffect(() => { images.current = loadSprites(); }, []);
+  useEffect(() => { images.current = loadSprites(subject); }, [subject]);
   // Development-only hook so browser tests can place this player.
   useEffect(() => { if (process.env.NODE_ENV !== 'production') (window as unknown as { __clashLocal?: unknown }).__clashLocal = local.current; }, []);
   // Read browser-only values after mount (deferred one tick to avoid a render cascade).
@@ -100,6 +103,8 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
       if (event === 'roster') {
         const r = (payload as { r?: Roster })?.r;
         if (Array.isArray(r)) { setRoster(r); for (const [id, name] of r) names.current.set(id, name); }
+        const sj = (payload as { subject?: unknown })?.subject;
+        if (isClashSubject(sj)) setSubject(sj);
       } else if (event === 'snap') {
         const g = decodeSnapshot(payload as Snapshot, names.current);
         snaps.current.push({ g, at: performance.now() });
@@ -114,14 +119,14 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
             if (e.by === mine) { pushFeed(`You tagged ${v?.name ?? 'someone'}`, by?.team ?? 'info'); sound.cue('correct'); }
             else if (e.victim === mine) { pushFeed(`${by?.name ?? 'Someone'} tagged you`, by?.team ?? 'info'); sound.cue('wrong'); }
           } else if (e.type === 'capture') { const rc = g.reactors.find(x => x.id === e.reactor); if (rc) fx.current.push({ x: rc.x, y: rc.y, r: 30, life: 1, color: TEAM_COLOR[e.team], kind: 'pulse' }); pushFeed(`${e.team === 'blue' ? 'Blue' : 'Orange'} captured the ${e.reactor} reactor`, e.team); }
-          else if (e.type === 'boss-spawn') { pushFeed('Reactor Prime has arrived! Most damage wins +60', 'info'); sound.cue('fanfare'); }
+          else if (e.type === 'boss-spawn') { pushFeed(`${bossName} has arrived! Most damage wins +60`, 'info'); sound.cue('fanfare'); }
           else if (e.type === 'end') sound.cue('fanfare');
         }
       }
     });
     net.current = n;
     return () => { n.close(); net.current = null; };
-  }, [client, seat, session, pushFeed, sound]);
+  }, [client, seat, session, pushFeed, sound, bossName]);
 
   const openQuestion = useCallback(async () => {
     const st = seatRef.current, latest = snaps.current.at(-1)?.g;
@@ -310,7 +315,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
             <span className={s.clock}>{mmss(seconds - hud.t)}</span>
             <span className={`${s.team} ${s.orange}`}>{Math.floor(hud.score.orange)} {myTeam === 'orange' ? 'Your team' : 'Orange'}</span>
           </div>
-          {hud.boss !== null && <div className={s.bossBar}><span>Reactor Prime</span><span className={s.track}><span style={{ width: `${(hud.boss / BOSS_HP) * 100}%` }} /></span></div>}
+          {hud.boss !== null && <div className={s.bossBar}><span>{bossName}</span><span className={s.track}><span style={{ width: `${(hud.boss / BOSS_HP) * 100}%` }} /></span></div>}
           <div className={s.bottom}>
             <div className={s.energy}>
               <span className={s.energyLabel}>Energy</span>

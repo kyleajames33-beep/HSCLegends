@@ -9,7 +9,8 @@ import {
   BOSS_HP, MATCH_SECONDS, MAX_ENERGY,
   type ClashEvent, type ClashState, type Input, type Team,
 } from '@/lib/clash/sim';
-import { draw, followCam, loadSprites, TEAM_COLOR, type Cam, type Fx } from './render';
+import { draw, followCam, loadSprites, CLASH_SUBJECTS, TEAM_COLOR, type Cam, type ClashSubject, type Fx } from './render';
+import { BOSSES } from '../live/boss';
 import { botInputs, type BotBrain } from '@/lib/clash/bots';
 import { PRACTICE_BANK } from '@/lib/clash/questions';
 import { useSound } from '@/lib/live-sound';
@@ -40,13 +41,15 @@ export default function ClashGame() {
   const [feed, setFeed] = useState<Feed[]>([]);
   const [result, setResult] = useState<{ winner: Team | null; score: Record<Team, number>; me: ClashState['players'][string]['stats'] } | null>(null);
   const sound = useSound('clash', true);
+  const [subject, setSubject] = useState<ClashSubject>('chemistry');
+  const bossName = BOSSES[subject].name;
   const questionRef = useRef(question);
   useEffect(() => { questionRef.current = question; }, [question]);
 
   // Preload sprites (bosses / emblems are decorative; shapes are used until art loads).
   useEffect(() => {
-    images.current = loadSprites();
-  }, []);
+    images.current = loadSprites(subject);
+  }, [subject]);
 
   const pushFeed = useCallback((text: string, tone: Feed['tone']) => {
     const id = Date.now() + Math.random();
@@ -162,7 +165,7 @@ export default function ClashGame() {
           if (e.by === ME) { pushFeed(`You tagged ${v.name}`, 'blue'); sound.cue('correct'); }
           else if (e.victim === ME) { pushFeed(`${by?.name ?? 'Someone'} tagged you`, 'orange'); sound.cue('wrong'); setQuestion(null); }
         } else if (e.type === 'capture') { const rc = g.reactors.find(x => x.id === e.reactor); if (rc) fx.current.push({ x: rc.x, y: rc.y, r: 30, life: 1, color: TEAM_COLOR[e.team], kind: 'pulse' }); pushFeed(`${e.team === 'blue' ? 'Your team' : 'Orange'} captured the ${e.reactor} reactor`, e.team); sound.cue(e.team === 'blue' ? 'start' : 'reveal'); }
-        else if (e.type === 'boss-spawn') { pushFeed('Reactor Prime has arrived! Most damage wins +60', 'info'); sound.cue('fanfare'); }
+        else if (e.type === 'boss-spawn') { pushFeed(`${bossName} has arrived! Most damage wins +60`, 'info'); sound.cue('fanfare'); }
         else if (e.type === 'boss-down') pushFeed(e.team ? `${e.team === 'blue' ? 'Your team' : 'Orange'} wins the boss bonus` : 'Boss bonus tied', e.team ?? 'info');
         else if (e.type === 'pickup' && e.player === ME) sound.cue('join');
         else if (e.type === 'boss-pulse') fx.current.push({ x: g.boss?.x ?? 0, y: g.boss?.y ?? 0, r: 20, life: 1, color: '#ff6a2b' });
@@ -197,7 +200,7 @@ export default function ClashGame() {
       canvas.removeEventListener('mousedown', md);
       window.removeEventListener('mouseup', mu);
     };
-  }, [phase, pushFeed, sound]);
+  }, [phase, pushFeed, sound, bossName]);
 
   if (phase === 'intro') {
     return (
@@ -217,9 +220,14 @@ export default function ClashGame() {
             <li>Stand on a reactor to capture it. Each one you hold scores 1 point a second.</li>
             <li>Tagging an enemy scores 2 and sends them back to base.</li>
             <li>Minions drain reactors. Shoot them for energy orbs.</li>
-            <li>With a minute left, Reactor Prime arrives. The team that deals the most damage gets +60.</li>
+            <li>With a minute left, {bossName} arrives. The team that deals the most damage gets +60.</li>
             <li>Wrong answer? That terminal locks for 6 seconds. While you answer, you can&apos;t move.</li>
           </ul>
+          <label className={s.field}>Boss for the final minute
+            <select className={s.input} value={subject} onChange={e => setSubject(e.target.value as ClashSubject)}>
+              {CLASH_SUBJECTS.map(k => <option key={k} value={k}>{BOSSES[k].name} ({BOSSES[k].subject})</option>)}
+            </select>
+          </label>
           <button className={s.btn} onClick={start}>Start match</button>
         </div>
       </div>
@@ -237,7 +245,7 @@ export default function ClashGame() {
             <span className={`${s.team} ${s.orange}`}>{Math.floor(hud.score.orange)} Orange</span>
           </div>
           {hud.bossHp !== null && (
-            <div className={s.bossBar}><span>Reactor Prime</span><span className={s.track}><span style={{ width: `${(hud.bossHp / BOSS_HP) * 100}%` }} /></span></div>
+            <div className={s.bossBar}><span>{bossName}</span><span className={s.track}><span style={{ width: `${(hud.bossHp / BOSS_HP) * 100}%` }} /></span></div>
           )}
           <div className={s.bottom}>
             <div className={s.energy}>

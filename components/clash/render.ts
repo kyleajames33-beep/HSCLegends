@@ -19,16 +19,24 @@ const SPRITES: Record<string, string> = {
   blue: `${A}/players/operative-blue.webp`, orange: `${A}/players/operative-orange.webp`,
   blueAnswer: `${A}/players/operative-blue-answering.webp`, orangeAnswer: `${A}/players/operative-orange-answering.webp`,
   ...Object.fromEntries((['blue', 'orange'] as const).flatMap(t => [1, 2, 3, 4].map(i => [`${t}Walk${i}`, `${A}/players/operative-${t}-walk-${i}.webp`]))),
-  bossTop: `${A}/boss/chemistry-boss-topdown.webp`,
-  minion: `${A}/minions/chemistry-minion.webp`,
   shot: `${A}/fx/neutraliser-projectile.webp`, spark: `${A}/fx/hit-spark.webp`, pulse: `${A}/fx/capture-pulse-ring.webp`,
-  boss: '/art/bosses/chemistry-boss-idle.webp', bossHurt: '/art/bosses/chemistry-boss-hurt.webp',
 };
 
-/** Preload sprites; shapes are drawn until each loads. */
-export function loadSprites(): Record<string, HTMLImageElement> {
+export type ClashSubject = 'biology' | 'chemistry' | 'physics' | 'maths-standard' | 'maths-advanced' | 'maths-ext1';
+export const CLASH_SUBJECTS: ClashSubject[] = ['biology', 'chemistry', 'physics', 'maths-standard', 'maths-advanced', 'maths-ext1'];
+export const isClashSubject = (v: unknown): v is ClashSubject => typeof v === 'string' && (CLASH_SUBJECTS as string[]).includes(v);
+const artName = (s: ClashSubject) => (s === 'maths-ext1' ? 'maths-extension-1' : s);
+
+/** Preload sprites (boss and minions match the match's subject); shapes are drawn until each loads. */
+export function loadSprites(subject: ClashSubject = 'chemistry'): Record<string, HTMLImageElement> {
+  const n = artName(subject);
+  const all: Record<string, string> = {
+    ...SPRITES,
+    minion: `${A}/minions/${n}-minion.webp`, bossTop: `${A}/boss/${n}-boss-topdown.webp`,
+    boss: `/art/bosses/${n}-boss-idle.webp`, bossHurt: `/art/bosses/${n}-boss-hurt.webp`,
+  };
   const out: Record<string, HTMLImageElement> = {};
-  for (const [k, src] of Object.entries(SPRITES)) { const img = new Image(); img.src = src; out[k] = img; }
+  for (const [k, src] of Object.entries(all)) { const img = new Image(); img.src = src; out[k] = img; }
   return out;
 }
 const ready = (img: HTMLImageElement | undefined): img is HTMLImageElement => !!img && img.complete && img.naturalWidth > 0;
@@ -166,7 +174,7 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, g
     const pic = hurt ? img.bossHurt : img.boss;
     const mb = track('__boss', b.x, b.y, dt);
     ctx.save();
-    ctx.shadowColor = '#ff6a2b'; ctx.shadowBlur = hurt ? 18 + 12 * Math.sin(now / 90) : 30;
+    ctx.shadowColor = '#f2f2fa'; ctx.shadowBlur = hurt ? 18 + 12 * Math.sin(now / 90) : 30;
     if (ready(img.bossTop)) drawRotated(ctx, img.bossTop, b.x, b.y, 150, mb.heading + Math.PI / 2);
     else if (ready(pic)) ctx.drawImage(pic, b.x - 70, b.y - 80, 140, 140);
     else { ctx.fillStyle = '#ff6a2b'; ctx.beginPath(); ctx.arc(b.x, b.y, 44, 0, Math.PI * 2); ctx.fill(); }

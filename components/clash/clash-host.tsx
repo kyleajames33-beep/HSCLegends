@@ -14,13 +14,15 @@ import { encodeRoster, encodeSnapshot, inputFromMsg, type InputMsg, type Termina
 import { openClashChannel, type ClashNet } from '@/lib/clash/net';
 import { PRACTICE_BANK } from '@/lib/clash/questions';
 import { useSound } from '@/lib/live-sound';
-import { draw, followCam, loadSprites, TEAM_COLOR, type Cam, type Fx } from './render';
+import { draw, followCam, loadSprites, isClashSubject, CLASH_SUBJECTS, TEAM_COLOR, type Cam, type ClashSubject, type Fx } from './render';
+import { BOSSES } from '../live/boss';
 import s from './clash.module.css';
 
 const ROOM_KEY = 'hsc-clash-host-room';
 type HostPlayer = { id: string; alias: string; team: Team; token: string };
 type HostView = { room_id: string; short_code: string; state: 'lobby' | 'active' | 'complete'; seconds: number; pool_size: number; results: Results | null; players: HostPlayer[] };
-type SetSummary = { id: string; name: string; count: number };
+type SetSummary = { id: string; name: string; count: number; subject: string | null };
+const SUBJECT_KEY = 'hsc-clash-host-subject';
 type Results = { score: Record<Team, number>; winner: Team | null; players: { name: string; team: Team; bot: boolean; tags: number; captures: number; correct: number; answered: number; bossDamage: number }[] };
 type Feed = { id: number; text: string; tone: Team | 'info' };
 const mmss = (sec: number) => `${Math.floor(Math.max(0, sec) / 60)}:${String(Math.max(0, Math.floor(sec % 60))).padStart(2, '0')}`;
@@ -50,6 +52,8 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   const [source, setSource] = useState('practice');
   const [minutes, setMinutes] = useState(4);
   const [fillBots, setFillBots] = useState(true);
+  const [subject, setSubject] = useState<ClashSubject>('chemistry');
+  const bossName = BOSSES[subject].name;
   const [origin, setOrigin] = useState('');
   const [hud, setHud] = useState<{ t: number; score: Record<Team, number>; answering: number; boss: number | null } | null>(null);
   const [feed, setFeed] = useState<Feed[]>([]);
@@ -66,9 +70,9 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   const fx = useRef<Fx[]>([]);
   const images = useRef<Record<string, HTMLImageElement>>({});
 
-  useEffect(() => { images.current = loadSprites(); }, []);
+  useEffect(() => { images.current = loadSprites(subject); }, [subject]);
   // Read browser-only values after mount (deferred one tick to avoid a render cascade).
-  useEffect(() => { const id = setTimeout(() => { setOrigin(window.location.origin); setRoomId(readTab<string>(ROOM_KEY)); }, 0); return () => clearTimeout(id); }, []);
+  useEffect(() => { const id = setTimeout(() => { setOrigin(window.location.origin); setRoomId(readTab<string>(ROOM_KEY)); const sj = readTab<string>(SUBJECT_KEY); if (isClashSubject(sj)) setSubject(sj); }, 0); return () => clearTimeout(id); }, []);
 
   const pushFeed = useCallback((text: string, tone: Feed['tone']) => {
     const id = Date.now() + Math.random();
@@ -121,11 +125,11 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   // Lobby roster broadcast so students can see who's on their team.
   useEffect(() => {
     if (!view || view.state !== 'lobby') return;
-    const send = () => net.current?.send('roster', { r: view.players.map(p => [p.id, p.alias, p.team === 'blue' ? 0 : 1]), state: 'lobby' });
+    const send = () => net.current?.send('roster', { r: view.players.map(p => [p.id, p.alias, p.team === 'blue' ? 0 : 1]), state: 'lobby', subject });
     send();
     const id = setInterval(send, 2000);
     return () => clearInterval(id);
-  }, [view]);
+  }, [view, subject]);
 
   const finish = useCallback(async (g: ClashState) => {
     const winner: Team | null = Math.round(g.score.blue) === Math.round(g.score.orange) ? null : g.score.blue > g.score.orange ? 'blue' : 'orange';
@@ -176,11 +180,11 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
       for (const e of events) {
         if (e.type === 'tag') { const v = g.players[e.victim], by = g.players[e.by]; fx.current.push({ x: v.x, y: v.y, r: 8, life: 1, color: TEAM_COLOR[by?.team ?? 'blue'], kind: 'spark' }); pushFeed(`${by?.name ?? '?'} tagged ${v?.name ?? '?'}`, by?.team ?? 'info'); }
         else if (e.type === 'capture') { const rc = g.reactors.find(x => x.id === e.reactor); if (rc) fx.current.push({ x: rc.x, y: rc.y, r: 30, life: 1, color: TEAM_COLOR[e.team], kind: 'pulse' }); pushFeed(`${e.team === 'blue' ? 'Blue' : 'Orange'} captured the ${e.reactor} reactor`, e.team); sound.cue('start'); }
-        else if (e.type === 'boss-spawn') { pushFeed('Reactor Prime has arrived! Most damage wins +60', 'info'); sound.cue('fanfare'); }
+        else if (e.type === 'boss-spawn') { pushFeed(`${bossName} has arrived! Most damage wins +60`, 'info'); sound.cue('fanfare'); }
         else if (e.type === 'boss-down') pushFeed(e.team ? `${e.team === 'blue' ? 'Blue' : 'Orange'} wins the boss bonus` : 'Boss bonus tied', e.team ?? 'info');
       }
       if (now - snapAt > 100 || g.ended) { snapAt = now; net.current?.send('snap', encodeSnapshot(g, pending.current)); pending.current = []; }
-      if (now - rosterAt > 2000) { rosterAt = now; net.current?.send('roster', { r: encodeRoster(g), state: 'active', seconds: g.duration }); }
+      if (now - rosterAt > 2000) { rosterAt = now; net.current?.send('roster', { r: encodeRoster(g), state: 'active', seconds: g.duration, subject }); }
       if (g.ended && !finished) { finished = true; void finish(g); }
     };
     const loop = setInterval(tick, 33);
@@ -217,7 +221,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
     };
     raf = requestAnimationFrame(frame);
     return () => { clearInterval(loop); clearInterval(receipts); cancelAnimationFrame(raf); };
-  }, [view?.state, roomId, client, fillBots, finish, pushFeed, sound]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [view?.state, roomId, client, fillBots, finish, pushFeed, sound, bossName, subject]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function signIn() {
     setBusy(true); setError('');
@@ -235,7 +239,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
       const id = rows?.[0]?.room_id;
       if (!id) throw new LiveError('UNKNOWN');
       sim.current = null; setResults(null); setView(null);
-      writeTab(ROOM_KEY, id); setRoomId(id);
+      writeTab(SUBJECT_KEY, subject); writeTab(ROOM_KEY, id); setRoomId(id);
     } catch (e) {
       setError(e instanceof LiveError && e.code === 'FORBIDDEN' ? 'This account is not approved to host games yet.' : 'Could not create the game. Try again.');
     }
@@ -293,9 +297,14 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
         <p className={s.kicker}>Reactor Clash · Host a class match</p>
         <h1 className={s.title}>Set up a match</h1>
         <label className={s.field}>Questions
-          <select className={s.input} value={source} onChange={e => setSource(e.target.value)}>
+          <select className={s.input} value={source} onChange={e => { setSource(e.target.value); const sj = sets.find(x => x.id === e.target.value)?.subject; if (isClashSubject(sj)) setSubject(sj); }}>
             <option value="practice">Practice bank ({PRACTICE_BANK.length} questions, unreviewed)</option>
             {sets.map(x => <option key={x.id} value={x.id}>{x.name} ({x.count} questions)</option>)}
+          </select>
+        </label>
+        <label className={s.field}>Boss for the final minute (and its minions)
+          <select className={s.input} value={subject} onChange={e => setSubject(e.target.value as ClashSubject)}>
+            {CLASH_SUBJECTS.map(k => <option key={k} value={k}>{BOSSES[k].name} ({BOSSES[k].subject})</option>)}
           </select>
         </label>
         <label className={s.field}>Match length
