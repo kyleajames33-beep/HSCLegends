@@ -209,3 +209,49 @@ test('acknowledgements preserve later movement and ease even large corrections',
   for (let i = 0; i < 60; i++) correction.display(local, 1 / 30);
   assert.ok(Math.abs(correction.display(local, 0).x - local.x) < 0.01);
 });
+
+function walker(t, x) {
+  const g = createClash();
+  const player = addPlayer(g, 'r', 'Remote', 'blue');
+  Object.assign(player, { x, y: 330 });
+  g.t = t;
+  return g;
+}
+
+test('bursty deliveries play back at host speed and a missing snapshot is bridged briefly', () => {
+  const buf = new protocol.SnapshotBuffer();
+  assert.equal(buf.sample(0), undefined);
+  buf.push(walker(0, 400), 1000);
+  buf.push(walker(0.1, 420), 1170);
+  buf.push(walker(0.2, 440), 1200);
+  const x = now => buf.sample(now).players.r.x;
+  assert.equal(x(1100), 400, 'warm-up holds the oldest position');
+  for (let now = 1200; now <= 1410; now += 10) {
+    const expected = 400 + (now - 1150) * 0.2;
+    assert.ok(Math.abs(x(now) - expected) < 1, `at ${now}: expected ${expected}, saw ${x(now)}`);
+  }
+  assert.equal(x(1420), x(2100), 'a long gap holds the bounded projection');
+  assert.equal(buf.latest.g.players.r.x, 440, 'rendering leaves the authoritative position intact');
+  buf.push(walker(1.1, 600), 2100);
+  assert.equal(x(2101), 600, 'recovery discards the stale trajectory');
+});
+
+test('remote rendering respects respawns, terminal locks, walls and projectile identities', () => {
+  const a = walker(1, 400), b = walker(1.1, 420);
+  b.players.r.respawnAt = 1.05;
+  assert.equal(protocol.lerpState(a, b, 0.5).players.r.x, 400);
+  assert.equal(protocol.lerpState(a, b, 1.5).players.r.x, 420);
+  b.players.r.respawnAt = 0;
+  b.players.r.answering = 't1';
+  assert.equal(protocol.lerpState(a, b, 1.5).players.r.x, 420);
+  const w = sim.WALLS[4];
+  Object.assign(b.players.r, { answering: null, x: w.x - sim.PLAYER_R - 2, y: w.y + 20 });
+  Object.assign(a.players.r, { x: b.players.r.x - 20, y: b.players.r.y });
+  assert.ok(protocol.lerpState(a, b, 1.6).players.r.x <= w.x - sim.PLAYER_R);
+  const shot = (id, x) => ({ id, x, y: 330, vx: 560, vy: 0, team: 'blue' });
+  a.shots = [shot(1, 500), shot(2, 600)];
+  b.shots = [shot(2, 656), shot(3, 640)];
+  const wire = g => protocol.decodeSnapshot(protocol.encodeSnapshot(g, []), new Map());
+  const view = protocol.lerpState(wire(a), wire(b), 0.5);
+  assert.deepEqual(Array.from(view.shots, s => [s.id, s.x]), [[1, 500], [2, 628]]);
+});

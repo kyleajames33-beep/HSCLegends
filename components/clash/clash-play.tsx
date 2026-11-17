@@ -7,8 +7,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, liveClient, readTab, rpc, useSession, writeTab } from '@/lib/live-game';
-import { moveCircle, terminalLocked, terminalNear, BOSS_HP, MAX_ENERGY, PLAYER_R, SPEED, SPRINT_SPEED, type ClashState, type Team } from '@/lib/clash/sim';
-import { decodeSnapshot, lerpState, PROJECTOR_TIMEOUT_MS, type Roster, type Snapshot } from '@/lib/clash/protocol';
+import { moveCircle, terminalLocked, terminalNear, BOSS_HP, MAX_ENERGY, PLAYER_R, SPEED, SPRINT_SPEED, type Team } from '@/lib/clash/sim';
+import { decodeSnapshot, SnapshotBuffer, PROJECTOR_TIMEOUT_MS, type Roster, type Snapshot } from '@/lib/clash/protocol';
 import { PositionCorrection } from '@/lib/clash/prediction';
 import { openClashChannel, type ClashNet } from '@/lib/clash/net';
 import { useSound } from '@/lib/live-sound';
@@ -43,7 +43,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   const [subject, setSubject] = useState<ClashSubject>('chemistry');
   const bossName = BOSSES[subject].name;
 
-  const snaps = useRef<{ g: ClashState; at: number }[]>([]);
+  const snaps = useRef(new SnapshotBuffer());
   const names = useRef(new Map<string, string>());
   const local = useRef({ x: 0, y: 0, aim: 0, init: false, life: 0, wasAlive: true });
   const reportSeq = useRef(0);
@@ -110,8 +110,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
         if (isClashSubject(sj)) setSubject(sj);
       } else if (event === 'snap') {
         const g = decodeSnapshot(payload as Snapshot, names.current);
-        snaps.current.push({ g, at: performance.now() });
-        if (snaps.current.length > 3) snaps.current.shift();
+        snaps.current.push(g, performance.now());
         setLive(true);
         if (g.ended) setEnded(true);
         for (const e of (payload as Snapshot).ev ?? []) {
@@ -132,7 +131,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   }, [client, seat, session, pushFeed, sound, bossName]);
 
   const openQuestion = useCallback(async () => {
-    const st = seatRef.current, snapshot = snaps.current.at(-1);
+    const st = seatRef.current, snapshot = snaps.current.latest;
     if (!st || !snapshot || questionRef.current || performance.now() - snapshot.at > PROJECTOR_TIMEOUT_MS) return;
     const latest = snapshot.g;
     const mine = latest.players[st.playerId];
@@ -205,15 +204,9 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       if (canvas.width !== Math.round(canvas.clientWidth * dpr)) { canvas.width = Math.round(canvas.clientWidth * dpr); canvas.height = Math.round(canvas.clientHeight * dpr); }
-      const list = snaps.current;
-      if (list.length) {
-        // Render ~100ms in the past, interpolating between the two snapshots around that time.
-        const renderAt = now - 100;
-        let view = list[list.length - 1].g;
-        for (let i = list.length - 1; i > 0; i--) {
-          if (list[i - 1].at <= renderAt && renderAt <= list[i].at) { view = lerpState(list[i - 1].g, list[i].g, (renderAt - list[i - 1].at) / Math.max(1, list[i].at - list[i - 1].at)); break; }
-        }
-        const latest = list[list.length - 1];
+      const latest = snaps.current.latest;
+      let view = snaps.current.sample(now);
+      if (view && latest) {
         const stale = now - latest.at > PROJECTOR_TIMEOUT_MS;
         const host = latest.g.players[seat.playerId];
         const l = local.current;
@@ -245,7 +238,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
             net.current?.send('in', { ...msg, seq });
             sendAt = now; lastSent = sig;
           }
-          view = { ...view, players: { ...view.players, [seat.playerId]: { ...view.players[seat.playerId] ?? host, ...correction.display(l, dt), aim: l.aim } } };
+          view = { ...view, players: { ...view.players, [seat.playerId]: { ...host, ...correction.display(l, dt), aim: l.aim } } };
         }
         followCam(cam, canvas, view.players[seat.playerId] ?? null);
         draw(ctx, canvas, view, cam, fx.current, images.current, dt, now, seat.playerId);
@@ -253,11 +246,11 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
         if (now - hudAt > 120 && host) {
           setWaiting(stale);
           hudAt = now;
-          const latest = list[list.length - 1].g;
-          const term = host.alive ? terminalNear(latest, { ...host, x: local.current.x, y: local.current.y }) : null;
-          setHud({ t: latest.t, score: latest.score, energy: host.energy, streak: host.streak, alive: host.alive, respawnIn: Math.max(0, host.respawnAt - latest.t),
-            near: term && !host.answering ? (terminalLocked(latest, host, term.id) ? 'locked' : 'ready') : null,
-            lockIn: term ? Math.max(0, (host.locks[term.id] ?? 0) - latest.t) : 0, boss: latest.boss ? latest.boss.hp : null });
+          const world = latest.g;
+          const term = host.alive ? terminalNear(world, { ...host, x: local.current.x, y: local.current.y }) : null;
+          setHud({ t: world.t, score: world.score, energy: host.energy, streak: host.streak, alive: host.alive, respawnIn: Math.max(0, host.respawnAt - world.t),
+            near: term && !host.answering ? (terminalLocked(world, host, term.id) ? 'locked' : 'ready') : null,
+            lockIn: term ? Math.max(0, (host.locks[term.id] ?? 0) - world.t) : 0, boss: world.boss ? world.boss.hp : null });
           // The host didn't accept the terminal (too far / tagged): close the question.
           const q = questionRef.current;
           if (!stale && q && q.picked === null && !host.answering && now - q.opened > 1500) { setQuestion(null); pushFeed(host.alive ? 'Too far from the terminal' : 'Tagged while answering', 'info'); }
@@ -269,7 +262,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
     return () => { cancelAnimationFrame(raf); canvas.removeEventListener('mousemove', move); canvas.removeEventListener('mousedown', md); window.removeEventListener('mouseup', mu); };
   }, [seat, live, pushFeed]);
 
-  const leave = () => { writeTab(SEAT_KEY, null); setSeat(null); setMe(null); setWaiting(false); setLive(false); setEnded(false); snaps.current = []; local.current.init = false; };
+  const leave = () => { writeTab(SEAT_KEY, null); setSeat(null); setMe(null); setWaiting(false); setLive(false); setEnded(false); snaps.current = new SnapshotBuffer(); local.current.init = false; };
 
   // ---- Screens ---------------------------------------------------------------
   if (session === 'checking') return <div className={s.stage}><p className={s.center}>Loading…</p></div>;

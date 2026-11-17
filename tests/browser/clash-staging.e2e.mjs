@@ -99,7 +99,25 @@ try {
     await measure(host, 'visible', ada, 'Ada', 's');
     await ben.bringToFront();
     await ben.waitForTimeout(31000); // Pass Chromium's recent-audio grace period.
+    // Observe Ben's nameplate on Ada's actual canvas. Its world coordinates
+    // follow the same rendered position as the operative, independent of Ada's camera.
+    await ada.evaluate(() => {
+      const ctx = document.querySelector('canvas').getContext('2d');
+      const drawText = ctx.fillText.bind(ctx);
+      window.benPositions = [];
+      ctx.fillText = (...args) => {
+        if (args[0] === 'Ben') window.benPositions.push(args[2]);
+        drawText(...args);
+      };
+    });
     await measure(ben, 'hidden', ben, 'Ben', 's');
+    const positions = await ada.evaluate(() => {
+      delete document.querySelector('canvas').getContext('2d').fillText;
+      return window.benPositions;
+    });
+    const intermediate = new Set(positions.filter(y => !Number.isInteger(y))).size;
+    ok(intermediate >= 4 && Math.max(...positions) - Math.min(...positions) > 45,
+      `spectator drew Ben at ${intermediate} distinct positions between integer snapshot coordinates`);
 
     // Interrupt the worker while the student's browser and the host watchdog still run.
     const [clock] = host.workers();

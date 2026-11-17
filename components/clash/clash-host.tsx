@@ -170,7 +170,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
       if (process.env.NODE_ENV !== 'production') (window as unknown as { __clashHost?: ClashState }).__clashHost = g;
     }
     const g = sim.current;
-    let steppedAt = performance.now(), snapAt = 0, rosterAt = 0, receiptBusy = false;
+    let steppedAt = performance.now(), nextSnapshotAt = steppedAt, rosterAt = 0, receiptBusy = false;
     const stepMs = 1000 / 30;
     const consumedAt = new Map<string, number>();
     let finished = g.ended;
@@ -208,7 +208,12 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
         else if (e.type === 'boss-spawn') { pushFeed(`${bossName} has arrived! Most damage wins +60`, 'info'); sound.cue('fanfare'); }
         else if (e.type === 'boss-down') pushFeed(e.team ? `${e.team === 'blue' ? 'Blue' : 'Orange'} wins the boss bonus` : 'Boss bonus tied', e.team ?? 'info');
       }
-      if ((now - snapAt > 100 && now - steppedAt < stepMs) || g.ended) { snapAt = now; net.current?.send('snap', encodeSnapshot(g, pending.current)); pending.current = []; }
+      if ((now >= nextSnapshotAt && now - steppedAt < stepMs) || g.ended) {
+        // Keep the 10 Hz cadence across late ticks. One current snapshot covers missed deadlines.
+        nextSnapshotAt += (Math.floor((now - nextSnapshotAt) / 100) + 1) * 100;
+        net.current?.send('snap', encodeSnapshot(g, pending.current));
+        pending.current = [];
+      }
       if (now - rosterAt > 2000) { rosterAt = now; net.current?.send('roster', { r: encodeRoster(g), state: 'active', seconds: g.duration, subject }); }
       if (g.ended && !finished) { finished = true; void finish(g); }
     };
