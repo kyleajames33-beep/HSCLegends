@@ -193,7 +193,7 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
   async function create() {
     setBusy(true); setError('');
     try {
-      const pool = selected === SAMPLE_ID ? SAMPLE_SET : await rpc<QuestionDraft[]>(client, 'classroom_v2_set_get', { p_set: selected });
+      const pool: readonly QuestionDraft[] = selected === SAMPLE_ID ? SAMPLE_SET : await rpc<QuestionDraft[]>(client, 'classroom_v2_set_get', { p_set: selected });
       const rows = await rpc<{ room_id: string }[]>(client, 'classroom_v2_create', { p_request_id: crypto.randomUUID(), p_questions: draw(pool, perGame), p_seconds: seconds });
       const id = rows?.[0]?.room_id;
       if (!id) throw new LiveError('UNKNOWN');
