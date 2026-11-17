@@ -25,7 +25,7 @@ export default function Games() {
           <p className="mt-2 text-sm font-semibold text-[#c5cde0]">Build, battle and play your way.</p>
         </div>
         <LobbyActions />
-        <p className="mt-3 text-xs font-semibold text-[#c5cde0]">Classroom games are being restored. Solo samples are ready now.</p>
+        <p className="mt-3 text-xs font-semibold text-[#c5cde0]">Live classroom games are in testing. Solo samples are ready now.</p>
         <Link href="/question-import" prefetch={false} className="mt-2 w-fit text-xs font-semibold text-[#c3f67a] underline">Teachers: prepare questions</Link>
         <section className="mt-9" aria-labelledby="featured">
           <p className="text-[10px] font-black tracking-[0.18em] text-[#a7e1d0]">NO ACCOUNT NEEDED</p>

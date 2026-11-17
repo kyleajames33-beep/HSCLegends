@@ -3,8 +3,8 @@ import Image from 'next/image';
 import { ArrowRight, FlaskConical, Gamepad2, KeyRound, Radio, Swords, Trophy, Zap } from 'lucide-react';
 
 const actions = [
-  { href: '/join', title: 'Join a game', detail: 'Enter a code', icon: KeyRound, color: 'bg-[#202944] text-white border-[#4c5876]' },
-  { href: '/host', title: 'Host a game', detail: 'For your class', icon: Radio, color: 'bg-[#202944] text-white border-[#4c5876]' },
+  { href: '/live', title: 'Join a game', detail: 'Enter a code', icon: KeyRound, color: 'bg-[#202944] text-white border-[#4c5876]' },
+  { href: '/live/host', title: 'Host a game', detail: 'For your class', icon: Radio, color: 'bg-[#202944] text-white border-[#4c5876]' },
   { href: '/demo', title: 'Play solo', detail: 'Start a sample', icon: Gamepad2, color: 'bg-[#c3f67a] text-[#172916] border-[#c3f67a]' },
 ];
 

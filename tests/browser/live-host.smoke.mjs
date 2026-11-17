@@ -13,15 +13,18 @@ const session={access_token:token,refresh_token:'mock',token_type:'bearer',expir
 const ROOM='22222222-2222-4222-8222-222222222222';
 const names=['Ava','Noah','Mia','Leo','Zara','Kai','Isla'];
 let phase='lobby0';
+const BOSS=process.env.HSC_BOSS==='1';
+const PFX=BOSS?'hb':'h';
 const q={id:'q1',index:2,stem:'Which base pairs with adenine in DNA?',options:['Cytosine','Guanine','Uracil','Thymine'],correct_index:3,explanation:null};
 function view(){
-  const now=new Date(); const base={room_id:ROOM,version:5,short_code:'T6HXHV',seconds:20,question_total:8,server_now:now.toISOString(),opens_at:null,closes_at:null,answered:0,choice_counts:null,question:null};
+  const now=new Date(); const bossFor=(hp,damage,round)=>BOSS?{mode:'boss',boss:{subject:'chemistry',hp,damage,round_damage:round}}:{mode:'classic',boss:null};
+  const base={room_id:ROOM,version:5,short_code:'T6HXHV',seconds:20,question_total:8,server_now:now.toISOString(),opens_at:null,closes_at:null,answered:0,choice_counts:null,question:null};
   const ps=(n,ans)=>names.slice(0,n).map((a,i)=>({id:'p'+i,alias:a,score:[3820,3610,2990,2400,1980,1200,600][i],last_points:[940,0,880,760,0,610,0][i],answered:i<ans,correct:[true,false,true,true,false,true,false][i]}));
-  if(phase==='lobby0') return {...base,state:'lobby',players:[]};
-  if(phase==='lobby') return {...base,state:'lobby',players:ps(7,0)};
-  if(phase==='question') return {...base,state:'active',question:q,opens_at:new Date(now-6000).toISOString(),closes_at:new Date(+now+14000).toISOString(),answered:4,choice_counts:[1,0,1,2],players:ps(7,4)};
-  if(phase==='reveal') return {...base,state:'active',question:q,opens_at:new Date(now-20000).toISOString(),closes_at:new Date(now-1000).toISOString(),answered:7,choice_counts:[1,1,1,4],players:ps(7,7)};
-  if(phase==='complete') return {...base,state:'complete',players:ps(7,7)};
+  if(phase==='lobby0') return {...base,...bossFor(null,0,0),state:'lobby',players:[]};
+  if(phase==='lobby') return {...base,...bossFor(null,0,0),state:'lobby',players:ps(7,0)};
+  if(phase==='question') return {...base,...bossFor(25200,12000,0),state:'active',question:q,opens_at:new Date(now-6000).toISOString(),closes_at:new Date(+now+14000).toISOString(),answered:4,choice_counts:[1,0,1,2],players:ps(7,4)};
+  if(phase==='reveal') return {...base,...bossFor(25200,15210,3210),state:'active',question:q,opens_at:new Date(now-20000).toISOString(),closes_at:new Date(now-1000).toISOString(),answered:7,choice_counts:[1,1,1,4],players:ps(7,7)};
+  if(phase==='complete') return {...base,...bossFor(25200,25200,0),state:'complete',players:ps(7,7)};
 }
 const browser=await chromium.launch();
 const ctx=await browser.newContext({viewport:{width:1366,height:768}});
@@ -32,12 +35,12 @@ await ctx.route('**/rest/v1/rpc/classroom_v2_game_host',r=>r.fulfill({json:view(
 const page=await ctx.newPage();
 const errs=[]; page.on('pageerror',e=>errs.push(e.message));
 await page.goto(BASE+'/live/host');
-const shot=async(name,ph,wait)=>{phase=ph; await page.waitForTimeout(wait??1800); await page.screenshot({path:`${D}/h-${name}.png`});};
+const shot=async(name,ph,wait)=>{phase=ph; await page.waitForTimeout(wait??1800); await page.screenshot({path:`${D}/${PFX}-${name}.png`});};
 await shot('1-lobby-empty','lobby0',3000);
 await shot('2-lobby','lobby');
 await shot('3-question','question');
 await shot('4-reveal','reveal');
-await page.getByRole('button',{name:'Show leaderboard'}).click(); await page.waitForTimeout(900); await page.screenshot({path:`${D}/h-5-board.png`});
+await page.getByRole('button',{name:'Show leaderboard'}).click(); await page.waitForTimeout(900); await page.screenshot({path:`${D}/${PFX}-5-board.png`});
 await shot('6-podium','complete');
 if(errs.length){console.error('page errors:',errs);process.exitCode=1;} else console.log('live host smoke: ok');
 await browser.close();

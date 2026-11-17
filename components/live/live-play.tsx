@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, SHAPES, liveClient, msRemaining, ordinal, readTab, rpc, useNow, usePoll, useSession, writeTab, type PlayerView } from '@/lib/live-game';
 import { useOnChange, useSound } from '@/lib/live-sound';
 import { Icon } from './icon';
+import { BOSSES, BossBar, bossLeft } from './boss';
 import s from './live.module.css';
 
 const SEAT_KEY = 'hsc-live-seat';
@@ -91,6 +92,21 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
     poll.refresh();
   }
 
+  // Laptop play: number keys 1-6 pick an answer while a question is open.
+  const answerRef = useRef(answer);
+  useEffect(() => { answerRef.current = answer; });
+  const keyTarget = view?.state === 'active' && pq && !pr && pLeft > 0 ? pq : null;
+  useEffect(() => {
+    if (!keyTarget) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat || e.altKey || e.ctrlKey || e.metaKey || (e.target as HTMLElement | null)?.closest('input,textarea,select')) return;
+      const n = Number(e.key);
+      if (Number.isInteger(n) && n >= 1 && n <= keyTarget.options.length) { e.preventDefault(); void answerRef.current(keyTarget.id, n - 1); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [keyTarget]);
+
   const leave = () => { writeTab(SEAT_KEY, null); setSeat(null); setSending(null); };
 
   const shell = (body: React.ReactNode, right?: React.ReactNode) => (
@@ -132,13 +148,17 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
         <p className={s.dim}>You&apos;re in!</p>
         <p className={s.points}>{view.alias}</p>
         <p className={s.dim}>Look for your name on the big screen. The game starts soon.</p>
+        {view.boss && <p style={{ marginTop: 10 }}>Boss Battle: your class vs <b>{BOSSES[view.boss.subject].name}</b></p>}
       </div>
       <button className={s.link} style={{ marginTop: 16 }} onClick={leave}>Leave game</button>
     </div>, scorePill);
   }
 
   if (view.state === 'complete') {
+    const bossLeftHp = view.boss ? bossLeft(view.boss) : null;
     return shell(<div className={`${s.narrow} ${s.center}`}>
+      {view.boss && <p className={`${s.banner} ${bossLeftHp === 0 ? s.win : s.lose}`} style={{ marginBottom: 16, fontSize: '1.4rem' }}>
+        {bossLeftHp === 0 ? `Your class defeated ${BOSSES[view.boss.subject].name}!` : `${BOSSES[view.boss.subject].name} escaped`}</p>}
       <div className={`${s.result} ${view.rank <= 3 ? s.good : s.neutral}`}>
         <Icon name={view.rank <= 3 ? 'trophy' : 'star'} size={64} />
         <p>Final place</p>
@@ -160,12 +180,13 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
   if (!r && remaining > 0) {
     const pending = sending?.questionId === q.id ? sending.choice : null;
     return shell(<>
+      {view.boss && <BossBar boss={view.boss} />}
       <p className={`${s.stem}`} style={{ fontSize: 'clamp(1.1rem, 4.5vw, 1.6rem)', padding: 18 }}>{q.stem}</p>
       <div className={s.tiles}>
         {q.options.map((opt, i) => (
           <button key={i} className={`${s.tile} ${pending !== null && pending !== i ? s.dimmed : ''} ${pending === i ? s.chosen : ''}`}
             disabled={pending !== null} onClick={() => void answer(q.id, i)}>
-            <span className={s.shape}>{SHAPES[i]}</span><span className={s.tileText}>{opt}</span>
+            <span className={s.shape}>{SHAPES[i]}</span><span className={s.tileText}>{opt}</span><kbd className={s.key}>{i + 1}</kbd>
           </button>
         ))}
       </div>
@@ -194,8 +215,8 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
     ) : r.correct ? (
       <div className={`${s.result} ${s.good}`}>
         <Icon name="correct-tick" size={64} />
-        <p>Correct</p>
-        <p className={s.points}>+{r.points}</p>
+        <p>{view.boss ? 'Direct hit' : 'Correct'}</p>
+        <p className={s.points}>+{r.points}{view.boss ? ' damage' : ''}</p>
         {view.streak >= 2 && <p className={s.iconRow} style={{ justifyContent: 'center' }}><Icon name="streak-flame" size={28} />{view.streak} in a row</p>}
       </div>
     ) : (
@@ -205,6 +226,7 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
         <p>Answer: {q.options[r.correct_index]}</p>
       </div>
     )}
+    {view.boss && <div style={{ marginTop: 16 }}><BossBar boss={view.boss} /></div>}
     <p className={s.h2} style={{ marginTop: 20 }}>{ordinal(view.rank)} of {view.player_count}</p>
     <p className={s.dim}>{view.score.toLocaleString()} points</p>
     {r?.explanation && <p className={s.explain} style={{ marginTop: 12 }}>{r.explanation}</p>}

@@ -9,6 +9,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
 
+export type BossSubject = 'biology' | 'chemistry' | 'physics' | 'maths-standard' | 'maths-advanced' | 'maths-ext1';
+export type BossState = { subject: BossSubject; hp: number | null; damage: number; round_damage: number };
 export type LiveQuestion = { id: string; index: number; stem: string; options: string[] };
 export type HostPlayer = { id: string; alias: string; score: number; last_points: number; answered: boolean; correct: boolean | null };
 export type HostView = {
@@ -16,6 +18,7 @@ export type HostView = {
   question_total: number; question: (LiveQuestion & { correct_index: number; explanation: string | null }) | null;
   opens_at: string | null; closes_at: string | null; server_now: string;
   answered: number; choice_counts: number[] | null; players: HostPlayer[];
+  mode: 'classic' | 'boss'; boss: BossState | null;
 };
 export type PlayerReceipt = { choice: number; correct: boolean; correct_index: number; points: number; explanation: string | null };
 export type PlayerView = {
@@ -23,6 +26,7 @@ export type PlayerView = {
   rank: number; player_count: number; streak: number; answered: number; question_total: number;
   question: LiveQuestion | null; opens_at: string | null; closes_at: string | null; server_now: string;
   receipt: PlayerReceipt | null;
+  mode: 'classic' | 'boss'; boss: BossState | null;
 };
 
 const KNOWN = ['FORBIDDEN', 'ROOM_UNAVAILABLE', 'STALE_QUESTION', 'OUTSIDE_WINDOW', 'INVALID_CHOICE', 'INVALID_ALIAS', 'INVALID_SETUP', 'INVALID_CONTENT', 'ALIAS_TAKEN'] as const;

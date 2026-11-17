@@ -11,6 +11,13 @@ A Kahoot-style live game. The teacher hosts from a projector and students play o
 
 Both routes are disabled unless the four `CLASSROOM_STAGING_*` variables are set (see `docs/CLASSROOM_STAGING_LAB.md`). Locally they live in `.env.local`, which is gitignored.
 
+## Modes
+
+- **Boss Battle** (default): the whole class fights one subject boss. Every point scored is damage. Boss health is fixed when the game starts, at 450 × players × questions, so a class answering about two-thirds correctly at a fair pace wins near the end. The projector shows a health bar during questions, the boss taking the round's damage at each reveal, and a win or escape banner at the end. Students see the health bar, their "+N damage", and the outcome. Bosses and art are in `components/live/boss.tsx` and `public/art/bosses/`. The mode is set by host-only, lobby-only `classroom_v2_game_configure` (`prototypes/classroom-v2/staging-boss-battle.sql`).
+- **Classic**: everyone for themselves, with a leaderboard and podium.
+
+Students on laptops can answer with number keys 1–6.
+
 ## Running a test game
 
 1. `npm run dev`, then open `/live/host` and sign in with an approved teacher account.
@@ -42,5 +49,6 @@ Both routes are disabled unless the four `CLASSROOM_STAGING_*` variables are set
 - Updates come from 1-second polling, not Supabase Realtime. That's fine for one class; revisit before large-scale use.
 - There are no rate limits or abuse controls on anonymous sign-in or joins yet.
 - Questions are text only (no images).
-- The main app's Home → "Host a game" / "Join a game" still point to the old, locked-down live mode.
+- Home → "Host a game" / "Join a game" and the Join tab now point to `/live/host` and `/live`. The old `/host` and `/join` pages still exist but aren't linked.
+- Boss hurt and defeated poses use CSS effects on the idle art until Codex delivers the dedicated poses.
 - Production rollout needs: a reviewed migration path, a decision about the shared database, and real-device testing over the internet. A codespace port is private to your GitHub login.

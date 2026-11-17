@@ -13,7 +13,7 @@ const TABS: { id: Tab; href: string; icon: LucideIcon; label: string }[] = [
 const ARCADE_TABS: typeof TABS = [
   { id: 'today', href: '/', icon: House, label: 'Home' },
   { id: 'play', href: '/games', icon: Gamepad2, label: 'Play' },
-  { id: 'join', href: '/join', icon: Users, label: 'Join' },
+  { id: 'join', href: '/live', icon: Users, label: 'Join' },
   { id: 'study', href: '/study', icon: BookOpen, label: 'Study' },
   { id: 'profile', href: '/profile', icon: UserRound, label: 'Profile' },
 ];

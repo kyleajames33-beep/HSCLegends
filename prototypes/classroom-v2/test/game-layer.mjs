@@ -7,6 +7,7 @@ await db.exec(`create role anon; create role authenticated; create schema auth;
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true),'')::uuid $$;`);
 await db.exec(fs.readFileSync(`${dir}/staging-candidate.sql`,'utf8'));
 await db.exec(fs.readFileSync(`${dir}/staging-game-layer.sql`,'utf8'));
+await db.exec(fs.readFileSync(`${dir}/staging-boss-battle.sql`,'utf8'));
 const H='00000000-0000-4000-8000-0000000000a1', S1='00000000-0000-4000-8000-0000000000b1', S2='00000000-0000-4000-8000-0000000000b2';
 const as = async (uid, sql, params=[]) => { await db.exec(`select set_config('test.uid','${uid}',false)`); return (await db.query(sql, params)).rows; };
 const ok = (c,m)=>{ if(!c){console.error('FAIL',m);process.exitCode=1;} else console.log('ok',m); };
@@ -55,4 +56,25 @@ host = (await as(H, `select public.classroom_v2_game_host($1) v`, [room.room_id]
 await as(H, `select public.classroom_v2_finish($1,$2)`, [room.room_id, host.version]);
 let closed=null; try { await as('00000000-0000-4000-8000-0000000000b5', `select * from public.classroom_v2_game_join($1,'Too late')`, [host.short_code]); } catch(e){ closed=e.message }
 ok(/ROOM_UNAVAILABLE/.test(closed||''), 'cannot join a finished game');
+
+// Boss Battle
+const [b] = await as(H, `select * from public.classroom_v2_create($1,$2::jsonb,30::smallint)`, [crypto.randomUUID(), qs]);
+ok((await as(H, `select public.classroom_v2_game_configure($1,'boss','chemistry') v`, [b.room_id]))[0].v===true, 'configure boss mode');
+let deny=null; try { await as(S1, `select public.classroom_v2_game_configure($1,'classic',null)`, [b.room_id]); } catch(e){ deny=e.message }
+ok(/FORBIDDEN/.test(deny||''), 'student cannot configure');
+let bh = (await as(H, `select public.classroom_v2_game_host($1) v`, [b.room_id]))[0].v;
+ok(bh.mode==='boss' && bh.boss.subject==='chemistry' && bh.boss.hp===null, 'boss in lobby, hp not frozen yet');
+const [bp1] = await as(S1, `select * from public.classroom_v2_game_join($1,'Ann')`, [bh.short_code]);
+const [bp2] = await as(S2, `select * from public.classroom_v2_game_join($1,'Ben')`, [bh.short_code]);
+await as(H, `select public.classroom_v2_start($1,$2)`, [b.room_id, bh.version]);
+bh = (await as(H, `select public.classroom_v2_game_host($1) v`, [b.room_id]))[0].v;
+ok(bh.boss.hp===450*2*2 && bh.boss.damage===0, 'hp frozen at start: '+bh.boss.hp);
+ok((await as(H, `select public.classroom_v2_game_configure($1,'classic',null) v`, [b.room_id]))[0].v===false, 'cannot change mode after start');
+const bq = (await as(S1, `select public.classroom_v2_game_player($1,$2) v`, [b.room_id,bp1.player_id]))[0].v;
+const [hit] = await as(S1, `select * from public.classroom_v2_answer($1,$2,$3,0::smallint)`, [b.room_id,bp1.player_id,bq.question.id]);
+const bv = (await as(S2, `select public.classroom_v2_game_player($1,$2) v`, [b.room_id,bp2.player_id]))[0].v;
+ok(bv.mode==='boss' && bv.boss.damage===hit.points && bv.boss.round_damage===hit.points, 'class damage visible to players: '+bv.boss.damage);
+ok(bv.question && !('correct_index' in bv.question), 'boss view still hides the key');
+const classic = (await as(H, `select public.classroom_v2_game_host($1) v`, [room.room_id]))[0].v;
+ok(classic.mode==='classic' && classic.boss===null, 'classic rooms unaffected');
 

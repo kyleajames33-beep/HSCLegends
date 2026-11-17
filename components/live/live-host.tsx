@@ -9,6 +9,8 @@ import type { QuestionDraft } from '@/lib/classroom-v2';
 import { useOnChange, useSound } from '@/lib/live-sound';
 import QRCode from 'qrcode';
 import { Icon } from './icon';
+import { BOSSES, BOSS_ORDER, BossBar, BossPanel, bossLeft } from './boss';
+import type { BossSubject } from '@/lib/live-game';
 import s from './live.module.css';
 
 type QuestionSet = { name: string; questions: readonly QuestionDraft[] };
@@ -61,13 +63,19 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
   const [origin, setOrigin] = useState('');
   const [questionSet, setQuestionSet] = useState<QuestionSet>(SAMPLE);
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [mode, setMode] = useState<'classic' | 'boss'>('boss');
+  const [bossSubject, setBossSubject] = useState<BossSubject>('chemistry');
 
   async function pickFile(file: File | undefined) {
     setImportErrors([]);
     if (!file) return;
     if (file.size > 1_000_000) { setImportErrors(['Choose a file under 1 MB.']); return; }
     const result = loadSet(file.name, await file.text());
-    if ('set' in result) setQuestionSet(result.set); else { setImportErrors(result.errors); setQuestionSet(SAMPLE); }
+    if ('set' in result) {
+      setQuestionSet(result.set);
+      const subject = result.set.questions[0]?.teacher_draft?.subject;
+      if (subject && subject in BOSSES) setBossSubject(subject as BossSubject);
+    } else { setImportErrors(result.errors); setQuestionSet(SAMPLE); }
   }
 
   useEffect(() => { setOrigin(window.location.origin); setRoomId(readTab<string>(ROOM_KEY)); }, []);
@@ -116,6 +124,10 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
       const rows = await rpc<{ room_id: string }[]>(client, 'classroom_v2_create', { p_request_id: crypto.randomUUID(), p_questions: questionSet.questions, p_seconds: seconds });
       const id = rows?.[0]?.room_id;
       if (!id) throw new LiveError('UNKNOWN');
+      if (mode === 'boss') {
+        const ok = await rpc<boolean>(client, 'classroom_v2_game_configure', { p_room: id, p_mode: 'boss', p_boss: bossSubject }).catch(() => false);
+        if (!ok) setError('The game was created, but Boss Battle could not be switched on. It will run as a classic game.');
+      }
       writeTab(ROOM_KEY, id); setRoomId(id); setBoardFor(null);
     } catch (e) {
       setError(e instanceof LiveError && e.code === 'FORBIDDEN' ? 'This account is not approved to host games yet.' : 'Could not create the game. Try again.');
@@ -170,6 +182,15 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
     return shell(
       <div className={`${s.card} ${s.narrow}`}>
         <h1 className={s.h2}>Host a live game</h1>
+        <div className={s.modePick} role="radiogroup" aria-label="Game mode">
+          <button role="radio" aria-checked={mode === 'boss'} className={`${s.modeBtn} ${mode === 'boss' ? s.modeOn : ''}`} onClick={() => setMode('boss')}>Boss Battle<small>The class teams up to take down a boss</small></button>
+          <button role="radio" aria-checked={mode === 'classic'} className={`${s.modeBtn} ${mode === 'classic' ? s.modeOn : ''}`} onClick={() => setMode('classic')}>Classic<small>Everyone for themselves</small></button>
+        </div>
+        {mode === 'boss' && <label className={s.field}>Boss
+          <select className={s.input} value={bossSubject} onChange={e => setBossSubject(e.target.value as BossSubject)}>
+            {BOSS_ORDER.map(k => <option key={k} value={k}>{BOSSES[k].name} ({BOSSES[k].subject})</option>)}
+          </select>
+        </label>}
         <p className={s.field} style={{ marginBottom: 4 }}>Questions</p>
         <p className={s.dim} style={{ marginBottom: 10 }}>{questionSet.name}</p>
         <div className={s.row} style={{ justifyContent: 'flex-start', marginBottom: 14 }}>
@@ -210,10 +231,15 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
           {origin && <JoinQr url={`${origin}/live?code=${view.short_code}`} />}
         </div>
       </div>
-      <p className={`${s.h2} ${s.iconRow}`}><Icon name="players-group" size={32} />{players.length} {players.length === 1 ? 'player' : 'players'}</p>
-      <div className={s.names}>{players.length === 0 ? <p className={s.dim}>Waiting for players…</p> : players.map(p => <span key={p.id} className={s.name}>{p.alias}</span>)}</div>
-      <div className={s.row}>
-        <button className={s.btn} disabled={busy || players.length === 0} onClick={() => void command('classroom_v2_start')}>Start game</button>
+      <div className={view.boss ? s.lobbyGrid : undefined} style={view.boss ? undefined : { display: 'contents' }}>
+        <div className={s.main} style={{ gap: 16 }}>
+          <p className={`${s.h2} ${s.iconRow}`}><Icon name="players-group" size={32} />{players.length} {players.length === 1 ? 'player' : 'players'}</p>
+          <div className={s.names}>{players.length === 0 ? <p className={s.dim}>Waiting for players…</p> : players.map(p => <span key={p.id} className={s.name}>{p.alias}</span>)}</div>
+          <div className={s.row}>
+            <button className={s.btn} disabled={busy || players.length === 0} onClick={() => void command('classroom_v2_start')}>{view.boss ? 'Start the battle' : 'Start game'}</button>
+          </div>
+        </div>
+        {view.boss && <BossPanel boss={view.boss} size={240} caption="Your class vs" />}
       </div>
       <p className={s.dim}>Testing on your own? Open <b>{origin}/live</b> in another tab. Each tab is a separate player.</p>
     </>, endBtn, true);
@@ -223,7 +249,15 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
   if (view.state === 'complete') {
     const [first, second, third] = players;
     return shell(<>
-      <h1 className={`${s.h1} ${s.iconRow}`}><Icon name="trophy" size={48} />Final results</h1>
+      {view.boss && (() => {
+        const left = bossLeft(view.boss);
+        const meta = BOSSES[view.boss.subject];
+        return <>
+          <p className={`${s.banner} ${left === 0 ? s.win : s.lose}`}>{left === 0 ? `${meta.name} defeated!` : `${meta.name} escaped with ${left?.toLocaleString()} HP`}</p>
+          <BossPanel boss={view.boss} size={100} caption={`Class damage: ${view.boss.damage.toLocaleString()}`} />
+        </>;
+      })()}
+      <h1 className={`${s.h1} ${s.iconRow}`}><Icon name="trophy" size={48} />{view.boss ? 'Top damage dealers' : 'Final results'}</h1>
       <div className={s.podium}>
         {[{ p: second, cls: s.block2, n: 2 }, { p: first, cls: s.block1, n: 1 }, { p: third, cls: s.block3, n: 3 }].map(({ p, cls, n }) => (
           <div key={n} className={s.step}>
@@ -252,7 +286,8 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
   // Leaderboard between questions
   if (boardFor === q.id) {
     return shell(<>
-      <h1 className={s.h1}>Leaderboard</h1>
+      {view.boss && <div style={{ width: '100%', maxWidth: 720 }}><BossBar boss={view.boss} /></div>}
+      <h1 className={s.h1}>{view.boss ? 'Top damage dealers' : 'Leaderboard'}</h1>
       <ol className={s.board}>{players.slice(0, 5).map((p, i) => (
         <li key={p.id} className={s.boardRow} style={{ animationDelay: `${i * 80}ms` }}>
           <span>{i + 1}</span><span>{p.alias}</span>
@@ -277,7 +312,13 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
         : <span className={s.pill}>{everyone ? 'Everyone answered' : "Time's up"}</span>}
       <div className={s.stat}><b>{players.length}</b>players</div>
     </div>
-    <div className={s.stem}>{q.stem}</div>
+    {view.boss && !reveal && <BossBar boss={view.boss} />}
+    {view.boss && reveal
+      ? <div className={s.revealRow}>
+          <BossPanel boss={view.boss} size={130} hit caption={bossLeft(view.boss) === 0 ? 'Defeated!' : `Class hit for ${view.boss.round_damage.toLocaleString()} this round`} />
+          <div className={s.stem}>{q.stem}</div>
+        </div>
+      : <div className={s.stem}>{q.stem}</div>}
     <div className={s.tiles}>
       {q.options.map((opt, i) => {
         const right = i === q.correct_index;

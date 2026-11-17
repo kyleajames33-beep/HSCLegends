@@ -14,7 +14,7 @@ export default function Home() {
         <ArcadeHeader active="home" />
         <LobbyHero />
         <div className="mt-4"><LobbyActions /></div>
-        <p className="mt-3 text-xs font-semibold text-[#c5cde0]">Classroom games are being restored. Solo samples are ready now.</p>
+        <p className="mt-3 text-xs font-semibold text-[#c5cde0]">Live classroom games are in testing. Solo samples are ready now.</p>
         <section className="mt-9" aria-labelledby="featured-games">
           <div className="mb-4 flex items-end justify-between gap-3">
             <div><p className="text-[10px] font-black tracking-[0.18em] text-[#a7e1d0]">PICK YOUR ADVENTURE</p><h2 id="featured-games" className="mt-1 font-display text-3xl font-black">Jump into a game</h2></div>
