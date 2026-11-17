@@ -1074,3 +1074,291 @@ Invariants: same component shapes/counts, same facet construction and thickness 
 
 Composition: one complete full-body boss on square canvas at least 1024px; same camera scale as idle, clear padding all around, no clipping, genuinely transparent background. No scene, floor, ground shadow, labels, UI, motion lines, impact stars or detached decorative particles. No text, numbers, equations, logos, watermark, franchise likenesses, cute or toy styling. Decorative game art, not a scientific diagram.
 ```
+
+## Round 5 — brand, home hero, impact and subject emblems (2026-11-17)
+
+Round 4 was approved and integrated. This batch supplies the requested branding, Boss Battle home hero, hit overlay and six subject emblems for review. Style 1 is used for the hero; Style 2 for brand, FX and subject emblems. Brand wordmark text is explicitly authorised for this round; no text appears in the other artwork.
+
+- Date of all generation and authoring: **2026-11-17** (Australia/Sydney).
+- Image generation tool: built-in **`image_gen.imagegen`** (`image_gen__imagegen`); exact underlying model/version is not exposed. Each prompt is recorded below, including unused wordmark attempts. Transparent output was requested for every image except the opaque hero.
+- Brand finishing: the generated emblem concept was rebuilt with simple original SVG polygons/paths. Raster-generated wordmark attempts had rough lettering and were discarded; the final wordmark uses clean **outlined DejaVu Sans Bold glyph paths** and the same rebuilt emblem. The delivered SVG is genuine geometry, with **no embedded bitmap, external font or external resource**. FontTools creates the outlines, CairoSVG rasterises PNG copies, Pillow produces WebP and app-icon composites. Font attribution/license is embedded in the wordmark SVG and preserved in `art/masters/brand/DEJAVU-LICENSE.txt`.
+- Reproducible brand source: `art/masters/brand/build-brand.py` (requires FontTools, CairoSVG, Pillow and system DejaVu Sans Bold). Final brand masters: `art/masters/brand/hsc-legends-wordmark.svg`, `art/masters/brand/hsc-legends-wordmark.png` (2400px wide), `art/masters/brand/hsc-legends-emblem.svg`, `art/masters/brand/hsc-legends-emblem.png` (1024px square). PNG brand masters are rasterisations of the final vectors, not unmodified image-tool outputs.
+- Wordmark deliveries: `public/art/brand/hsc-legends-wordmark.svg`, `.png` (1200px wide, transparent) and `.webp` (lossless, transparent).
+- Emblem deliveries: **`public/icon-192.png`**, **`public/icon-512.png`**, **`public/apple-touch-icon.png`** (180px), **`public/favicon-32.png`**. These four root public paths were explicitly requested as exceptions to the normal art-only path scope. Each is an opaque square on `#0E1020`, with consistent clear margin and no baked rounded corners. The emblem is also reviewed at 16px by downsampling the 32px delivery.
+- Hero, FX and subject-emblem PNG masters are copied unchanged from tool output. Pillow/Lanczos creates web copies: hero **1600 × 900** (centre fitted from near-16:9), impact **256 × 256**, six subject emblems **96 × 96**. All new WebP copies are below 60,000 bytes. Hero uses WebP quality 58, method 6; effect/icons/wordmark use lossless WebP with alpha preserved.
+- Review sheet: **`art/review/round5-sheet.png`**, 1800 × 2220 RGB, Pillow composition on **`#0E1020`**, DejaVu Sans labels outside artwork. It shows the wordmark, all app-icon sizes (512px shown at 256px; 192px and 180px native), emblem at **native 32px and 16px**, native 256px impact, delivered hero, and subject emblems enlarged plus native 96px copies.
+- Visual review: correct wordmark spelling, sharp geometry, recognisable small emblem, students seen from behind without facial focus, reference-matched towering Chemistry boss, calm dark left hero area for headline, distinct subject motifs, transparent effect/icons and no unintended in-art text. Palette hues in generated art are prompt targets with shading. Decorative game art only, not scientific diagrams. Awaiting owner review; app code is outside this batch.
+
+### Round 5 delivery inventory
+
+| Delivered path | Size | Bytes |
+|---|---|---:|
+| `public/art/keyart/home-hero.webp` | 1600 × 900 | 58,362 |
+| `public/art/fx/impact.webp` | 256 × 256 | 30,952 |
+| `public/art/icons/subject-biology.webp` | 96 × 96 | 9,068 |
+| `public/art/icons/subject-chemistry.webp` | 96 × 96 | 9,712 |
+| `public/art/icons/subject-physics.webp` | 96 × 96 | 8,764 |
+| `public/art/icons/subject-maths-standard.webp` | 96 × 96 | 10,054 |
+| `public/art/icons/subject-maths-advanced.webp` | 96 × 96 | 7,866 |
+| `public/art/icons/subject-maths-extension-1.webp` | 96 × 96 | 8,120 |
+| `public/icon-192.png` | 192 × 192 | 4,493 |
+| `public/icon-512.png` | 512 × 512 | 12,353 |
+| `public/apple-touch-icon.png` | 180 × 180 | 4,390 |
+| `public/favicon-32.png` | 32 × 32 | 882 |
+| `public/art/brand/hsc-legends-wordmark.svg` | 1822 × 320 (SVG units) | 6,532 |
+| `public/art/brand/hsc-legends-wordmark.png` | 1200 × 211 | 25,251 |
+| `public/art/brand/hsc-legends-wordmark.webp` | 1200 × 211 | 9,550 |
+
+### Round 5 reference inventory
+
+SHA-256 identifies exact source images supplied to generation calls. Generated brand concepts are not final vector masters.
+
+| Reference | SHA-256 |
+|---|---|
+| `art/masters/bosses/chemistry-boss-idle.png` | `528d32ee8afe9df8a59e457497844f02ab70492b1726556a78dc5f2b409153f8` |
+| `art/masters/bosses/biology-boss-idle.png` | `377579bd276ecf36d25d625a6af45b92c25d7a57e9bf748bb68dc11814c4b859` |
+| `art/masters/icons/shield.png` | `a8b7db6191054c3e73631207b5f84f75c5df9733005e0d3b3aa722543d9f2ddf` |
+| `art/masters/bosses/physics-boss-idle.png` | `c0b03485772fdc020990033278d9c6b7b9c8ffde00e0a5c5918b333b8b3235bd` |
+| `art/masters/bosses/maths-standard-boss-idle.png` | `082bff165d0bc7db9f762e95ee628dfad1cc50b53bf9a8fc96ed7665cac1df80` |
+| `art/masters/bosses/maths-advanced-boss-idle.png` | `f2e9fe1712190b5fcda2c56ed737a33c29bc06489cf266e5c67653dd346700ee` |
+| `art/masters/bosses/maths-extension-1-boss-idle.png` | `8cadb4a37b98cda50a87a196dd5fbf383efc4d227359f85c24c15d9c885a29ef` |
+| `Generated emblem concept` | `78e8348f1ebacbf8039fc7145c24e26d1983ba9086aef82ab2e9a5145d0cae1b` |
+| `Discarded initial raster wordmark` | `52799884f263e1591f4b6e3acf97f52f037c035cda12aeb0cdb87ca611c82bd6` |
+| `Discarded cleanup raster wordmark` | `c55a1fc5c459fe99796919bc78d2a0bba785f076e31af75423c7528b1f403090` |
+
+### Round 5 brand: emblem concept and final production geometry
+
+- Prompt/tool date: 2026-11-17; built-in `image_gen.imagegen`, exact model not exposed.
+- Generated concept: no input images. Not shipped as the final master; its SHA-256 appears in the reference inventory.
+- Final geometry: violet `#6E5BFF` angular hexagonal tile, pale `#F2F2FA` mirrored book planes, `#07080F` outline. Hand-authored SVG paths/polygons follow the generated concept and remove gradient/edge noise. Master and delivery paths are listed above.
+- Exact concept prompt:
+
+```text
+Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base
+with a single #6E5BFF accent, angular/hexagonal framing, no gradients beyond one
+subtle highlight, readable at 24px. Original design.
+
+Use case: stylized-concept. Mature visual direction for HSC students aged 16–18. Original design only, no franchise characters, logos or signature likenesses. No kawaii/chibi, huge cartoon eyes, smiling objects, toy shapes, candy pastels or primary-school decoration. Neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA. Use only the specified saturated accent. No watermarks or signatures. Decorative game art, not scientific diagrams.
+
+Asset type: original HSC Legends square app emblem. One simple powerful geometric mark: a broad solid violet hexagonal shield-like tile with clipped upper corners, containing a single pale #F2F2FA angular open-book/ascending-chevron shape made from TWO thick connected mirrored planes, a clear central V notch. Abstract academic ascent, bold mature competitive-game feel. The two pale planes must be broad and simple, no thin lines, no small cutouts. Violet #6E5BFF body, pale central shape, dark outline only. NOT a lightning bolt, crown, star or a known logo. No letters, initials, numbers or text.
+
+Square canvas at least 1024px. One isolated emblem centered with about 12% clear transparent padding around all sides. Genuinely transparent background outside emblem. Near-flat geometric shapes with crisp edges, no gradients or texture, no shadows, no ornaments, no mockup, no border beyond emblem. Must have a strong recognisable silhouette at 32px AND 16px.
+```
+
+### Round 5 brand: HSC Legends wordmark
+
+- Final source: `art/masters/brand/build-brand.py`; true SVG and raster masters/deliveries listed above. Date: 2026-11-17. Tool/model: deterministic FontTools/CairoSVG/Pillow authoring, no image model for final lettering.
+- Recipe: reproduce the emblem as original flat polygons; place it left of the exact single-line text **HSC Legends**, with generous separation; convert DejaVu Sans Bold glyphs to SVG paths; pale `#F2F2FA` type, violet emblem, transparent canvas for a dark-background lockup. Rasterise at 2400px for master and 1200px for delivery; create lossless WebP. All lettering is outlined, so no installed font is needed for display.
+- Two raster wordmark attempts were generated with built-in `image_gen.imagegen` (exact model not exposed), reviewed and discarded because of rough edges. Initial input: generated emblem concept; cleanup input: initial generated wordmark. Their image hashes are recorded below.
+- Exact initial attempt prompt:
+
+```text
+Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base
+with a single #6E5BFF accent, angular/hexagonal framing, no gradients beyond one
+subtle highlight, readable at 24px. Original design.
+
+Use case: logo-brand. Input image 1 is the original HSC Legends emblem; use it as the precise symbol and palette reference. Create a HORIZONTAL dark-background brand lockup: this same simple violet hexagonal emblem with two pale open-book planes at LEFT, followed by the exact text "HSC Legends" in one clean horizontal line to the right. Text must read precisely HSC Legends (H S C, a space, L e g e n d s), no extra text or tagline. Bold slightly condensed angular sans-serif letterforms, mature confident competitive-game branding, crisp geometry, high legibility. Both words are pale #F2F2FA; violet #6E5BFF only on the emblem and one restrained small geometric cut if needed. All letters fully formed and distinct, no overlapping ligatures, no crown, lightning bolt, glow or ornament. Use the supplied emblem unchanged in design. No existing brand or franchise imitation.
+
+Wide 3:1 or wider transparent canvas at least 1800px wide. Balanced proportions: emblem height comparable to letter cap height with a modest gap; single baseline, no wrapping or stacked words. The entire lockup occupies most of width with clear outer margins. Genuinely transparent background; designed to sit on #0E1020. No backdrop, mockup, shadows, watermark or signature. Render only this original emblem plus the exact requested wordmark; this explicit wordmark text is the sole exception to the project's no-text-in-art rule.
+```
+
+- Exact cleanup attempt prompt:
+
+```text
+Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base
+with a single #6E5BFF accent, angular/hexagonal framing, no gradients beyond one
+subtle highlight, readable at 24px. Original design.
+
+Use case: precise-object-edit. Input image 1 is the HSC Legends horizontal wordmark edit target. Preserve its exact emblem, lettering, spelling "HSC Legends", single baseline, proportions and layout. Clean the rendering completely: remove ALL stray white flecks, ragged pixels, paint splatter, distress, grunge, rough holes, ghost edges and texture. Letter surfaces must be solid uniform pale #F2F2FA, with perfectly smooth crisp clean geometry and normal counters only. Violet emblem surfaces #6E5BFF and white book planes must be flat clean fills. This is precision flat vector-like logo rendering, NOT distressed game lettering or painted text. Only the exact lockup remains, zero stray pixels around letters. No additional labels, shadows, glow or markings. Genuinely transparent background, preserve transparency. Same wide layout, at least 1800px wide.
+```
+
+### Round 5: home-hero
+
+- Master: `art/masters/keyart/home-hero.png`.
+- Delivery: `public/art/keyart/home-hero.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent: `#FF6A2B`.
+- Input references: image 1: `art/masters/bosses/chemistry-boss-idle.png`.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#FF6A2B accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: stylized-concept. Mature visual direction for HSC students aged 16–18. Original design only, no franchise characters, logos or signature likenesses. No kawaii/chibi, huge cartoon eyes, smiling objects, toy shapes, candy pastels or primary-school decoration. Neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA. Use only the specified saturated accent. No watermarks or signatures. Decorative game art, not scientific diagrams.
+
+Use case: illustration-story. Input image 1 is the approved Chemistry boss design reference. Scene: Boss Battle in a monumental industrial containment arena. On the far RIGHT, this exact reaction-vessel crawler is towering at building scale, with orange flames in its hexagonal glass vessel, cubic crystal lattice on its left, two distillation necks, dark ceramic clamps and four articulated legs. Keep its recognisable subject-specific construction, not a humanoid or lava golem. Three small late-teen students/operatives stand in the RIGHT lower foreground with their backs to the viewer, facing the towering boss. Diverse body silhouettes and field gear: one tall figure with tightly curled hair, one shorter broad-shouldered figure and one slender figure with a close-fitting head covering. Confident determined stance, proportional late-teen bodies. Faces never visible or in focus, no portraits, no weapons or violence. Convey teamwork and huge boss scale, not cute mascots.
+
+Composition: exact wide 16:9 full-bleed image, at least 1600px wide. LEFT 45% must be calm nearly uniform dark #0E1020 negative space for a large headline later; keep ALL characters, boss, bright crystals, flames, machinery and focal lighting in RIGHT 55%. No bright horizontal beam crossing left side, no central vanishing-point light, particles or intricate structures in left area. Ground fades to near-dark at left. Camera behind distant students, looking up toward the boss. Restrained orange rim light ties silhouettes to boss; dark navy background and charcoal forms. One saturated accent Chemistry #FF6A2B, pale neutral highlights only.
+
+No text, letters, numbers, equations, logos, brand marks, watermark, UI, labels or headline placeholder. No existing franchise likenesses. Opaque scene background.
+```
+
+### Round 5: impact
+
+- Master: `art/masters/fx/impact.png`.
+- Delivery: `public/art/fx/impact.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 2 (graphic emblem); accent: `#FF6A2B`.
+- Input references: none.
+- Exact prompt:
+
+```text
+Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base
+with a single #FF6A2B accent, angular/hexagonal framing, no gradients beyond one
+subtle highlight, readable at 24px. Original design.
+
+Use case: stylized-concept. Mature visual direction for HSC students aged 16–18. Original design only, no franchise characters, logos or signature likenesses. No kawaii/chibi, huge cartoon eyes, smiling objects, toy shapes, candy pastels or primary-school decoration. Neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA. Use only the specified saturated accent. No watermarks or signatures. Decorative game art, not scientific diagrams.
+
+Asset type: one transparent hit-impact burst overlay for damage on a boss. Angular asymmetric radial impact flash, broad solid white #F2F2FA central flare with six to eight bold sharp irregular wedge rays, three short orange #FF6A2B accents tucked between the main rays, minimal #07080F edge only where needed. No framing badge or filled navy backplate: this is an overlay effect. Bold compact silhouette, clear central impact point, broad rays stay readable at 128px. Original crisp flat Style 2 geometry, not a comic word balloon, not a star currency crystal, no lightning-bolt shape.
+
+Square canvas at least 1024px, centered complete flare occupying about 80% with clear padding. Genuinely transparent background, including gaps between rays. No halo, blur, smoky cloud, background glow, gradients, soft shadow, particles scattered far away, text, letters, numbers, logos, watermarks or signatures. Render exactly one burst.
+```
+
+### Round 5: subject-biology
+
+- Master: `art/masters/icons/subject-biology.png`.
+- Delivery: `public/art/icons/subject-biology.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 2 (graphic emblem); accent: `#1FB070`.
+- Input references: image 1: `art/masters/bosses/biology-boss-idle.png`; image 2: `art/masters/icons/shield.png`.
+- Exact prompt:
+
+```text
+Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base
+with a single #1FB070 accent, angular/hexagonal framing, no gradients beyond one
+subtle highlight, readable at 24px. Original design.
+
+Use case: stylized-concept. Mature visual direction for HSC students aged 16–18. Original design only, no franchise characters, logos or signature likenesses. No kawaii/chibi, huge cartoon eyes, smiling objects, toy shapes, candy pastels or primary-school decoration. Neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA. Use only the specified saturated accent. No watermarks or signatures. Decorative game art, not scientific diagrams.
+
+Input image 1 is the matching approved subject boss, used ONLY as a motif and accent-colour reference. Input image 2 is an approved Style 2 UI icon, used ONLY for flat geometric rendering, dark outline weight and simplicity. Do not copy the shield subject itself.
+
+Subject emblem: A faceted living-cell silhouette containing ONE bold simplified double-helix cutout, plus two small attached spore lobes. Broad green cell forms, navy helix negative space. Echo the Biology boss's membrane/helix/spore identity, not a generic leaf.
+
+Composition: ONE centered subject emblem in a consistent simple flat dark hexagonal backing #171A31, thick #07080F external outline, motif in the single specified subject accent #1FB070 with one restrained pale #9A9CC0 highlight if essential. No miniature whole boss or tiny complex details. Main subject shapes must be broad and readable at 24px and 48px, delivered later at 96px. Square canvas at least 1024px, icon occupies 80% of canvas with clear padding, genuinely transparent outside backing. No 3D bevel, painting texture, glow, gradients, extra border rings, scenery, cast shadow, text, letters, numbers, equations, logos or watermark. Original artwork.
+```
+
+### Round 5: subject-chemistry
+
+- Master: `art/masters/icons/subject-chemistry.png`.
+- Delivery: `public/art/icons/subject-chemistry.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 2 (graphic emblem); accent: `#FF6A2B`.
+- Input references: image 1: `art/masters/bosses/chemistry-boss-idle.png`; image 2: `art/masters/icons/shield.png`.
+- Exact prompt:
+
+```text
+Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base
+with a single #FF6A2B accent, angular/hexagonal framing, no gradients beyond one
+subtle highlight, readable at 24px. Original design.
+
+Use case: stylized-concept. Mature visual direction for HSC students aged 16–18. Original design only, no franchise characters, logos or signature likenesses. No kawaii/chibi, huge cartoon eyes, smiling objects, toy shapes, candy pastels or primary-school decoration. Neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA. Use only the specified saturated accent. No watermarks or signatures. Decorative game art, not scientific diagrams.
+
+Input image 1 is the matching approved subject boss, used ONLY as a motif and accent-colour reference. Input image 2 is an approved Style 2 UI icon, used ONLY for flat geometric rendering, dark outline weight and simplicity. Do not copy the shield subject itself.
+
+Subject emblem: THREE connected isometric cubic crystal volumes emerging above a small angular reaction-chamber cup. Orange crystal faces and a simple dark vessel base. Clear crystalline lattice and reaction-vessel motif from the Chemistry boss, no face or atom badge.
+
+Composition: ONE centered subject emblem in a consistent simple flat dark hexagonal backing #171A31, thick #07080F external outline, motif in the single specified subject accent #FF6A2B with one restrained pale #9A9CC0 highlight if essential. No miniature whole boss or tiny complex details. Main subject shapes must be broad and readable at 24px and 48px, delivered later at 96px. Square canvas at least 1024px, icon occupies 80% of canvas with clear padding, genuinely transparent outside backing. No 3D bevel, painting texture, glow, gradients, extra border rings, scenery, cast shadow, text, letters, numbers, equations, logos or watermark. Original artwork.
+```
+
+### Round 5: subject-physics
+
+- Master: `art/masters/icons/subject-physics.png`.
+- Delivery: `public/art/icons/subject-physics.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 2 (graphic emblem); accent: `#2F7BEA`.
+- Input references: image 1: `art/masters/bosses/physics-boss-idle.png`; image 2: `art/masters/icons/shield.png`.
+- Exact prompt:
+
+```text
+Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base
+with a single #2F7BEA accent, angular/hexagonal framing, no gradients beyond one
+subtle highlight, readable at 24px. Original design.
+
+Use case: stylized-concept. Mature visual direction for HSC students aged 16–18. Original design only, no franchise characters, logos or signature likenesses. No kawaii/chibi, huge cartoon eyes, smiling objects, toy shapes, candy pastels or primary-school decoration. Neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA. Use only the specified saturated accent. No watermarks or signatures. Decorative game art, not scientific diagrams.
+
+Input image 1 is the matching approved subject boss, used ONLY as a motif and accent-colour reference. Input image 2 is an approved Style 2 UI icon, used ONLY for flat geometric rendering, dark outline weight and simplicity. Do not copy the shield subject itself.
+
+Subject emblem: ONE broad toroidal electromagnetic coil with two simple wound-segment divisions, a dark central circular opening and one sparse elliptical field arc with two charge dots. Blue flat coil faces. Echo the Physics boss; no lightning bolt.
+
+Composition: ONE centered subject emblem in a consistent simple flat dark hexagonal backing #171A31, thick #07080F external outline, motif in the single specified subject accent #2F7BEA with one restrained pale #9A9CC0 highlight if essential. No miniature whole boss or tiny complex details. Main subject shapes must be broad and readable at 24px and 48px, delivered later at 96px. Square canvas at least 1024px, icon occupies 80% of canvas with clear padding, genuinely transparent outside backing. No 3D bevel, painting texture, glow, gradients, extra border rings, scenery, cast shadow, text, letters, numbers, equations, logos or watermark. Original artwork.
+```
+
+### Round 5: subject-maths-standard
+
+- Master: `art/masters/icons/subject-maths-standard.png`.
+- Delivery: `public/art/icons/subject-maths-standard.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 2 (graphic emblem); accent: `#F2B530`.
+- Input references: image 1: `art/masters/bosses/maths-standard-boss-idle.png`; image 2: `art/masters/icons/shield.png`.
+- Exact prompt:
+
+```text
+Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base
+with a single #F2B530 accent, angular/hexagonal framing, no gradients beyond one
+subtle highlight, readable at 24px. Original design.
+
+Use case: stylized-concept. Mature visual direction for HSC students aged 16–18. Original design only, no franchise characters, logos or signature likenesses. No kawaii/chibi, huge cartoon eyes, smiling objects, toy shapes, candy pastels or primary-school decoration. Neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA. Use only the specified saturated accent. No watermarks or signatures. Decorative game art, not scientific diagrams.
+
+Input image 1 is the matching approved subject boss, used ONLY as a motif and accent-colour reference. Input image 2 is an approved Style 2 UI icon, used ONLY for flat geometric rendering, dark outline weight and simplicity. Do not copy the shield subject itself.
+
+Subject emblem: A bold simplified geometric balance: horizontal gold lever on a central triangular support, two shallow triangular trays, one solid cube per tray. Symmetric broad gold motif, clear negative space. Echo the Standard boss's proportion and measurement construct.
+
+Composition: ONE centered subject emblem in a consistent simple flat dark hexagonal backing #171A31, thick #07080F external outline, motif in the single specified subject accent #F2B530 with one restrained pale #9A9CC0 highlight if essential. No miniature whole boss or tiny complex details. Main subject shapes must be broad and readable at 24px and 48px, delivered later at 96px. Square canvas at least 1024px, icon occupies 80% of canvas with clear padding, genuinely transparent outside backing. No 3D bevel, painting texture, glow, gradients, extra border rings, scenery, cast shadow, text, letters, numbers, equations, logos or watermark. Original artwork.
+```
+
+### Round 5: subject-maths-advanced
+
+- Master: `art/masters/icons/subject-maths-advanced.png`.
+- Delivery: `public/art/icons/subject-maths-advanced.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 2 (graphic emblem); accent: `#9B5CFF`.
+- Input references: image 1: `art/masters/bosses/maths-advanced-boss-idle.png`; image 2: `art/masters/icons/shield.png`.
+- Exact prompt:
+
+```text
+Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base
+with a single #9B5CFF accent, angular/hexagonal framing, no gradients beyond one
+subtle highlight, readable at 24px. Original design.
+
+Use case: stylized-concept. Mature visual direction for HSC students aged 16–18. Original design only, no franchise characters, logos or signature likenesses. No kawaii/chibi, huge cartoon eyes, smiling objects, toy shapes, candy pastels or primary-school decoration. Neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA. Use only the specified saturated accent. No watermarks or signatures. Decorative game art, not scientific diagrams.
+
+Input image 1 is the matching approved subject boss, used ONLY as a motif and accent-colour reference. Input image 2 is an approved Style 2 UI icon, used ONLY for flat geometric rendering, dark outline weight and simplicity. Do not copy the shield subject itself.
+
+Subject emblem: Two nested violet diamond/octahedron silhouettes, outer four facets separated by broad dark negative-space seams, one smaller central diamond; one short restrained violet curved trajectory cut through centre. Echo the Advanced boss, few bold geometric planes.
+
+Composition: ONE centered subject emblem in a consistent simple flat dark hexagonal backing #171A31, thick #07080F external outline, motif in the single specified subject accent #9B5CFF with one restrained pale #9A9CC0 highlight if essential. No miniature whole boss or tiny complex details. Main subject shapes must be broad and readable at 24px and 48px, delivered later at 96px. Square canvas at least 1024px, icon occupies 80% of canvas with clear padding, genuinely transparent outside backing. No 3D bevel, painting texture, glow, gradients, extra border rings, scenery, cast shadow, text, letters, numbers, equations, logos or watermark. Original artwork.
+```
+
+### Round 5: subject-maths-extension-1
+
+- Master: `art/masters/icons/subject-maths-extension-1.png`.
+- Delivery: `public/art/icons/subject-maths-extension-1.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 2 (graphic emblem); accent: `#E8447F`.
+- Input references: image 1: `art/masters/bosses/maths-extension-1-boss-idle.png`; image 2: `art/masters/icons/shield.png`.
+- Exact prompt:
+
+```text
+Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base
+with a single #E8447F accent, angular/hexagonal framing, no gradients beyond one
+subtle highlight, readable at 24px. Original design.
+
+Use case: stylized-concept. Mature visual direction for HSC students aged 16–18. Original design only, no franchise characters, logos or signature likenesses. No kawaii/chibi, huge cartoon eyes, smiling objects, toy shapes, candy pastels or primary-school decoration. Neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA. Use only the specified saturated accent. No watermarks or signatures. Decorative game art, not scientific diagrams.
+
+Input image 1 is the matching approved subject boss, used ONLY as a motif and accent-colour reference. Input image 2 is an approved Style 2 UI icon, used ONLY for flat geometric rendering, dark outline weight and simplicity. Do not copy the shield subject itself.
+
+Subject emblem: A solid central tetrahedral mass formed by THREE broad interlocking triangular facets, with two short chunky self-similar triangular branches at upper corners; ONE thick pink line joins three pink nodes across central planes. Echo the revised heavy Extension 1 boss, compact substantial triangular/fractal silhouette, not a sparse chain.
+
+Composition: ONE centered subject emblem in a consistent simple flat dark hexagonal backing #171A31, thick #07080F external outline, motif in the single specified subject accent #E8447F with one restrained pale #9A9CC0 highlight if essential. No miniature whole boss or tiny complex details. Main subject shapes must be broad and readable at 24px and 48px, delivered later at 96px. Square canvas at least 1024px, icon occupies 80% of canvas with clear padding, genuinely transparent outside backing. No 3D bevel, painting texture, glow, gradients, extra border rings, scenery, cast shadow, text, letters, numbers, equations, logos or watermark. Original artwork.
+```
