@@ -9,6 +9,7 @@ await db.exec(fs.readFileSync(`${dir}/staging-candidate.sql`,'utf8'));
 await db.exec(fs.readFileSync(`${dir}/staging-game-layer.sql`,'utf8'));
 await db.exec(fs.readFileSync(`${dir}/staging-boss-battle.sql`,'utf8'));
 await db.exec(fs.readFileSync(`${dir}/staging-host-tools.sql`,'utf8'));
+await db.exec(fs.readFileSync(`${dir}/staging-question-sets.sql`,'utf8'));
 const H='00000000-0000-4000-8000-0000000000a1', S1='00000000-0000-4000-8000-0000000000b1', S2='00000000-0000-4000-8000-0000000000b2';
 const as = async (uid, sql, params=[]) => { await db.exec(`select set_config('test.uid','${uid}',false)`); return (await db.query(sql, params)).rows; };
 const ok = (c,m)=>{ if(!c){console.error('FAIL',m);process.exitCode=1;} else console.log('ok',m); };
@@ -92,4 +93,21 @@ ok(rep.questions.length===2 && rep.players.length===2 && rep.players[0].answers.
 ok(rep.questions[0].opened===true && rep.questions[1].opened===false, 'report marks unplayed questions');
 let rnope=null; try { await as(S1, `select public.classroom_v2_game_report($1)`, [b.room_id]); } catch(e){ rnope=e.message }
 ok(/FORBIDDEN/.test(rnope||''), 'student cannot read the report');
+
+// Saved question sets
+const big = JSON.stringify(Array.from({length:40},(_,i)=>({stem:`Set Q${i}`,options:['a','b'],correct_index:i%2,content_revision:'t',teacher_draft:{id:`s${i}`,explanation:'x',subject:'physics',year:12,module:'module-5',syllabusVersion:'2017',source:'test',reviewStatus:'unreviewed'}})));
+const setId = (await as(H, `select public.classroom_v2_set_save('Physics M5', $1::jsonb) v`, [big]))[0].v;
+let list = (await as(H, `select public.classroom_v2_set_list() v`))[0].v;
+ok(list.length===1 && list[0].count===40 && list[0].subject==='physics', 'set saved and listed with subject');
+let sdeny=null; try { await as(S1, `select public.classroom_v2_set_save('x', $1::jsonb)`, [big]); } catch(e){ sdeny=e.message }
+ok(/FORBIDDEN/.test(sdeny||''), 'non-host cannot save sets');
+const H2='00000000-0000-4000-8000-0000000000a2';
+await db.exec(`insert into classroom_v2_private.hosts(actor) values('${H2}')`);
+ok((await as(H2, `select public.classroom_v2_set_list() v`))[0].v.length===0, 'another host cannot see the set');
+let other=null; try { await as(H2, `select public.classroom_v2_set_get($1)`, [setId]); } catch(e){ other=e.message }
+ok(/ROOM_UNAVAILABLE/.test(other||''), 'another host cannot read the set');
+ok((await as(H2, `select public.classroom_v2_set_delete($1) v`, [setId]))[0].v===false, 'another host cannot delete the set');
+const got = (await as(H, `select public.classroom_v2_set_get($1) v`, [setId]))[0].v;
+ok(got.length===40, 'owner reads the set');
+ok((await as(H, `select public.classroom_v2_set_delete($1) v`, [setId]))[0].v===true, 'owner deletes the set');
 

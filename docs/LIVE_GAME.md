@@ -43,7 +43,7 @@ A student who closes the tab by accident can reopen `/live` in the same browser 
 - **What the server guarantees.** It decides scores and deadlines. A student never receives the answer key for a question they haven't answered, and cannot read another student's view or the host view.
 - **Client.** `lib/live-game.ts` provides the client, polling (1 s, stale responses dropped) and the clock offset. `lib/live-sound.ts` holds the synthesized sound cues. The screens are in `components/live/`. Sessions are stored per tab.
 - **When results appear.** The reveal shows when time runs out or every player has answered. Students who answer early see "Locked in" until then, so they can't tell their neighbours the answer.
-- **Your own questions.** `/live/host` accepts the same CSV/JSON as `/question-import`. Example file: `docs/examples/live-game-questions.csv`. A game holds at most 20 questions. Explanations show to students only after they answer.
+- **Your own questions.** Upload a CSV/JSON set on `/live/host` (same format as `/question-import`, up to 300 questions). It's saved to the teacher's private library (`classroom_v2_set_*`, `staging-question-sets.sql`), and each game draws a random 5–20 questions from it. Example file: `docs/examples/live-game-questions.csv`. A single game holds at most 20 questions. Explanations show to students only after they answer.
 
 ## Tests
 

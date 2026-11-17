@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, SAMPLE_SET, SHAPES, liveClient, msRemaining, readTab, rpc, useNow, usePoll, useSession, writeTab, type HostView } from '@/lib/live-game';
 import { validateTeacherQuestions } from '@/lib/teacher-question-import.mjs';
-import { prepareTeacherDraftRequest } from '@/lib/classroom-v2/teacher-drafts.mjs';
+import { draftQuestions } from '@/lib/classroom-v2/teacher-drafts.mjs';
 import type { QuestionDraft } from '@/lib/classroom-v2';
 import { useOnChange, useSound } from '@/lib/live-sound';
 import QRCode from 'qrcode';
@@ -14,25 +14,35 @@ import { BOSSES, BOSS_ORDER, BossBar, BossPanel, bossLeft, emblem } from './boss
 import type { BossSubject } from '@/lib/live-game';
 import s from './live.module.css';
 
-type QuestionSet = { name: string; questions: readonly QuestionDraft[] };
-const SAMPLE: QuestionSet = { name: 'Sample: 8 mixed HSC questions (unreviewed, for testing)', questions: SAMPLE_SET };
+type SetSummary = { id: string; name: string; subject: BossSubject | null; count: number; created_at: string };
+const SAMPLE_ID = 'sample';
+const MAX_SET = 300;
 
-/** Validate a teacher CSV/JSON file with the same rules as /question-import. */
-function loadSet(fileName: string, text: string): { set: QuestionSet } | { errors: string[] } {
+/** Validate a teacher CSV/JSON file with the same rules as /question-import (up to 300 questions). */
+function parseFile(fileName: string, text: string): { name: string; questions: QuestionDraft[] } | { errors: string[] } {
   const format = /\.csv$/i.test(fileName) ? 'csv' : /\.json$/i.test(fileName) ? 'json' : null;
   if (!format) return { errors: ['Choose a .csv or .json file.'] };
   try {
-    const checked = validateTeacherQuestions(text, format);
+    const checked = validateTeacherQuestions(text, format, { maxQuestions: MAX_SET });
     if (!checked.valid || !checked.draft) {
       const errors = checked.results.filter(r => r.errors.length).slice(0, 4).map(r => `Row ${r.row}: ${r.errors.join(' ')}`);
       return { errors: errors.length ? errors : ['The file could not be used.'] };
     }
-    const revision = `teacher-draft-${new Date().toISOString().slice(0, 10)}`;
-    const request = prepareTeacherDraftRequest(JSON.stringify(checked.draft), crypto.randomUUID(), 20, revision);
-    return { set: { name: `${fileName} (${request.questions.length} questions, unreviewed)`, questions: request.questions } };
+    const name = fileName.replace(/\.(csv|json)$/i, '').slice(0, 80) || 'Question set';
+    return { name, questions: draftQuestions(checked.draft, `teacher-draft-${new Date().toISOString().slice(0, 10)}`) };
   } catch (e) {
-    return { errors: [e instanceof Error && e.message !== 'INVALID_TEACHER_DRAFT' ? e.message : 'The file could not be used.'] };
+    return { errors: [e instanceof Error ? e.message : 'The file could not be used.'] };
   }
+}
+
+/** Random selection of `n` questions in random order (unbiased shuffle). */
+function draw<T>(pool: readonly T[], n: number): T[] {
+  const a = [...pool];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.slice(0, Math.min(n, a.length));
 }
 
 const ROOM_KEY = 'hsc-live-host-room';
@@ -80,21 +90,43 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
   const [password, setPassword] = useState('');
   const [boardFor, setBoardFor] = useState<string | null>(null); // question id whose leaderboard is showing
   const [origin, setOrigin] = useState('');
-  const [questionSet, setQuestionSet] = useState<QuestionSet>(SAMPLE);
+  const [library, setLibrary] = useState<SetSummary[] | null>(null);
+  const [selected, setSelected] = useState<string>(SAMPLE_ID);
+  const [perGame, setPerGame] = useState<number>(10);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [mode, setMode] = useState<'classic' | 'boss'>('boss');
   const [bossSubject, setBossSubject] = useState<BossSubject>('chemistry');
+
+  const loadLibrary = useCallback(async () => {
+    try { setLibrary(await rpc<SetSummary[]>(client, 'classroom_v2_set_list', {})); } catch { setLibrary([]); }
+  }, [client]);
+  useEffect(() => { if (session === 'teacher' && !roomId) void loadLibrary(); }, [session, roomId, loadLibrary]);
 
   async function pickFile(file: File | undefined) {
     setImportErrors([]);
     if (!file) return;
     if (file.size > 1_000_000) { setImportErrors(['Choose a file under 1 MB.']); return; }
-    const result = loadSet(file.name, await file.text());
-    if ('set' in result) {
-      setQuestionSet(result.set);
-      const subject = result.set.questions[0]?.teacher_draft?.subject;
+    const parsed = parseFile(file.name, await file.text());
+    if ('errors' in parsed) { setImportErrors(parsed.errors); return; }
+    setBusy(true);
+    try {
+      const id = await rpc<string>(client, 'classroom_v2_set_save', { p_name: parsed.name, p_questions: parsed.questions });
+      await loadLibrary();
+      setSelected(id);
+      const subject = parsed.questions[0]?.teacher_draft?.subject;
       if (subject && subject in BOSSES) setBossSubject(subject as BossSubject);
-    } else { setImportErrors(result.errors); setQuestionSet(SAMPLE); }
+    } catch {
+      setImportErrors(['The set could not be saved. Try again.']);
+    }
+    setBusy(false);
+  }
+
+  async function deleteSet(id: string) {
+    setConfirmDelete(null);
+    try { await rpc<boolean>(client, 'classroom_v2_set_delete', { p_set: id }); } catch { setError('Could not delete that set.'); }
+    if (selected === id) setSelected(SAMPLE_ID);
+    await loadLibrary();
   }
 
   useEffect(() => { setOrigin(window.location.origin); setRoomId(readTab<string>(ROOM_KEY)); }, []);
@@ -161,7 +193,8 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
   async function create() {
     setBusy(true); setError('');
     try {
-      const rows = await rpc<{ room_id: string }[]>(client, 'classroom_v2_create', { p_request_id: crypto.randomUUID(), p_questions: questionSet.questions, p_seconds: seconds });
+      const pool = selected === SAMPLE_ID ? SAMPLE_SET : await rpc<QuestionDraft[]>(client, 'classroom_v2_set_get', { p_set: selected });
+      const rows = await rpc<{ room_id: string }[]>(client, 'classroom_v2_create', { p_request_id: crypto.randomUUID(), p_questions: draw(pool, perGame), p_seconds: seconds });
       const id = rows?.[0]?.room_id;
       if (!id) throw new LiveError('UNKNOWN');
       if (mode === 'boss') {
@@ -237,17 +270,37 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
             ))}
           </div>
         </fieldset>}
-        <p className={s.field} style={{ marginBottom: 4 }}>Questions</p>
-        <p className={s.dim} style={{ marginBottom: 10 }}>{questionSet.name}</p>
-        <div className={s.row} style={{ justifyContent: 'flex-start', marginBottom: 14 }}>
-          <label className={`${s.btn} ${s.ghost}`} style={{ fontSize: '.95rem', padding: '10px 14px' }}>
-            Use my own file (CSV or JSON)
-            <input type="file" accept=".csv,.json,text/csv,application/json" hidden onChange={e => { void pickFile(e.target.files?.[0]); e.target.value = ''; }} />
-          </label>
-          {questionSet !== SAMPLE && <button className={s.link} onClick={() => { setQuestionSet(SAMPLE); setImportErrors([]); }}>Use sample instead</button>}
+        <p className={s.field} style={{ marginBottom: 6 }}>Questions</p>
+        <div className={s.setList} role="radiogroup" aria-label="Question set">
+          {[{ id: SAMPLE_ID, name: 'Sample: mixed HSC questions', subject: null, count: SAMPLE_SET.length }, ...(library ?? [])].map(set => (
+            <div key={set.id} className={`${s.setRow} ${selected === set.id ? s.modeOn : ''}`}>
+              <button role="radio" aria-checked={selected === set.id} className={s.setPick} onClick={() => { setSelected(set.id); if (set.subject) setBossSubject(set.subject); }}>
+                {set.subject ? <Image src={emblem(set.subject)} alt="" width={28} height={28} /> : <Icon name="star" size={28} />}
+                <span><b>{set.name}</b><small>{set.count} questions{set.id === SAMPLE_ID ? ' · unreviewed sample' : ''}</small></span>
+              </button>
+              {set.id !== SAMPLE_ID && (confirmDelete === set.id
+                ? <button className={s.link} onClick={() => void deleteSet(set.id)}>Confirm delete</button>
+                : <button className={s.link} aria-label={`Delete ${set.name}`} onClick={() => setConfirmDelete(set.id)}>Delete</button>)}
+            </div>
+          ))}
+          {library === null && <p className={s.dim}>Loading your sets…</p>}
         </div>
+        <label className={`${s.btn} ${s.ghost}`} style={{ fontSize: '.95rem', padding: '10px 14px', margin: '10px 0 6px' }}>
+          Upload a question set (CSV or JSON)
+          <input type="file" accept=".csv,.json,text/csv,application/json" hidden disabled={busy} onChange={e => { void pickFile(e.target.files?.[0]); e.target.value = ''; }} />
+        </label>
         {importErrors.length > 0 && <div className={s.error} role="alert" style={{ marginBottom: 14 }}>{importErrors.map((m, i) => <p key={i}>{m}</p>)}</div>}
-        <p className={s.dim} style={{ fontSize: '.85rem', marginBottom: 14 }}>Up to 20 questions per game. Get the CSV template and check a file on the <a href="/question-import" style={{ textDecoration: 'underline' }}>Question import</a> page.</p>
+        <p className={s.dim} style={{ fontSize: '.85rem', marginBottom: 14 }}>Up to 300 questions per set. Sets are saved to your account, and each game draws a random selection. Get the CSV template on the <a href="/question-import" style={{ textDecoration: 'underline' }}>Question import</a> page.</p>
+        {(() => {
+          const count = selected === SAMPLE_ID ? SAMPLE_SET.length : (library?.find(x => x.id === selected)?.count ?? 0);
+          const choices = [...new Set([5, 10, 15, 20].filter(n => n < count).concat(Math.min(count, 20)))].filter(n => n > 0).sort((a, b) => a - b);
+          const value = choices.includes(perGame) ? perGame : choices.at(-1) ?? 1;
+          return <label className={s.field}>Questions per game
+            <select className={s.input} value={value} onChange={e => setPerGame(Number(e.target.value))}>
+              {choices.map(n => <option key={n} value={n}>{n} questions{n === count ? ' (all)' : ''}</option>)}
+            </select>
+          </label>;
+        })()}
         <label className={s.field}>Time per question
           <select className={s.input} value={seconds} onChange={e => setSeconds(Number(e.target.value))}>
             {DURATIONS.map(d => <option key={d} value={d}>{d} seconds</option>)}
