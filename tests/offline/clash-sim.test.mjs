@@ -120,3 +120,62 @@ test('a full bot-vs-bot match plays out, ends, and both sides do things', () => 
     assert.ok(s.score.blue > 0 && s.score.orange > 0, `both teams scored ${Math.round(s.score.blue)}-${Math.round(s.score.orange)}`);
   }
 });
+
+const protocol = loadSourceModule('lib/clash/protocol.ts', { './sim': sim });
+
+test('snapshots round-trip the world state compactly', () => {
+  const s = createClash(5);
+  for (let i = 0; i < 3; i++) { addPlayer(s, `b${i}`, `Blue ${i}`, 'blue', true); addPlayer(s, `o${i}`, `Orange ${i}`, 'orange', true); }
+  const brain = {};
+  let ev = [];
+  for (let i = 0; i < 30 * 70; i++) { const e = []; const inp = bots.botInputs(s, brain, e, Math.random); e.push(...step(s, 1 / 30, inp)); ev = e.length ? e : ev; }
+  s.players.b0.locks.t3 = s.t + 4;
+  const snap = protocol.encodeSnapshot(s, ev);
+  const names = new Map(protocol.encodeRoster(s).map(([id, name]) => [id, name]));
+  const g = protocol.decodeSnapshot(JSON.parse(JSON.stringify(snap)), names);
+  assert.equal(Object.keys(g.players).length, 6);
+  for (const p of Object.values(s.players)) {
+    const q = g.players[p.id];
+    assert.ok(Math.abs(q.x - p.x) <= 0.5 && Math.abs(q.y - p.y) <= 0.5, 'positions');
+    assert.equal(q.team, p.team); assert.equal(q.alive, p.alive); assert.equal(q.name, p.name);
+    assert.equal(q.answering, p.answering);
+  }
+  assert.ok(g.players.b0.locks.t3 > g.t, 'locks survive');
+  assert.deepEqual(g.reactors.map(r => r.owner), s.reactors.map(r => r.owner));
+  assert.equal(g.minions.length, s.minions.length);
+  assert.ok(JSON.stringify(snap).length < 4000, `snapshot is small (${JSON.stringify(snap).length} bytes)`);
+});
+
+test('student input messages are clamped and sanitised', () => {
+  const m = protocol.inputFromMsg({ id: 'x', k: 'y', x: 'far', y: 1e9, a: Number.NaN, f: 1, s: 'yes' });
+  assert.deepEqual({ ...m.input }, { mx: 0, my: 0, aim: 0, fire: true, sprint: false });
+  assert.ok(Number.isNaN(m.x));
+  assert.equal(m.y, 1e5);
+});
+
+test('remote positions are accepted only as far as plausible', () => {
+  const s = createClash(1);
+  const p = addPlayer(s, 'r', 'R', 'blue');
+  p.remote = true; p.x = 400; p.y = 330; p.energy = 0;
+  sim.applyRemotePosition(s, 'r', 1400, 330, 1 / 30);
+  assert.ok(p.x - 400 <= sim.SPEED / 30 * 1.25 + 2.01, `teleport clamped to walking speed (${p.x - 400})`);
+  p.energy = 50; const x0 = p.x;
+  sim.applyRemotePosition(s, 'r', p.x + 13, 330, 1 / 30);
+  assert.ok(p.x - x0 > 12 && p.energy < 50, 'sprint-speed move allowed with energy, and costs energy');
+  const wall = sim.WALLS[4];
+  p.x = wall.x - sim.PLAYER_R - 2; p.y = wall.y + 10;
+  sim.applyRemotePosition(s, 'r', wall.x + 10, wall.y + 10, 1 / 30);
+  assert.ok(p.x <= wall.x - sim.PLAYER_R + 0.5, 'cannot move into a wall');
+  const before = { x: p.x, y: p.y };
+  step(s, 1 / 30, { r: { ...IDLE, mx: 1 } });
+  assert.deepEqual({ x: p.x, y: p.y }, before, 'remote players are not moved by inputs');
+});
+
+test('match length is configurable', () => {
+  const s = createClash(1, 90);
+  addPlayer(s, 'a', 'A', 'blue');
+  const ev = tick(s, 31);
+  assert.ok(ev.some(e => e.type === 'boss-spawn'), 'boss arrives with a minute left of a 90s match');
+  tick(s, 60);
+  assert.ok(s.ended);
+});

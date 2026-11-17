@@ -3,7 +3,7 @@
 // Synthesized sound effects for the live game. No audio files: short note
 // sequences rendered with Web Audio. Optional; any failure is ignored.
 
-import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 
 export type Cue = 'join' | 'start' | 'tick' | 'lock' | 'reveal' | 'correct' | 'wrong' | 'fanfare';
 
@@ -67,7 +67,8 @@ export function useSound(key: string, defaultOn: boolean) {
     if (next) play('lock');
   }, [key]);
   const cue = useCallback((c: Cue) => { if (onRef.current) play(c); }, []);
-  return { on, toggle, cue };
+  // Stable object: effects that list `sound` as a dependency must not restart every render.
+  return useMemo(() => ({ on, toggle, cue }), [on, toggle, cue]);
 }
 
 /** Fires `effect` once each time `key` changes to a new non-null value. */

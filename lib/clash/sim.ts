@@ -41,7 +41,7 @@ export type Vec = { x: number; y: number };
 export type Rect = { x: number; y: number; w: number; h: number };
 
 export type Player = {
-  id: string; name: string; team: Team; bot: boolean;
+  id: string; name: string; team: Team; bot: boolean; remote?: boolean;
   x: number; y: number; aim: number;
   energy: number; streak: number;
   alive: boolean; respawnAt: number; cooldown: number;
@@ -68,7 +68,7 @@ export type ClashEvent =
   | { type: 'end'; winner: Team | null };
 
 export type ClashState = {
-  t: number; ended: boolean; seed: number; nextId: number;
+  t: number; ended: boolean; seed: number; nextId: number; duration: number;
   players: Record<string, Player>;
   reactors: Reactor[]; terminals: Terminal[];
   shots: Shot[]; minions: Minion[]; orbs: Orb[];
@@ -124,7 +124,7 @@ function hitsWall(x: number, y: number, r: number): boolean {
   return false;
 }
 /** Move with axis-separated wall collision (slides along walls). */
-function moveCircle(p: Vec, dx: number, dy: number, r: number) {
+export function moveCircle(p: Vec, dx: number, dy: number, r: number) {
   if (!hitsWall(p.x + dx, p.y, r)) p.x += dx;
   if (!hitsWall(p.x, p.y + dy, r)) p.y += dy;
 }
@@ -134,9 +134,9 @@ export function spawnPoint(team: Team, slot: number): Vec {
 }
 
 // ---- Setup -----------------------------------------------------------------
-export function createClash(seed = 1): ClashState {
+export function createClash(seed = 1, duration = MATCH_SECONDS): ClashState {
   return {
-    t: 0, ended: false, seed, nextId: 1,
+    t: 0, ended: false, seed, nextId: 1, duration,
     players: {},
     reactors: REACTOR_CELLS.map(([id, c, r]) => ({ id, ...cell(c, r), control: 0, owner: null })),
     terminals: TERMINAL_CELLS.map(([id, c, r]) => ({ id, ...cell(c, r) })),
@@ -200,6 +200,32 @@ export function cancelAnswer(state: ClashState, playerId: string) {
 }
 
 // ---- Step ------------------------------------------------------------------
+function fireIfAsked(state: ClashState, p: Player, inp: Input) {
+  if (!inp.fire || p.cooldown !== 0 || p.energy < SHOT_COST) return;
+  p.energy -= SHOT_COST;
+  p.cooldown = SHOT_COOLDOWN;
+  state.shots.push({ id: state.nextId++, owner: p.id, team: p.team,
+    x: p.x + Math.cos(p.aim) * (PLAYER_R + 4), y: p.y + Math.sin(p.aim) * (PLAYER_R + 4),
+    vx: Math.cos(p.aim) * SHOT_SPEED, vy: Math.sin(p.aim) * SHOT_SPEED, ttl: SHOT_TTL });
+}
+
+/**
+ * Multiplayer: a student's browser moves its own character and reports the
+ * position. Accept it only as far as is plausible: no faster than sprinting,
+ * no passing through walls, and fast movement costs sprint energy.
+ */
+export function applyRemotePosition(state: ClashState, id: string, x: number, y: number, dt: number) {
+  const p = state.players[id];
+  if (!p || !p.alive || p.answering || state.ended || !Number.isFinite(x) || !Number.isFinite(y)) return;
+  let dx = x - p.x, dy = y - p.y;
+  const d = Math.hypot(dx, dy);
+  if (d < 0.01) return;
+  const walkMax = SPEED * dt * 1.25 + 2;
+  const allowed = p.energy > 0 ? SPRINT_SPEED * dt * 1.25 + 2 : walkMax;
+  if (d > allowed) { dx *= allowed / d; dy *= allowed / d; }
+  if (Math.hypot(dx, dy) > walkMax) p.energy = Math.max(0, p.energy - SPRINT_COST * dt);
+  moveCircle(p, dx, dy, PLAYER_R);
+}
 function knockOut(state: ClashState, victim: Player) {
   victim.alive = false;
   victim.answering = null;
@@ -213,7 +239,7 @@ export function step(state: ClashState, dt: number, inputs: Record<string, Input
   if (state.ended) return events;
   dt = Math.min(dt, 0.1);
   state.t += dt;
-  const left = MATCH_SECONDS - state.t;
+  const left = state.duration - state.t;
   const players = Object.values(state.players);
 
   // Players
@@ -229,6 +255,7 @@ export function step(state: ClashState, dt: number, inputs: Record<string, Input
     const inp = inputs[p.id] ?? IDLE;
     p.aim = Number.isFinite(inp.aim) ? inp.aim : p.aim;
     if (p.answering) continue; // locked in place while answering
+    if (p.remote) { fireIfAsked(state, p, inp); continue; } // position comes from applyRemotePosition
     let mx = clamp(inp.mx, -1, 1), my = clamp(inp.my, -1, 1);
     const len = Math.hypot(mx, my);
     if (len > 1) { mx /= len; my /= len; }
@@ -236,13 +263,7 @@ export function step(state: ClashState, dt: number, inputs: Record<string, Input
     if (sprinting) p.energy = Math.max(0, p.energy - SPRINT_COST * dt);
     const speed = sprinting ? SPRINT_SPEED : SPEED;
     moveCircle(p, mx * speed * dt, my * speed * dt, PLAYER_R);
-    if (inp.fire && p.cooldown === 0 && p.energy >= SHOT_COST) {
-      p.energy -= SHOT_COST;
-      p.cooldown = SHOT_COOLDOWN;
-      state.shots.push({ id: state.nextId++, owner: p.id, team: p.team,
-        x: p.x + Math.cos(p.aim) * (PLAYER_R + 4), y: p.y + Math.sin(p.aim) * (PLAYER_R + 4),
-        vx: Math.cos(p.aim) * SHOT_SPEED, vy: Math.sin(p.aim) * SHOT_SPEED, ttl: SHOT_TTL });
-    }
+    fireIfAsked(state, p, inp);
     // Energy orbs
     for (const o of state.orbs) if (o.id > 0 && dist(p, o) < PLAYER_R + 12) {
       p.energy = Math.min(MAX_ENERGY, p.energy + ORB_ENERGY); o.id = -1; events.push({ type: 'pickup', player: p.id });
@@ -341,7 +362,7 @@ export function step(state: ClashState, dt: number, inputs: Record<string, Input
   if (boss && boss.hp <= 0 && !state.bossDone) finishBoss(state, events);
 
   // End of match
-  if (state.t >= MATCH_SECONDS) {
+  if (state.t >= state.duration) {
     if (state.boss && !state.bossDone) finishBoss(state, events);
     state.ended = true;
     const { blue, orange } = state.score;
