@@ -17,6 +17,9 @@ const SPRITES: Record<string, string> = {
   reactorNeutral: `${A}/objects/reactor-neutral.webp`, reactorBlue: `${A}/objects/reactor-blue.webp`, reactorOrange: `${A}/objects/reactor-orange.webp`,
   orb: `${A}/objects/energy-pickup.webp`,
   blue: `${A}/players/operative-blue.webp`, orange: `${A}/players/operative-orange.webp`,
+  blueAnswer: `${A}/players/operative-blue-answering.webp`, orangeAnswer: `${A}/players/operative-orange-answering.webp`,
+  ...Object.fromEntries((['blue', 'orange'] as const).flatMap(t => [1, 2, 3, 4].map(i => [`${t}Walk${i}`, `${A}/players/operative-${t}-walk-${i}.webp`]))),
+  bossTop: `${A}/boss/chemistry-boss-topdown.webp`,
   minion: `${A}/minions/chemistry-minion.webp`,
   shot: `${A}/fx/neutraliser-projectile.webp`, spark: `${A}/fx/hit-spark.webp`, pulse: `${A}/fx/capture-pulse-ring.webp`,
   boss: '/art/bosses/chemistry-boss-idle.webp', bossHurt: '/art/bosses/chemistry-boss-hurt.webp',
@@ -41,6 +44,18 @@ export function followCam(cam: Cam, canvas: HTMLCanvasElement, focus: { x: numbe
   const halfW = canvas.width / 2 / cam.scale, halfH = canvas.height / 2 / cam.scale;
   cam.x = halfW * 2 > WORLD_W ? WORLD_W / 2 : Math.max(halfW, Math.min(WORLD_W - halfW, focus.x));
   cam.y = halfH * 2 > WORLD_H ? WORLD_H / 2 : Math.max(halfH, Math.min(WORLD_H - halfH, focus.y));
+}
+
+// Per-entity motion memory for walk cycles and facing (renderer-only, not game state).
+const motion = new Map<string, { x: number; y: number; stride: number; moving: number; heading: number }>();
+function track(id: string, x: number, y: number, dt: number) {
+  const m = motion.get(id);
+  if (!m) { const fresh = { x, y, stride: 0, moving: 0, heading: 0 }; motion.set(id, fresh); return fresh; }
+  const d = Math.hypot(x - m.x, y - m.y);
+  if (d > 0.25 && d < 80) { m.stride += d; m.moving = 0.15; m.heading = Math.atan2(y - m.y, x - m.x); }
+  else m.moving = Math.max(0, m.moving - dt);
+  m.x = x; m.y = y;
+  return m;
 }
 
 function drawRotated(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, size: number, angle: number) {
@@ -149,9 +164,11 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, g
   if (g.boss) {
     const b = g.boss, hurt = b.hp < BOSS_HP / 2;
     const pic = hurt ? img.bossHurt : img.boss;
+    const mb = track('__boss', b.x, b.y, dt);
     ctx.save();
-    ctx.shadowColor = '#ff6a2b'; ctx.shadowBlur = 30;
-    if (ready(pic)) ctx.drawImage(pic, b.x - 70, b.y - 80, 140, 140);
+    ctx.shadowColor = '#ff6a2b'; ctx.shadowBlur = hurt ? 18 + 12 * Math.sin(now / 90) : 30;
+    if (ready(img.bossTop)) drawRotated(ctx, img.bossTop, b.x, b.y, 150, mb.heading + Math.PI / 2);
+    else if (ready(pic)) ctx.drawImage(pic, b.x - 70, b.y - 80, 140, 140);
     else { ctx.fillStyle = '#ff6a2b'; ctx.beginPath(); ctx.arc(b.x, b.y, 44, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
     const left = Math.max(0, (b.pulseAt - g.t) / 3.5);
@@ -178,8 +195,13 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, g
     // energy arc
     ctx.strokeStyle = '#f2b530'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R + 10, -Math.PI / 2, -Math.PI / 2 + (p.energy / MAX_ENERGY) * Math.PI * 2); ctx.stroke();
-    const sprite = img[p.team];
-    if (ready(sprite)) drawRotated(ctx, sprite, p.x, p.y, 54, p.aim + Math.PI / 2);
+    const m = track(p.id, p.x, p.y, dt);
+    const term = p.answering ? g.terminals.find(t => t.id === p.answering) : undefined;
+    let sprite = img[p.team], facing = p.aim + Math.PI / 2;
+    if (term) { sprite = img[`${p.team}Answer`] ?? sprite; facing = Math.atan2(term.y - p.y, term.x - p.x) + Math.PI / 2; }
+    else if (m.moving > 0) { const frame = 1 + (Math.floor(m.stride / 14) % 4); sprite = img[`${p.team}Walk${frame}`] ?? sprite; }
+    if (!ready(sprite)) sprite = img[p.team];
+    if (ready(sprite)) drawRotated(ctx, sprite, p.x, p.y, 54, facing);
     else { ctx.fillStyle = TEAM_COLOR[p.team]; ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R, 0, Math.PI * 2); ctx.fill(); }
     ctx.fillStyle = mine ? '#ffffff' : '#c9cbe6'; ctx.font = `${mine ? 800 : 600} 12px system-ui`; ctx.textAlign = 'center';
     ctx.fillText(p.answering ? `${p.name} · answering` : p.name, p.x, p.y - PLAYER_R - 16);
