@@ -25,6 +25,7 @@ The multiplayer routes need the `CLASSROOM_STAGING_*` settings (see `docs/LIVE_G
 
 - **Simulation:** `lib/clash/sim.ts` holds the game rules as a pure, engine-free module. `lib/clash/bots.ts` has bots with grid pathfinding. `components/clash/render.ts` is a Canvas 2D renderer using `public/art/arena`.
 - **Host-authoritative:** the projector runs the simulation and sends compact snapshots (about 10 a second, under 4 KB each; `lib/clash/protocol.ts`). Students move their own character locally and report positions, which the host clamps to sprint speed, blocks at walls, and charges sprint energy for. Shots, tags, captures and energy are all decided by the host.
+- **Clock and movement.** A dedicated worker wakes the projector, which catches up in 1/30-second simulation steps. Each new student position is applied at most once, using the elapsed time since the previous accepted report. Snapshots acknowledge the report so newer local movement survives correction. The camera and operative ease into corrected positions, and respawns place the student directly at base. After 1.5 seconds without snapshots the student sees “Waiting for the projector…” and prediction pauses until updates resume.
 - **Server-owned:** `prototypes/classroom-v2/staging-clash.sql` covers rooms, team-balanced joins, and a per-player secret token that the host checks on every student message. Questions are issued by the server (no answer key sent, no re-rolling), answers are recorded once, and the host only grants energy for answers it reads back from the database (`clash_receipts`).
 - **Transport:** `lib/clash/net.ts` uses Supabase Realtime broadcast and is swappable.
 
@@ -36,11 +37,11 @@ The Supabase free plan allows about **100 Realtime messages per second** per pro
 
 - `tests/offline/clash-sim.test.mjs`: game rules, full bot matches, protocol round-trip, remote-move limits.
 - `node prototypes/classroom-v2/test/clash.mjs`: 24 SQL rules (in-memory Postgres).
-- `tests/browser/clash-staging.e2e.mjs`: projector plus 2 students against real staging (14 checks: movement, terminals, server-recorded answers to energy, firing, results).
+- `tests/browser/clash-staging.e2e.mjs`: projector plus two students against real staging. Add `HSC_TEST_TAB_VISIBILITY=1` and use a display (on Linux, `xvfb-run -a node tests/browser/clash-staging.e2e.mjs`) for the foreground, background and interrupted-clock checks. This mode uses the Playwright 1.48.2 installation from the handoff.
 
 ## Known gaps
 
-- If the host reloads mid-match, the match restarts. The simulation lives in the projector tab, which must stay open and in front.
+- If the host reloads mid-match, the match restarts. The simulation lives in the projector tab, which must stay open. A browser or OS that fully suspends the tab interrupts play until the projector wakes up.
 - The boss and minions are always Chemistry-themed. Subject-themed matches are a possible extension.
 - There's one map.
 - The answer review at the end is the teacher's CSV only.

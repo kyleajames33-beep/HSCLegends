@@ -41,7 +41,7 @@ export type Vec = { x: number; y: number };
 export type Rect = { x: number; y: number; w: number; h: number };
 
 export type Player = {
-  id: string; name: string; team: Team; bot: boolean; remote?: boolean;
+  id: string; name: string; team: Team; bot: boolean; remote?: boolean; reportSeq?: number;
   x: number; y: number; aim: number;
   energy: number; streak: number;
   alive: boolean; respawnAt: number; cooldown: number;
@@ -214,17 +214,22 @@ function fireIfAsked(state: ClashState, p: Player, inp: Input) {
  * position. Accept it only as far as is plausible: no faster than sprinting,
  * no passing through walls, and fast movement costs sprint energy.
  */
-export function applyRemotePosition(state: ClashState, id: string, x: number, y: number, dt: number) {
+export function applyRemotePosition(state: ClashState, id: string, x: number, y: number, elapsed: number) {
   const p = state.players[id];
   if (!p || !p.alive || p.answering || state.ended || !Number.isFinite(x) || !Number.isFinite(y)) return;
   let dx = x - p.x, dy = y - p.y;
   const d = Math.hypot(dx, dy);
   if (d < 0.01) return;
+  // A disconnected player cannot bank an unlimited move. Heartbeats normally arrive every 400ms.
+  const dt = Math.min(elapsed, 1.5);
+  if (!(dt > 0)) return;
   const walkMax = SPEED * dt * 1.25 + 2;
   const allowed = p.energy > 0 ? SPRINT_SPEED * dt * 1.25 + 2 : walkMax;
   if (d > allowed) { dx *= allowed / d; dy *= allowed / d; }
   if (Math.hypot(dx, dy) > walkMax) p.energy = Math.max(0, p.energy - SPRINT_COST * dt);
-  moveCircle(p, dx, dy, PLAYER_R);
+  // A late report can span an entire wall. Sweep in increments smaller than the player's radius.
+  const parts = Math.ceil(Math.hypot(dx, dy) / PLAYER_R);
+  for (let i = 0; i < parts; i++) moveCircle(p, dx / parts, dy / parts, PLAYER_R);
 }
 function knockOut(state: ClashState, victim: Player) {
   victim.alive = false;

@@ -8,9 +8,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, liveClient, readTab, rpc, useSession, writeTab } from '@/lib/live-game';
-import { addPlayer, answerResult, applyRemotePosition, beginAnswer, cancelAnswer, createClash, step, IDLE, type ClashEvent, type ClashState, type Input, type Team } from '@/lib/clash/sim';
+import { addPlayer, answerResult, applyRemotePosition, beginAnswer, cancelAnswer, createClash, step, type ClashEvent, type ClashState, type Input, type Team } from '@/lib/clash/sim';
 import { botInputs, type BotBrain } from '@/lib/clash/bots';
-import { encodeRoster, encodeSnapshot, inputFromMsg, type InputMsg, type TerminalMsg } from '@/lib/clash/protocol';
+import { encodeRoster, encodeSnapshot, inputFromMsg, PROJECTOR_TIMEOUT_MS, type InputMsg, type TerminalMsg } from '@/lib/clash/protocol';
 import { openClashChannel, type ClashNet } from '@/lib/clash/net';
 import { PRACTICE_BANK } from '@/lib/clash/questions';
 import { useSound } from '@/lib/live-sound';
@@ -56,6 +56,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   const bossName = BOSSES[subject].name;
   const [origin, setOrigin] = useState('');
   const [hud, setHud] = useState<{ t: number; score: Record<Team, number>; answering: number; boss: number | null } | null>(null);
+  const [paused, setPaused] = useState(false);
   const [feed, setFeed] = useState<Feed[]>([]);
   const [results, setResults] = useState<Results | null>(null);
 
@@ -63,7 +64,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   const brain = useRef<BotBrain>({});
   const net = useRef<ClashNet | null>(null);
   const tokens = useRef(new Map<string, string>());
-  const remote = useRef(new Map<string, { input: Input; x: number; y: number; at: number }>());
+  const remote = useRef(new Map<string, ReturnType<typeof inputFromMsg> & { at: number; seq?: number; life?: number }>());
   const pending = useRef<ClashEvent[]>([]);
   const lastSeq = useRef(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -110,11 +111,20 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   // Realtime channel: student controls in, snapshots out.
   useEffect(() => {
     if (session === 'signed-out' || !roomId) return;
-    const valid = (m: unknown): m is { id: string; k: string } => !!m && typeof (m as { id?: unknown }).id === 'string' && tokens.current.get((m as { id: string }).id) === (m as { k?: unknown }).k;
+    const valid = (m: unknown): m is { id: string; k: string } => {
+      if (!m || typeof m !== 'object' || !('id' in m) || !('k' in m)) return false;
+      return typeof m.id === 'string' && typeof m.k === 'string' && tokens.current.get(m.id) === m.k;
+    };
     const n = openClashChannel(client, roomId, ['in', 'begin', 'cancel'], (event, payload) => {
       if (!valid(payload)) return;
       const g = sim.current;
-      if (event === 'in') { const r = inputFromMsg(payload as InputMsg); remote.current.set(payload.id, { ...r, at: performance.now() }); }
+      if (event === 'in' && g?.players[payload.id] && !g.ended) {
+        const msg = payload as InputMsg;
+        const r = inputFromMsg(msg);
+        if (Number.isFinite(r.x) && Number.isFinite(r.y)) {
+          remote.current.set(msg.id, { ...r, at: performance.now(), seq: Number.isSafeInteger(msg.seq) ? msg.seq : undefined, life: msg.life });
+        }
+      }
       else if (g && event === 'begin') beginAnswer(g, payload.id, String((payload as TerminalMsg).term ?? ''));
       else if (g && event === 'cancel') cancelAnswer(g, payload.id);
     });
@@ -160,22 +170,37 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
       if (process.env.NODE_ENV !== 'production') (window as unknown as { __clashHost?: ClashState }).__clashHost = g;
     }
     const g = sim.current;
-    let last = performance.now(), snapAt = 0, rosterAt = 0, receiptBusy = false;
+    let steppedAt = performance.now(), snapAt = 0, rosterAt = 0, receiptBusy = false;
+    const stepMs = 1000 / 30;
+    const consumedAt = new Map<string, number>();
     let finished = g.ended;
 
     const tick = () => {
       const now = performance.now();
-      const dt = Math.min(0.1, (now - last) / 1000); last = now;
       if (g.ended) return;
-      const inputs: Record<string, Input> = {};
-      for (const [id, r] of remote.current) {
-        if (!g.players[id]) continue;
-        if (now - r.at < 1000) applyRemotePosition(g, id, r.x, r.y, dt);
-        inputs[id] = now - r.at < 600 ? r.input : IDLE;
-      }
+      // Bound work per message, retaining any remaining time for the next wake-up.
+      // Send just the current snapshot after catching up.
       const events: ClashEvent[] = [];
-      Object.assign(inputs, botInputs(g, brain.current, events));
-      events.push(...step(g, dt, inputs));
+      for (let i = 0; i < 30 && now - steppedAt >= stepMs && !g.ended; i++) {
+        steppedAt += stepMs;
+        const inputs: Record<string, Input> = {};
+        for (const [id, report] of remote.current) {
+          const player = g.players[id];
+          const age = steppedAt - report.at;
+          if (!player || age < -stepMs || age > 600) continue;
+          if (report.life !== undefined && report.life !== Math.round(player.respawnAt * 10) / 10) continue;
+          const previous = consumedAt.get(id);
+          if (previous !== report.at) {
+            const elapsed = previous === undefined ? stepMs : report.at - previous;
+            applyRemotePosition(g, id, report.x, report.y, elapsed / 1000);
+            consumedAt.set(id, report.at);
+            player.reportSeq = report.seq;
+          }
+          inputs[id] = report.input;
+        }
+        Object.assign(inputs, botInputs(g, brain.current, events));
+        events.push(...step(g, stepMs / 1000, inputs));
+      }
       pending.current.push(...events);
       for (const e of events) {
         if (e.type === 'tag') { const v = g.players[e.victim], by = g.players[e.by]; fx.current.push({ x: v.x, y: v.y, r: 8, life: 1, color: TEAM_COLOR[by?.team ?? 'blue'], kind: 'spark' }); pushFeed(`${by?.name ?? '?'} tagged ${v?.name ?? '?'}`, by?.team ?? 'info'); }
@@ -183,11 +208,24 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
         else if (e.type === 'boss-spawn') { pushFeed(`${bossName} has arrived! Most damage wins +60`, 'info'); sound.cue('fanfare'); }
         else if (e.type === 'boss-down') pushFeed(e.team ? `${e.team === 'blue' ? 'Blue' : 'Orange'} wins the boss bonus` : 'Boss bonus tied', e.team ?? 'info');
       }
-      if (now - snapAt > 100 || g.ended) { snapAt = now; net.current?.send('snap', encodeSnapshot(g, pending.current)); pending.current = []; }
+      if ((now - snapAt > 100 && now - steppedAt < stepMs) || g.ended) { snapAt = now; net.current?.send('snap', encodeSnapshot(g, pending.current)); pending.current = []; }
       if (now - rosterAt > 2000) { rosterAt = now; net.current?.send('roster', { r: encodeRoster(g), state: 'active', seconds: g.duration, subject }); }
       if (g.ended && !finished) { finished = true; void finish(g); }
     };
-    const loop = setInterval(tick, 33);
+    const worker = new Worker(new URL('./clash-clock.worker.ts', import.meta.url));
+    worker.onmessage = () => {
+      tick();
+      if (!g.ended) worker.postMessage(performance.now() - steppedAt >= stepMs);
+    };
+    worker.postMessage(null);
+
+    // This watchdog also runs when the worker has stopped delivering messages.
+    const checkClock = () => {
+      const now = performance.now();
+      setPaused(now - steppedAt > PROJECTOR_TIMEOUT_MS);
+    };
+    const watchdog = setInterval(checkClock, 250);
+    document.addEventListener('visibilitychange', checkClock);
 
     // Answers recorded by the database become energy.
     const receipts = setInterval(async () => {
@@ -220,7 +258,13 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
       if (!g.ended) raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
-    return () => { clearInterval(loop); clearInterval(receipts); cancelAnimationFrame(raf); };
+    return () => {
+      worker.terminate();
+      clearInterval(watchdog);
+      document.removeEventListener('visibilitychange', checkClock);
+      clearInterval(receipts);
+      cancelAnimationFrame(raf);
+    };
   }, [view?.state, roomId, client, fillBots, finish, pushFeed, sound, bossName, subject]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function signIn() {
@@ -238,7 +282,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
       const rows = await rpc<{ room_id: string }[]>(client, 'clash_create', { p_questions: pool, p_seconds: minutes * 60 });
       const id = rows?.[0]?.room_id;
       if (!id) throw new LiveError('UNKNOWN');
-      sim.current = null; setResults(null); setView(null);
+      sim.current = null; remote.current.clear(); pending.current = []; setPaused(false); setResults(null); setView(null);
       writeTab(SUBJECT_KEY, subject); writeTab(ROOM_KEY, id); setRoomId(id);
     } catch (e) {
       setError(e instanceof LiveError && e.code === 'FORBIDDEN' ? 'This account is not approved to host games yet.' : 'Could not create the game. Try again.');
@@ -315,7 +359,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
         <label className={s.check}><input type="checkbox" checked={fillBots} onChange={e => setFillBots(e.target.checked)} /> Fill small teams with bots (up to 3 per side)</label>
         <button className={s.btn} disabled={busy || !!roomId} onClick={() => void create()}>{roomId ? 'Loading…' : 'Create match'}</button>
         {error && <p className={s.err}>{error}</p>}
-        <p className={s.small}>Students join on their laptops at <b>{origin}/clash/join</b>. Keep this tab open and in front: it runs the match.</p>
+        <p className={s.small}>Students join on their laptops at <b>{origin}/clash/join</b>. Keep this tab open during the match.</p>
       </div></div>
     );
   }
@@ -349,6 +393,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   return (
     <div className={s.stage}>
       <canvas ref={canvasRef} className={s.canvas} />
+      {paused && !results && view.state === 'active' && <p className={s.connection} role="status">Projector paused. Keep this tab in front.</p>}
       {hud && !results && (
         <>
           <div className={s.top}>

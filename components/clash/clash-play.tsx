@@ -8,7 +8,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, liveClient, readTab, rpc, useSession, writeTab } from '@/lib/live-game';
 import { moveCircle, terminalLocked, terminalNear, BOSS_HP, MAX_ENERGY, PLAYER_R, SPEED, SPRINT_SPEED, type ClashState, type Team } from '@/lib/clash/sim';
-import { decodeSnapshot, lerpState, type Roster, type Snapshot } from '@/lib/clash/protocol';
+import { decodeSnapshot, lerpState, PROJECTOR_TIMEOUT_MS, type Roster, type Snapshot } from '@/lib/clash/protocol';
+import { PositionCorrection } from '@/lib/clash/prediction';
 import { openClashChannel, type ClashNet } from '@/lib/clash/net';
 import { useSound } from '@/lib/live-sound';
 import { draw, followCam, loadSprites, isClashSubject, TEAM_COLOR, type Cam, type ClashSubject, type Fx } from './render';
@@ -37,13 +38,15 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   const [hud, setHud] = useState<{ t: number; score: Record<Team, number>; energy: number; streak: number; alive: boolean; respawnIn: number; near: 'ready' | 'locked' | null; lockIn: number; boss: number | null } | null>(null);
   const [feed, setFeed] = useState<Feed[]>([]);
   const [live, setLive] = useState(false);
+  const [waiting, setWaiting] = useState(false);
   const [ended, setEnded] = useState(false);
   const [subject, setSubject] = useState<ClashSubject>('chemistry');
   const bossName = BOSSES[subject].name;
 
   const snaps = useRef<{ g: ClashState; at: number }[]>([]);
   const names = useRef(new Map<string, string>());
-  const local = useRef<{ x: number; y: number; aim: number; init: boolean; wasAlive: boolean }>({ x: 0, y: 0, aim: 0, init: false, wasAlive: true });
+  const local = useRef({ x: 0, y: 0, aim: 0, init: false, life: 0, wasAlive: true });
+  const reportSeq = useRef(0);
   const keys = useRef(new Set<string>());
   const mouse = useRef({ x: 0, y: 0, down: false, has: false });
   const net = useRef<ClashNet | null>(null);
@@ -129,8 +132,9 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   }, [client, seat, session, pushFeed, sound, bossName]);
 
   const openQuestion = useCallback(async () => {
-    const st = seatRef.current, latest = snaps.current.at(-1)?.g;
-    if (!st || !latest || questionRef.current) return;
+    const st = seatRef.current, snapshot = snaps.current.at(-1);
+    if (!st || !snapshot || questionRef.current || performance.now() - snapshot.at > PROJECTOR_TIMEOUT_MS) return;
+    const latest = snapshot.g;
     const mine = latest.players[st.playerId];
     if (!mine?.alive) return;
     const pos = { ...mine, x: local.current.x, y: local.current.y };
@@ -187,6 +191,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
     const ctx = canvas.getContext('2d')!;
     const cam: Cam = { x: 0, y: 0, scale: 1 };
     let raf = 0, last = performance.now(), sendAt = 0, hudAt = 0, lastSent = '';
+    let correction = new PositionCorrection();
     const toWorld = (ev: MouseEvent) => {
       const rect = canvas.getBoundingClientRect(), dpr = canvas.width / rect.width;
       return { x: ((ev.clientX - rect.left) * dpr - canvas.width / 2) / cam.scale + cam.x, y: ((ev.clientY - rect.top) * dpr - canvas.height / 2) / cam.scale + cam.y };
@@ -208,32 +213,45 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
         for (let i = list.length - 1; i > 0; i--) {
           if (list[i - 1].at <= renderAt && renderAt <= list[i].at) { view = lerpState(list[i - 1].g, list[i].g, (renderAt - list[i - 1].at) / Math.max(1, list[i].at - list[i - 1].at)); break; }
         }
-        const host = list[list.length - 1].g.players[seat.playerId];
+        const latest = list[list.length - 1];
+        const stale = now - latest.at > PROJECTOR_TIMEOUT_MS;
+        const host = latest.g.players[seat.playerId];
         const l = local.current;
         if (host) {
-          // Respawns, first frame and large disagreements snap to the host's position.
-          if (!l.init || (host.alive && !l.wasAlive) || Math.hypot(host.x - l.x, host.y - l.y) > 140) { l.x = host.x; l.y = host.y; l.init = true; }
+          if (!l.init || (host.alive && (!l.wasAlive || host.respawnAt !== l.life))) {
+            l.x = host.x; l.y = host.y; l.init = true;
+            correction = new PositionCorrection();
+          } else if (host.reportSeq !== undefined) {
+            correction.acknowledge(l, host, host.reportSeq);
+          }
+          l.life = host.respawnAt;
           l.wasAlive = host.alive;
           const k = keys.current;
           const mx = (k.has('d') || k.has('arrowright') ? 1 : 0) - (k.has('a') || k.has('arrowleft') ? 1 : 0);
           const my = (k.has('s') || k.has('arrowdown') ? 1 : 0) - (k.has('w') || k.has('arrowup') ? 1 : 0);
           const len = Math.hypot(mx, my) || 1;
           const sprint = k.has('shift') && host.energy > 0 && (mx || my);
-          if (host.alive && !host.answering && !questionRef.current) {
+          if (!stale && host.alive && !host.answering && !questionRef.current) {
             const sp = (sprint ? SPRINT_SPEED : SPEED) * dt;
             moveCircle(l, (mx / len) * sp, (my / len) * sp, PLAYER_R);
           }
           l.aim = mouse.current.has ? Math.atan2(mouse.current.y - l.y, mouse.current.x - l.x) : mx || my ? Math.atan2(my, mx) : l.aim;
           const fire = (mouse.current.down || k.has(' ')) && !questionRef.current;
-          const msg = { id: seat.playerId, k: seat.token, x: Math.round(l.x), y: Math.round(l.y), a: Math.round(l.aim * 100) / 100, f: fire ? 1 : 0, s: sprint ? 1 : 0 };
+          const msg = { id: seat.playerId, k: seat.token, x: Math.round(l.x), y: Math.round(l.y), a: Math.round(l.aim * 100) / 100, life: host.respawnAt, f: fire ? 1 : 0, s: sprint ? 1 : 0 };
           const sig = `${msg.x},${msg.y},${msg.a},${msg.f},${msg.s}`;
-          if ((sig !== lastSent && now - sendAt > 66) || now - sendAt > 400) { net.current?.send('in', msg); sendAt = now; lastSent = sig; }
-          view = { ...view, players: { ...view.players, [seat.playerId]: { ...view.players[seat.playerId] ?? host, x: l.x, y: l.y, aim: l.aim } } };
+          if (!stale && ((sig !== lastSent && now - sendAt > 66) || now - sendAt > 400)) {
+            const seq = ++reportSeq.current;
+            correction.record(seq, msg.x, msg.y);
+            net.current?.send('in', { ...msg, seq });
+            sendAt = now; lastSent = sig;
+          }
+          view = { ...view, players: { ...view.players, [seat.playerId]: { ...view.players[seat.playerId] ?? host, ...correction.display(l, dt), aim: l.aim } } };
         }
-        followCam(cam, canvas, local.current.init ? local.current : null);
+        followCam(cam, canvas, view.players[seat.playerId] ?? null);
         draw(ctx, canvas, view, cam, fx.current, images.current, dt, now, seat.playerId);
 
         if (now - hudAt > 120 && host) {
+          setWaiting(stale);
           hudAt = now;
           const latest = list[list.length - 1].g;
           const term = host.alive ? terminalNear(latest, { ...host, x: local.current.x, y: local.current.y }) : null;
@@ -242,7 +260,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
             lockIn: term ? Math.max(0, (host.locks[term.id] ?? 0) - latest.t) : 0, boss: latest.boss ? latest.boss.hp : null });
           // The host didn't accept the terminal (too far / tagged): close the question.
           const q = questionRef.current;
-          if (q && q.picked === null && !host.answering && now - q.opened > 1500) { setQuestion(null); pushFeed(host.alive ? 'Too far from the terminal' : 'Tagged while answering', 'info'); }
+          if (!stale && q && q.picked === null && !host.answering && now - q.opened > 1500) { setQuestion(null); pushFeed(host.alive ? 'Too far from the terminal' : 'Tagged while answering', 'info'); }
         }
       }
       raf = requestAnimationFrame(frame);
@@ -251,7 +269,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
     return () => { cancelAnimationFrame(raf); canvas.removeEventListener('mousemove', move); canvas.removeEventListener('mousedown', md); window.removeEventListener('mouseup', mu); };
   }, [seat, live, pushFeed]);
 
-  const leave = () => { writeTab(SEAT_KEY, null); setSeat(null); setMe(null); setLive(false); setEnded(false); snaps.current = []; local.current.init = false; };
+  const leave = () => { writeTab(SEAT_KEY, null); setSeat(null); setMe(null); setWaiting(false); setLive(false); setEnded(false); snaps.current = []; local.current.init = false; };
 
   // ---- Screens ---------------------------------------------------------------
   if (session === 'checking') return <div className={s.stage}><p className={s.center}>Loading…</p></div>;
@@ -290,7 +308,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
     const mates = roster.filter(([, , t]) => (t === 0 ? 'blue' : 'orange') === myTeam).map(([, n]) => n);
     return (
       <div className={s.stage}><div className={s.panel}>
-        <p className={s.kicker}>You&apos;re in · waiting for the teacher to start</p>
+        <p className={s.kicker}>{me?.state === 'active' ? 'Waiting for the projector…' : "You’re in · waiting for the teacher to start"}</p>
         <h1 className={s.title} style={{ color: TEAM_COLOR[myTeam] }}>{seat.alias}, you&apos;re on {myTeam === 'blue' ? 'Blue' : 'Orange'}</h1>
         {mates.length > 0 && <p className={s.lead}>Team: {mates.join(', ')}</p>}
         <div className={s.controls}>
@@ -308,6 +326,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   return (
     <div className={s.stage}>
       <canvas ref={canvasRef} className={s.canvas} />
+      {waiting && <p className={s.connection} role="status">Waiting for the projector…</p>}
       {hud && (
         <>
           <div className={s.top}>

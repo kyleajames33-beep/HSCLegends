@@ -179,3 +179,33 @@ test('match length is configurable', () => {
   tick(s, 60);
   assert.ok(s.ended);
 });
+
+test('late movement uses the report interval and cannot tunnel through cover', () => {
+  const s = createClash();
+  const p = addPlayer(s, 'r', 'R', 'blue');
+  p.x = 400; p.y = 330;
+  sim.applyRemotePosition(s, 'r', p.x + sim.SPEED, p.y, 1);
+  assert.equal(p.x, 400 + sim.SPEED);
+  assert.equal(p.energy, sim.START_ENERGY, 'a delayed walk is still a walk');
+  const wall = sim.WALLS[4];
+  p.x = wall.x - sim.PLAYER_R - 4; p.y = wall.y + 20;
+  sim.applyRemotePosition(s, 'r', wall.x + wall.w + 100, p.y, 1);
+  assert.ok(p.x <= wall.x - sim.PLAYER_R);
+});
+
+test('acknowledgements preserve later movement and ease even large corrections', () => {
+  const { PositionCorrection } = loadSourceModule('lib/clash/prediction.ts', { './sim': sim });
+  const correction = new PositionCorrection();
+  correction.record(1, 500, 330);
+  correction.record(2, 512, 330);
+  const local = { x: 520, y: 330 };
+  correction.acknowledge(local, { x: 300, y: 330 }, 1);
+  assert.equal(local.x, 320, 'keeps the 20px walked since the report');
+  assert.equal(correction.display(local, 0).x, 520, 'no visual snap on receipt');
+  assert.ok(correction.display(local, 1 / 30).x >= 510, 'bounds the first frame of correction');
+  correction.acknowledge(local, { x: 312, y: 330 }, 2);
+  correction.acknowledge(local, { x: 312, y: 330 }, 2);
+  assert.equal(local.x, 320, 'neither in-flight nor duplicate acknowledgements apply the correction twice');
+  for (let i = 0; i < 60; i++) correction.display(local, 1 / 30);
+  assert.ok(Math.abs(correction.display(local, 0).x - local.x) < 0.01);
+});

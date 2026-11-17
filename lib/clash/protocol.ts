@@ -11,7 +11,7 @@ const TEAMS: Team[] = ['blue', 'orange'];
 const r1 = (n: number) => Math.round(n * 10) / 10;
 const r0 = Math.round;
 
-type SnapPlayer = [id: string, x: number, y: number, aim: number, team: 0 | 1, alive: 0 | 1, answering: number, energy: number, streak: number, respawnAt: number, locks: number[]];
+type SnapPlayer = [id: string, x: number, y: number, aim: number, team: 0 | 1, alive: 0 | 1, answering: number, energy: number, streak: number, respawnAt: number, locks: number[], reportSeq?: number];
 export type Snapshot = {
   t: number; e: 0 | 1; sc: [number, number];
   p: SnapPlayer[];
@@ -22,8 +22,9 @@ export type Snapshot = {
   b: [x: number, y: number, hp: number, pulseAt: number] | null;
   ev: ClashEvent[];
 };
+export const PROJECTOR_TIMEOUT_MS = 1500;
 export type Roster = [id: string, name: string, team: 0 | 1][];
-export type InputMsg = { id: string; k: string; x: number; y: number; a: number; f: 0 | 1; s: 0 | 1 };
+export type InputMsg = { id: string; k: string; x: number; y: number; a: number; f: 0 | 1; s: 0 | 1; seq?: number; life?: number };
 export type TerminalMsg = { id: string; k: string; term?: string };
 
 export function encodeSnapshot(g: ClashState, events: ClashEvent[]): Snapshot {
@@ -34,6 +35,7 @@ export function encodeSnapshot(g: ClashState, events: ClashEvent[]): Snapshot {
       p.id, r0(p.x), r0(p.y), Math.round(p.aim * 100) / 100, p.team === 'blue' ? 0 : 1, p.alive ? 1 : 0,
       p.answering ? termIndex.get(p.answering) ?? -1 : -1, r0(p.energy), p.streak, r1(p.respawnAt),
       Object.entries(p.locks).flatMap(([id, until]) => (until > g.t ? [termIndex.get(id) ?? -1, r1(until)] : [])),
+      p.reportSeq ?? 0,
     ]),
     r: g.reactors.map(r => [Math.round(r.control * 100) / 100, r.owner === 'blue' ? 0 : r.owner === 'orange' ? 1 : -1]),
     sh: g.shots.map(s => [r0(s.x), r0(s.y), r0(s.vx), r0(s.vy), s.team === 'blue' ? 0 : 1]),
@@ -54,10 +56,10 @@ export function decodeSnapshot(s: Snapshot, names: Map<string, string>): ClashSt
   const terms = g.terminals;
   g.t = s.t; g.ended = s.e === 1;
   g.score = { blue: s.sc[0], orange: s.sc[1] };
-  for (const [id, x, y, aim, team, alive, answering, energy, streak, respawnAt, locks] of s.p) {
+  for (const [id, x, y, aim, team, alive, answering, energy, streak, respawnAt, locks, reportSeq] of s.p) {
     const p: Player = {
       id, name: names.get(id) ?? '…', team: TEAMS[team], bot: false, x, y, aim,
-      energy, streak, alive: alive === 1, respawnAt, cooldown: 0,
+      energy, streak, alive: alive === 1, respawnAt, reportSeq, cooldown: 0,
       answering: answering >= 0 ? terms[answering]?.id ?? null : null, locks: {},
       stats: { tags: 0, captures: 0, answered: 0, correct: 0, bossDamage: 0 },
     };
