@@ -2,13 +2,13 @@ import Image from 'next/image';
 import type { BossState, BossSubject } from '@/lib/live-game';
 import s from './live.module.css';
 
-export const BOSSES: Record<BossSubject, { name: string; subject: string; image: string; accent: string }> = {
-  'biology': { name: 'The Mutagen', subject: 'Biology', image: '/art/bosses/biology-boss-idle.webp', accent: '#1fb070' },
-  'chemistry': { name: 'Reactor Prime', subject: 'Chemistry', image: '/art/bosses/chemistry-boss-idle.webp', accent: '#ff6a2b' },
-  'physics': { name: 'The Singularity', subject: 'Physics', image: '/art/bosses/physics-boss-idle.webp', accent: '#2f7bea' },
-  'maths-standard': { name: 'The Arbiter', subject: 'Maths Standard', image: '/art/bosses/maths-standard-boss-idle.webp', accent: '#f2b530' },
-  'maths-advanced': { name: 'Prism', subject: 'Maths Advanced', image: '/art/bosses/maths-advanced-boss-idle.webp', accent: '#9b5cff' },
-  'maths-ext1': { name: 'The Fractal', subject: 'Maths Extension 1', image: '/art/bosses/maths-extension-1-boss-idle.webp', accent: '#e8447f' },
+export const BOSSES: Record<BossSubject, { name: string; subject: string; art: string; accent: string }> = {
+  'biology': { name: 'The Mutagen', subject: 'Biology', art: '/art/bosses/biology', accent: '#1fb070' },
+  'chemistry': { name: 'Reactor Prime', subject: 'Chemistry', art: '/art/bosses/chemistry', accent: '#ff6a2b' },
+  'physics': { name: 'The Singularity', subject: 'Physics', art: '/art/bosses/physics', accent: '#2f7bea' },
+  'maths-standard': { name: 'The Arbiter', subject: 'Maths Standard', art: '/art/bosses/maths-standard', accent: '#f2b530' },
+  'maths-advanced': { name: 'Prism', subject: 'Maths Advanced', art: '/art/bosses/maths-advanced', accent: '#9b5cff' },
+  'maths-ext1': { name: 'The Fractal', subject: 'Maths Extension 1', art: '/art/bosses/maths-extension-1', accent: '#e8447f' },
 };
 export const BOSS_ORDER = Object.keys(BOSSES) as BossSubject[];
 
@@ -33,10 +33,12 @@ export function BossBar({ boss, showName = true }: { boss: BossState; showName?:
 export function BossPanel({ boss, size = 260, hit = false, caption }: { boss: BossState; size?: number; hit?: boolean; caption?: string }) {
   const meta = BOSSES[boss.subject], left = bossLeft(boss);
   const defeated = left === 0;
+  const hurt = !defeated && left !== null && boss.hp !== null && left / boss.hp < 0.5;
+  const pose = defeated ? 'defeated' : hurt ? 'hurt' : 'idle';
   return (
     <div className={s.bossPanel} style={{ ['--accent' as string]: meta.accent }}>
       <div className={`${s.bossArt} ${hit && boss.round_damage > 0 ? s.bossHit : ''} ${defeated ? s.bossDown : ''}`}>
-        <Image src={meta.image} alt={`${meta.name}, the ${meta.subject} boss`} width={size} height={size} priority />
+        <Image src={`${meta.art}-boss-${pose}.webp`} alt={`${meta.name}, the ${meta.subject} boss`} width={size} height={size} priority />
         {hit && boss.round_damage > 0 && <span className={s.damage}>−{boss.round_damage.toLocaleString()}</span>}
       </div>
       <p className={s.bossName}>{meta.name}</p>

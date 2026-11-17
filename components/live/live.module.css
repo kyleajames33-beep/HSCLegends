@@ -85,7 +85,7 @@ button.tile:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1p
 .bossArt { position: relative; filter: drop-shadow(0 0 28px color-mix(in srgb, var(--accent) 45%, transparent)); transition: filter .4s, transform .4s, opacity .4s; }
 .bossArt img { display: block; max-width: 100%; height: auto; }
 .bossHit { animation: shake .45s ease-in-out 2; }
-.bossDown { filter: grayscale(1) brightness(.5); transform: rotate(-8deg) translateY(12px); opacity: .7; }
+.bossDown { filter: saturate(.6) brightness(.8); }
 @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-10px) rotate(-2deg); } 40% { transform: translateX(9px) rotate(2deg); } 60% { transform: translateX(-6px); } 80% { transform: translateX(4px); } }
 .damage { position: absolute; top: 8%; right: -6%; font-family: var(--font-display, inherit); font-weight: 900; font-size: clamp(2rem, 5vw, 3.4rem); color: #fff; text-shadow: 0 3px 0 var(--outline), 0 0 18px var(--accent); animation: rise 1.2s ease-out both; }
 @keyframes rise { from { transform: translateY(20px) scale(.7); opacity: 0; } 30% { opacity: 1; transform: translateY(0) scale(1.1); } to { transform: translateY(-14px) scale(1); opacity: 1; } }
@@ -95,6 +95,8 @@ button.tile:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1p
 .bossBarBare { grid-template-columns: 1fr auto; }
 .revealRow { display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: center; width: 100%; }
 .revealRow .bossName { font-size: 1.15rem; }
+.revealRow .damage { top: 30%; right: auto; left: 100%; margin-left: 8px; font-size: 2rem; white-space: nowrap; }
+.revealRow .bossPanel { align-items: flex-start; text-align: left; }
 .bossBarHp { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--dim); }
 .hpTrack { height: 14px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
 .hpFill { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width .8s cubic-bezier(.2,.8,.2,1); }
