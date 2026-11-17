@@ -25,6 +25,22 @@ export function LobbyActions() {
 export function FeaturedModes() {
   return (
     <div className="grid gap-4 md:grid-cols-2">
+      <section aria-label="Reactor Clash" className="relative flex min-h-64 flex-col overflow-hidden rounded-[24px] border border-[#6e5bff]/60 bg-[#12142b] p-5 text-white shadow-[0_6px_0_#090d1b] md:col-span-2" style={{ backgroundImage: 'linear-gradient(90deg, rgba(14,16,32,.97) 0%, rgba(14,16,32,.85) 45%, rgba(14,16,32,.35) 100%), url(/art/arena/tiles/floor-plain.webp)', backgroundSize: 'auto, 48px 48px' }}>
+        <div aria-hidden className="pointer-events-none absolute -right-4 bottom-0 top-0 hidden w-[55%] sm:block">
+          <Image src="/art/arena/objects/reactor-blue.webp" alt="" width={140} height={140} className="absolute left-[32%] top-[22%] w-32" />
+          <Image src="/art/arena/players/operative-blue.webp" alt="" width={96} height={96} className="absolute left-[14%] top-[48%] w-20 rotate-[70deg]" />
+          <Image src="/art/arena/players/operative-orange.webp" alt="" width={96} height={96} className="absolute left-[62%] top-[30%] w-20 -rotate-[110deg]" />
+          <Image src="/art/arena/objects/question-terminal-active.webp" alt="" width={96} height={96} className="absolute left-[70%] top-[64%] w-20" />
+        </div>
+        <span className="relative w-fit rounded-full bg-[#6e5bff] px-3 py-1 text-[10px] font-black tracking-[0.12em] text-white">NEW · REAL-TIME TEAM GAME</span>
+        <span className="relative mt-5 font-display text-4xl font-black leading-none sm:text-5xl">Reactor Clash</span>
+        <span className="relative mt-3 max-w-md text-sm font-semibold leading-relaxed text-white/90">Move, shoot and capture reactors with your team. Every action costs energy, and the only way to get energy is answering questions.</span>
+        <span className="relative mt-auto flex flex-wrap gap-3 pt-6">
+          <Link href="/clash" className="rounded-xl bg-[#6e5bff] px-4 py-2.5 font-display font-black text-white shadow-[0_4px_0_#07080f] transition hover:-translate-y-0.5">Practise vs bots</Link>
+          <Link href="/clash/join" className="rounded-xl border border-white/30 bg-[#22264a] px-4 py-2.5 font-display font-bold text-white">Join a match</Link>
+          <Link href="/clash/host" className="rounded-xl border border-white/30 bg-[#22264a] px-4 py-2.5 font-display font-bold text-white">Host for a class</Link>
+        </span>
+      </section>
       <Link href="/live/host" style={{ backgroundImage: 'linear-gradient(90deg, rgba(14,16,32,.95) 0%, rgba(14,16,32,.75) 40%, rgba(14,16,32,.1) 75%), url(/art/keyart/classroom-live-card.webp)' }} className="group relative flex min-h-64 flex-col overflow-hidden rounded-[24px] border border-[#ff6a2b]/50 bg-[#1a1530] bg-cover bg-right p-5 text-white shadow-[0_6px_0_#090d1b] transition hover:-translate-y-1 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-[#ff6a2b] motion-reduce:transition-none md:col-span-2">
                 <span className="relative w-fit rounded-full bg-[#ff6a2b] px-3 py-1 text-[10px] font-black tracking-[0.12em] text-[#1a0d05]">LIVE CLASS · IN TESTING</span>
         <span className="relative mt-5 font-display text-4xl font-black leading-none sm:text-5xl">Boss Battle</span>
