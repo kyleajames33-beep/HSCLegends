@@ -2550,3 +2550,556 @@ Composition: isolated full-body character or complete creature/construct on a sq
 ### Round 6 derived collectible assets
 
 All 36 composed cards are deterministically produced by `art/review/round6/build-deliveries.py`. The source image, catalog ID/title/rarity, accent, source SHA-256, master and delivered path for each is recorded in `art/review/round6/card-mapping.json`. These composed assets use the generated character art above, except the six apex entries which reuse their approved subject idle master. Transparent card frames are authored from original geometric drawing commands in the same build script, with five neutral master/delivery layers at `art/masters/cards/frames/<rarity>.png` and `public/art/cards/frames/<rarity>.webp`. No model or generation prompt applies to the deterministic composition step. Date: 2026-11-17 (Australia/Sydney).
+
+## Arena 1 — real-time top-down facility set (2026-11-17)
+
+Delivers **30 original assets** for the real-time 2D arena direction. Date for every master and delivery: **17 November 2026 (Australia/Sydney)**. Camera is orthographic, directly overhead, with no isometric projection. Mature 16–18 audience; angular dark navy/charcoal silhouettes, restrained subject/team accents and crisp cel shading follow the locked Style 1 block in `docs/ART_DIRECTION.md`. These are decorative game sprites, not teaching diagrams.
+
+- **20 generated sprites:** built-in `image_gen.imagegen` (`image_gen__imagegen`); underlying model/version not exposed. Every call requested a genuine transparent background. Original PNG outputs are preserved unchanged in `art/masters/arena/<group>/`. Exact prompts and ordered reference images are recorded below and in `art/review/arena/manifest.json`.
+- **10 structural tiles:** original editable SVG geometry authored in `art/review/arena/build-assets.py`, rendered with CairoSVG into 1152 × 1152 PNG masters and exact 48 × 48 deliveries. These are production tiles with shared edge profiles; no image model or generation prompt applies to this deterministic authoring step. Authoring briefs and SVG source paths are listed below.
+- Deliveries: `public/art/arena/<group>/<name>.webp`, lossless WebP, all under 60,000 bytes. Players and objects: 96 × 96; minions and FX: 64 × 64; tiles: 48 × 48. Sprites and wall/door overlays have real alpha. **Walkable floor/base/hazard tiles are intentionally opaque** to cover the map; WebP decodes these as RGB. PNG master aspect ratios preserve the generated output; shield and projectile masters are elongated with a long edge over 1024px.
+- Export processing is crop, Lanczos resize and transparent padding only. No sprite is redrawn or recoloured by the build script. Related team/state variants share a union crop rectangle and scale so switching states does not shift the canvas anchor. The manifest records each export crop, alpha content bounds, centre anchor, byte count, master hash, tool and prompt.
+- Review: `art/review/arena-sheet.png` (1600 × 2200, #0E1020), with a **24 × 14 tile sample map at native 48px scale**, both teams, all six minions, objects and FX. Includes every delivery in labelled rows and player previews at 96px and 48px. `art/review/arena/sample-map.png` (1152 × 672) is the unlabelled map composition; `sample-map.json` records placed overlays/actors. These are review compositions, not gameplay/collision data.
+- Rebuild: `python art/review/arena/build-assets.py` (Pillow + CairoSVG). Validate: `python art/review/arena/validate-assets.py`. Validation covers exact inventory/dimensions, master hashes, alpha, floor-edge continuity across all variants, compatible wall ports, shared variant framing, visible player coverage at 48px, transparent ring centres and review dimensions. Visual review checks overhead camera, teen audience, silhouettes, team colours, subject motifs and readability.
+
+### Arena placement and scale contract
+
+- **World grid: 48px per tile.** Place tiles at integer multiples of 48 with top-left anchor `(0, 0)`. Do not shrink the 48px tile exports to 24px. This set uses the explicit arena sizes requested here rather than the older general 2× delivery convention.
+- Players, minions, objects and FX use centre anchor `(0.5, 0.5)`. Transparent canvases include padding: an active operative fits a 52 × 64px content box within its 96px canvas; a knocked-out body fits 66 × 66px; minions fit 44 × 44px within 64px. Thus active characters and minions occupy roughly one tile in width. Keep the full padded canvas when rotating.
+- Object content boxes: capture reactor 80 × 80px (2 × 2 tile canvas); terminal 64 × 54px; energy pickup 32 × 32px; barrier 80 × 20px. Each has a 96px canvas. Collision sizes and interaction radii remain app-defined.
+- Canonical active player and directional minion/projectile art faces **north/up**. Barrier spans east/west. Knocked-out players lie face-down with helmet north. FX are **single frames**: runtime can move/rotate the projectile, fade the hit spark and scale/fade the pulse ring. The sample map expands the pulse canvas from 64px to 132px around the objective.
+- Canonical wall ports: `wall-straight` connects **N–S**, `wall-corner` **N–E**, `wall-end` connects **S** with north cap. Rotate in 90° steps. Every wall has a symmetric 28px-wide cross-section. `doorway` connects **W–E** wall stubs with a clear 24px-wide N–S passage; draw it over a floor. Wall art shows top surfaces only. It is a transparent overlay, not a full floor tile.
+- Three normal floors, hazard floor and both team pads share identical 1px outer edge colours, so any floor variant can meet another on any edge. Their inset panel seams intentionally make the tile grid visible. Wall/corner/end/door ports are verified from decoded exports. Team pad accents use exact authored `#2F7BEA` / `#FF6A2B`; generated sprite hex values are prompt targets rather than per-pixel palette quantisation.
+
+### Arena delivery inventory
+
+Every row uses the date and tool/model policy above. Full generation prompts follow the inventory.
+
+| Delivery | Intended use | Size | Bytes | PNG master |
+|---|---|---|---:|---|
+| `public/art/arena/players/operative-blue.webp` | Blue-team active operative; north-facing base pose. | 96 × 96 | 6,058 | `art/masters/arena/players/operative-blue.png` |
+| `public/art/arena/objects/reactor-neutral.webp` | Unclaimed capture-point objective, neutral crystal and light band. | 96 × 96 | 8,742 | `art/masters/arena/objects/reactor-neutral.png` |
+| `public/art/arena/minions/biology-minion.webp` | Biology cell-colony minion: membrane, helix and spores; #1FB070. | 64 × 64 | 2,658 | `art/masters/arena/minions/biology-minion.png` |
+| `public/art/arena/players/operative-orange.webp` | Same operative design in orange; north-facing base pose. | 96 × 96 | 6,056 | `art/masters/arena/players/operative-orange.png` |
+| `public/art/arena/players/operative-blue-knocked-out.webp` | Blue-team knocked-out/revive state; prone, non-graphic. | 96 × 96 | 5,364 | `art/masters/arena/players/operative-blue-knocked-out.png` |
+| `public/art/arena/objects/reactor-blue.webp` | Blue-owned capture objective, same reactor geometry. | 96 × 96 | 9,274 | `art/masters/arena/objects/reactor-blue.png` |
+| `public/art/arena/objects/reactor-orange.webp` | Orange-owned capture objective, same reactor geometry. | 96 × 96 | 10,984 | `art/masters/arena/objects/reactor-orange.png` |
+| `public/art/arena/objects/question-terminal-idle.webp` | Inactive question/interaction terminal; dark blank display. | 96 × 96 | 4,334 | `art/masters/arena/objects/question-terminal-idle.png` |
+| `public/art/arena/objects/energy-pickup.webp` | Collectible energy/reward star crystal, no lightning-bolt motif. | 96 × 96 | 2,018 | `art/masters/arena/objects/energy-pickup.png` |
+| `public/art/arena/objects/shield-barrier.webp` | Deployed horizontal energy fence, plan view between two emitters. | 96 × 96 | 1,994 | `art/masters/arena/objects/shield-barrier.png` |
+| `public/art/arena/minions/chemistry-minion.webp` | Chemistry reaction-vessel crawler: chamber, lattice, four legs and port tops; #FF6A2B. | 64 × 64 | 3,556 | `art/masters/arena/minions/chemistry-minion.png` |
+| `public/art/arena/minions/physics-minion.webp` | Physics toroid drone: two coils, two crescent vanes and orbiting charges; #2F7BEA. | 64 × 64 | 3,762 | `art/masters/arena/minions/physics-minion.png` |
+| `public/art/arena/minions/maths-standard-minion.webp` | Maths Standard balance drone: bar, triangular brace and tray tops; #F2B530. | 64 × 64 | 2,580 | `art/masters/arena/minions/maths-standard-minion.png` |
+| `public/art/arena/minions/maths-advanced-minion.webp` | Maths Advanced faceted construct: nested diamond/octahedral tops and ribbon; #9B5CFF. | 64 × 64 | 2,972 | `art/masters/arena/minions/maths-advanced-minion.png` |
+| `public/art/arena/minions/maths-extension-1-minion.webp` | Maths Extension 1 solid fractal construct: two branches, tail and trajectory seams; #E8447F. | 64 × 64 | 3,206 | `art/masters/arena/minions/maths-extension-1-minion.png` |
+| `public/art/arena/fx/neutraliser-projectile.webp` | Neutral pale projectile, north-pointing diamond head with trailing streaks. | 64 × 64 | 1,060 | `art/masters/arena/fx/neutraliser-projectile.png` |
+| `public/art/arena/fx/hit-spark.webp` | Gold/pale impact feedback flash; one frame for brief fade. | 64 × 64 | 2,234 | `art/masters/arena/fx/hit-spark.png` |
+| `public/art/arena/fx/capture-pulse-ring.webp` | Neutral circular capture feedback ring with transparent centre; runtime scale/fade. | 64 × 64 | 2,148 | `art/masters/arena/fx/capture-pulse-ring.png` |
+| `public/art/arena/players/operative-orange-knocked-out.webp` | Orange-team knocked-out/revive state; same prone design. | 96 × 96 | 5,408 | `art/masters/arena/players/operative-orange-knocked-out.png` |
+| `public/art/arena/objects/question-terminal-active.webp` | Available/engaged question terminal; violet scan brackets and lit pads. | 96 × 96 | 5,384 | `art/masters/arena/objects/question-terminal-active.png` |
+| `public/art/arena/tiles/floor-plain.webp` | Quiet walkable metal floor; neutral panel with recessed seams. | 48 × 48 | 126 | `art/masters/arena/tiles/floor-plain.png` |
+| `public/art/arena/tiles/floor-vent.webp` | Walkable ventilation-grille floor variant; same edge profile as plain. | 48 × 48 | 146 | `art/masters/arena/tiles/floor-vent.png` |
+| `public/art/arena/tiles/floor-conduit.webp` | Walkable recessed service-conduit floor variant; same edge profile. | 48 × 48 | 144 | `art/masters/arena/tiles/floor-conduit.png` |
+| `public/art/arena/tiles/wall-straight.webp` | Solid wall top; canonical north/south ports. Rotate by 90 degrees for east/west. | 48 × 48 | 92 | `art/masters/arena/tiles/wall-straight.png` |
+| `public/art/arena/tiles/wall-corner.webp` | Solid wall top; canonical north-to-east elbow. Rotate in 90-degree steps. | 48 × 48 | 118 | `art/masters/arena/tiles/wall-corner.png` |
+| `public/art/arena/tiles/wall-end.webp` | Solid wall end; canonical south connection, capped at north. Rotate in 90-degree steps. | 48 × 48 | 214 | `art/masters/arena/tiles/wall-end.png` |
+| `public/art/arena/tiles/doorway.webp` | Open north/south doorway; west/east wall ports, 24px clear centre passage. Transparent overlay on floor. | 48 × 48 | 208 | `art/masters/arena/tiles/doorway.png` |
+| `public/art/arena/tiles/hazard-floor.webp` | Danger floor, red diagonal stripes and pale perimeter; render damage rules in code. | 48 × 48 | 372 | `art/masters/arena/tiles/hazard-floor.png` |
+| `public/art/arena/tiles/team-base-blue.webp` | Blue team spawn/base floor pad, one 48px tile; repeat for larger base zones. | 48 × 48 | 376 | `art/masters/arena/tiles/team-base-blue.png` |
+| `public/art/arena/tiles/team-base-orange.webp` | Orange team spawn/base floor pad, one 48px tile; repeat for larger base zones. | 48 × 48 | 378 | `art/masters/arena/tiles/team-base-orange.png` |
+
+### Arena generated sprites — exact prompts
+
+#### Arena: players/operative-blue
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/players/operative-blue.png`.
+- Delivery: `public/art/arena/players/operative-blue.webp` (96 × 96).
+- Input images: none.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#2F7BEA accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+ONE player operative, top-down facing UP (north/top edge). A realistic late-teen/adult human research operative viewed from overhead: small helmet TOP in upper centre, broad angular shoulders either side, compact navy torso/back and two separated forearms extending slightly toward top edge, two small boot tops beneath. No visible face. Do not draw a whole standing humanoid as seen from front. Adult proportions inferred by shoulder width and small helmet, no giant head. Practical charcoal field armour with BLUE shoulder plates and a blue stripe across upper back, pale shoulder edge. EMPTY hands carrying a compact nonviolent neutraliser tool forward. Symmetric footprint, body contained in central 54% of width and 65% of height; generous transparent padding. At export 96px occupies about 50x60px, roughly ONE 48px floor tile in width, readable at display 48px. Center anchor (0.5,0.5).
+```
+
+#### Arena: objects/reactor-neutral
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/objects/reactor-neutral.png`.
+- Delivery: `public/art/arena/objects/reactor-neutral.webp` (96 × 96).
+- Input images: none.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#9A9CC0 accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+ONE capture reactor viewed vertically overhead, complete six-sided containment platform occupying central 80% of square. Top surface only: central pale neutral hexagonal crystal/core, three dark angular containment clamps at equal spacing, two concentric crisp hexagonal plate outlines and one broad neutral ownership light band. Pure plan view, no tall side elevation. Recognisable neutral capture objective for 48px grid, delivery 96px spanning 2x2 tiles, transparent outside hexagonal footprint. No question mark, labels or number indicators.
+```
+
+#### Arena: minions/biology-minion
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/minions/biology-minion.png`.
+- Delivery: `public/art/arena/minions/biology-minion.webp` (64 × 64).
+- Input images, in order: `art/masters/bosses/biology-boss-idle.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#1FB070 accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+Input image 1 is the BIOLOGY boss MOTIF/COLOUR reference only; change camera to exact vertical OVERHEAD and simplify into one small nonhumanoid cell-colony skirmisher. Top of one elongated green membrane body enclosing a broad helix motif, three small spore sacs at rear, three angular supporting tendrils, leading tip points UP. No face. Central 70% footprint, at 64px occupies about 44px = just under one 48px tile. Match dark angular shell, green membrane and sharp outline of boss, but do not copy side-view pose.
+```
+
+#### Arena: players/operative-orange
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/players/operative-orange.png`.
+- Delivery: `public/art/arena/players/operative-orange.webp` (96 × 96).
+- Input images, in order: `art/masters/arena/players/operative-blue.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#FF6A2B accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+Use case: identity-preserve. Input image 1 is the exact BLUE operative EDIT TARGET. Change ONLY blue accent panels, helmet stripe, back stripe and neutraliser cell to ORANGE #FF6A2B. Keep every shape, seam, line, pose, padding, camera and silhouette pixel-aligned with reference. One identical top-down operative facing UP. No new accessories or changes to helmet/shoulders/hands/boots. Transparent.
+```
+
+#### Arena: players/operative-blue-knocked-out
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/players/operative-blue-knocked-out.png`.
+- Delivery: `public/art/arena/players/operative-blue-knocked-out.webp` (96 × 96).
+- Input images, in order: `art/masters/arena/players/operative-blue.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#2F7BEA accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+Use case: identity-preserve. Input image 1 is the exact blue operative DESIGN reference. ONE knocked-out variant, still viewed directly overhead. Same adult operative has fallen FACE DOWN on floor, helmet top towards top canvas, back armour facing camera, arms spread loosely to left and right, legs slightly apart toward bottom. Horizontal resting body, inactive tool beside forearm, no visible face, no injury/blood/death symbols. Keep same helmet shape, navy armour plates, blue shoulder and back panels and materials. Top-down prone body occupies central 65% width and 65% height, still at same world scale; no shadow, transparent.
+```
+
+#### Arena: objects/reactor-blue
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/objects/reactor-blue.png`.
+- Delivery: `public/art/arena/objects/reactor-blue.webp` (96 × 96).
+- Input images, in order: `art/masters/arena/objects/reactor-neutral.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#2F7BEA accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+Use case: identity-preserve. Input image 1 is the exact NEUTRAL capture reactor EDIT TARGET. Change ONLY the pale ownership light band, core and three light slots to blue #2F7BEA. Preserve geometry, scale, camera, outline, clamps, plate materials and transparency exactly. One top-down blue-owned capture reactor. No added effects or shape changes.
+```
+
+#### Arena: objects/reactor-orange
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/objects/reactor-orange.png`.
+- Delivery: `public/art/arena/objects/reactor-orange.webp` (96 × 96).
+- Input images, in order: `art/masters/arena/objects/reactor-neutral.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#FF6A2B accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+Use case: identity-preserve. Input image 1 is the exact NEUTRAL capture reactor EDIT TARGET. Change ONLY the pale ownership light band, core and three light slots to orange #FF6A2B. Preserve geometry, scale, camera, outline, clamps, plate materials and transparency exactly. One top-down orange-owned capture reactor. No added effects or shape changes.
+```
+
+#### Arena: objects/question-terminal-idle
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/objects/question-terminal-idle.png`.
+- Delivery: `public/art/arena/objects/question-terminal-idle.webp` (96 × 96).
+- Input images, in order: `art/masters/arena/objects/reactor-neutral.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#9A9CC0 accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+ONE compact lab QUESTION TERMINAL viewed directly vertically overhead. A low flat rectangular navy floor console, broad horizontal display surface facing SKY, not tilted towards viewer. Rectangular chamfered 4:3 footprint: top 2/3 is a dark blank display with one restrained pale diamond at centre, lower third has three broad blank rectangular touch pads. Two short angular corner feet; silver rim upper-left. Idle display almost dark. No actual question mark, readable text or digits. Occupies central 65% width and 55% height, roughly 1.3 floor tiles across on 96px delivery. No visible side panels/pedestal.
+```
+
+#### Arena: objects/energy-pickup
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/objects/energy-pickup.png`.
+- Delivery: `public/art/arena/objects/energy-pickup.webp` (96 × 96).
+- Input images, in order: `art/masters/arena/objects/reactor-neutral.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#F2B530 accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+ONE small compact neutral energy pickup seen straight down: an angular four-point STAR CRYSTAL in gold #F2B530 within a simple dark diamond retaining cradle. Four long main facets and one broad light central face. Neutral currency, NO lightning bolt. True symmetric plan view with no sideways elevation. Occupies only central 35% width/height of final square: a 30px-wide collectable in 96px delivery (<one 48px tile). Transparent all around.
+```
+
+#### Arena: objects/shield-barrier
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/objects/shield-barrier.png`.
+- Delivery: `public/art/arena/objects/shield-barrier.webp` (96 × 96).
+- Input images, in order: `art/masters/arena/objects/reactor-neutral.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#6E5BFF accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+ONE deployed SHIELD BARRIER seen directly vertically down. A low straight horizontal energy fence between two rectangular dark emitter posts, left and right. In plan view the membrane is a broad slim violet strip running horizontally, with a pale violet line through centre and two simple chevrons inside; translucent strip between posts, transparent above/below. No upright shield emblem, no hexagonal screen facing viewer, no perspective or visible post sidewalls. Footprint 80% width and 20% height on square 96px export = about 1.6 tiles wide. Simple angular structure.
+```
+
+#### Arena: minions/chemistry-minion
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/minions/chemistry-minion.png`.
+- Delivery: `public/art/arena/minions/chemistry-minion.webp` (64 × 64).
+- Input images, in order: `art/masters/bosses/chemistry-boss-idle.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#FF6A2B accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+Input image 1 is this subject boss's MOTIF/COLOUR reference only, not a pose to copy. Rebuild the motif for strict top-down camera and simplify to readable 64px sprite. One tiny four-legged REACTION VESSEL crawler. From above see the hexagonal orange reaction chamber top, small crystal lattice patch on left and two compact round port tops at rear. Four sharply bent dark articulated legs around chamber, front points UP. Central 70% footprint, about 44px across at export = just under one 48px tile. No face, labels or backdrop.
+```
+
+#### Arena: minions/physics-minion
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/minions/physics-minion.png`.
+- Delivery: `public/art/arena/minions/physics-minion.webp` (64 × 64).
+- Input images, in order: `art/masters/bosses/physics-boss-idle.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#2F7BEA accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+Input image 1 is this subject boss's MOTIF/COLOUR reference only, not a pose to copy. Rebuild the motif for strict top-down camera and simplify to readable 64px sprite. One compact electromagnetic TOROID drone. Viewed EXACTLY above, circular dark torus top surface with two blue coil bands, two crescent field vanes OUTSIDE the ring, and three small orbiting charges in the horizontal plane. Ring hole truly transparent, body faces UP. Central 70% footprint, about 44px across at export = just under one 48px tile. No face, labels or backdrop.
+```
+
+#### Arena: minions/maths-standard-minion
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/minions/maths-standard-minion.png`.
+- Delivery: `public/art/arena/minions/maths-standard-minion.webp` (64 × 64).
+- Input images, in order: `art/masters/bosses/maths-standard-boss-idle.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#F2B530 accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+Input image 1 is this subject boss's MOTIF/COLOUR reference only, not a pose to copy. Rebuild the motif for strict top-down camera and simplify to readable 64px sprite. One small mathematical BALANCE drone in overhead plan view, not a frontal upright scale. Horizontal straight beam across a central triangular brace TOP, two square tray TOPS at beam ends, left tray three tiny block tops and right tray six. All lie flat in ground plane; dark angular frame and gold rails. One central connector extends upward to establish facing UP. No standing pedestal. Central 70% footprint, about 44px across at export = just under one 48px tile. No face, labels or backdrop.
+```
+
+#### Arena: minions/maths-advanced-minion
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/minions/maths-advanced-minion.png`.
+- Delivery: `public/art/arena/minions/maths-advanced-minion.webp` (64 × 64).
+- Input images, in order: `art/masters/bosses/maths-advanced-boss-idle.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#9B5CFF accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+Input image 1 is this subject boss's MOTIF/COLOUR reference only, not a pose to copy. Rebuild the motif for strict top-down camera and simplify to readable 64px sprite. One compact geometric OCTAHEDRAL construct viewed along vertical axis from ABOVE. Four broad kite-like dark facet TOPS forming sharp four-point diamond, nested tiny diamond core at centre, one restrained violet ribbon loop in the horizontal plane. Pure symmetric plan view, no visible standing humanoid. Central 70% footprint, about 44px across at export = just under one 48px tile. No face, labels or backdrop.
+```
+
+#### Arena: minions/maths-extension-1-minion
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/minions/maths-extension-1-minion.png`.
+- Delivery: `public/art/arena/minions/maths-extension-1-minion.webp` (64 × 64).
+- Input images, in order: `art/masters/bosses/maths-extension-1-boss-idle.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#E8447F accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+Input image 1 is this subject boss's MOTIF/COLOUR reference only, not a pose to copy. Rebuild the motif for strict top-down camera and simplify to readable 64px sprite. One small solid heavy FRACTAL skirmisher viewed vertically ABOVE: compact triangular dark mass with three broad top facets, TWO short recursive angular branches sweeping back in ground plane and one tapering tail at bottom. Pink connected trajectory seam across core. No empty wire cage. Leading point faces UP. Central 70% footprint, about 44px across at export = just under one 48px tile. No face, labels or backdrop.
+```
+
+#### Arena: fx/neutraliser-projectile
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/fx/neutraliser-projectile.png`.
+- Delivery: `public/art/arena/fx/neutraliser-projectile.webp` (64 × 64).
+- Input images: none.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#F2F2FA accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+ONE nonviolent neutraliser energy projectile travelling UP. Seen straight down, a short sharp pale diamond head, compact violet-grey inner core and TWO thin short tapered trailing streaks pointing down. Neutral pale white/slate only, no team or subject colour. No lightning zigzag, circle badge, object muzzle or background. Central 22% width and 65% height; transparent around tiny luminous sprite. Broad simple readable geometry.
+```
+
+#### Arena: fx/hit-spark
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/fx/hit-spark.png`.
+- Delivery: `public/art/arena/fx/hit-spark.webp` (64 × 64).
+- Input images: none.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#F2B530 accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+ONE short impact spark in the horizontal ground plane, viewed vertically overhead. Four sharply tapered gold and pale shards radiate around a small asymmetric white flash centre, black/navy negative spaces separate arms. No spherical 3D burst, particles cloud, big glow disc, stars with faces or emoji. Central 70% footprint, transparent background; readable as one-frame hit feedback.
+```
+
+#### Arena: fx/capture-pulse-ring
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/fx/capture-pulse-ring.png`.
+- Delivery: `public/art/arena/fx/capture-pulse-ring.webp` (64 × 64).
+- Input images: none.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#9A9CC0 accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+ONE perfectly CIRCULAR capture pulse ring in horizontal ground plane seen vertically ABOVE (a true circle, never ellipse). Thin broad pale neutral rim with four short angular radial ticks at N/E/S/W, inner ~75% genuinely transparent and outside fully transparent. Diameter central 80% of square. No logo, filled centre, text or platform, no perspective. Neutral ownership pulse that can be drawn over blue or orange reactor.
+```
+
+#### Arena: players/operative-orange-knocked-out
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/players/operative-orange-knocked-out.png`.
+- Delivery: `public/art/arena/players/operative-orange-knocked-out.webp` (96 × 96).
+- Input images, in order: `art/masters/arena/players/operative-blue-knocked-out.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#FF6A2B accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+Use case: identity-preserve. Input image 1 is the exact BLUE knocked-out operative EDIT TARGET. Change ONLY the blue panels/stripes/tool cell to orange #FF6A2B. Preserve every contour, seam, camera, posture, anatomy, palette neutrals, outline, materials and padding exactly. Same prone face-down operative, arms out, tool beside forearm. No blood/injury, no change in pose. Transparent.
+```
+
+#### Arena: objects/question-terminal-active
+
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; underlying model/version not exposed.
+- PNG master: `art/masters/arena/objects/question-terminal-active.png`.
+- Delivery: `public/art/arena/objects/question-terminal-active.webp` (96 × 96).
+- Input images, in order: `art/masters/arena/objects/question-terminal-idle.png`.
+- Transparent output requested: true.
+- Exact prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#6E5BFF accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Audience 16-18, mature competitive science arena. Use case: stylized-concept. CRITICAL CAMERA: directly vertically ABOVE, orthographic plan view, looking straight DOWN along the vertical axis. NOT isometric, NOT three-quarter, NOT side-on, no horizon, no visible vertical side faces. See only tops of heads, shoulders, machinery. Flat 2D arena sprite. No foreshortened front-facing portrait. Canvas square at least 1024px, genuinely transparent background, no ground shadow, no scenery or labels. Palette #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA plus specified accent. Strong broad readable shapes, restrained detail for small sprites. Lighting consistently upper left. No text, letters, digits, logos, watermarks, faces with eyes, chibi, cute toy shapes, stickers or franchise resemblance. Original decorative art, not a scientific diagram.
+
+Use case: identity-preserve. Input image 1 is the IDLE question terminal EDIT TARGET. Keep exactly same camera, silhouette, device footprint, panel geometry, three pads and materials. Change ONLY screen to a strong violet #6E5BFF activated surface with a pale central diamond and two broad geometric scan brackets, light the three touch pads violet and outer light strip. Soft confined active glow inside screen, no large external halo. No question mark, words, numbers or labels. Pure overhead plan view, transparent outside device, identical framing to idle.
+```
+
+### Arena authored tile briefs and sources
+
+Tool: original SVG drawing commands in `art/review/arena/build-assets.py`, rasterised with CairoSVG; model: none. Date: 2026-11-17 (Australia/Sydney). The native source is an original geometric facility surface system, using the locked dark palette, angular cel-shaded top planes, hard outlines and restrained highlights. No perspective, symbols, text, numbers or logos are drawn. No generative prompt applies. Each SVG is 48 × 48 viewBox units, with a 1152px PNG master and direct 48px lossless WebP export.
+
+#### Arena authored tile: floor-plain
+
+- Authoring brief: Quiet walkable metal floor; neutral panel with recessed seams.
+- Editable source: `art/masters/arena/tiles/floor-plain.svg`.
+- PNG master: `art/masters/arena/tiles/floor-plain.png`.
+- Delivery: `public/art/arena/tiles/floor-plain.webp`.
+
+#### Arena authored tile: floor-vent
+
+- Authoring brief: Walkable ventilation-grille floor variant; same edge profile as plain.
+- Editable source: `art/masters/arena/tiles/floor-vent.svg`.
+- PNG master: `art/masters/arena/tiles/floor-vent.png`.
+- Delivery: `public/art/arena/tiles/floor-vent.webp`.
+
+#### Arena authored tile: floor-conduit
+
+- Authoring brief: Walkable recessed service-conduit floor variant; same edge profile.
+- Editable source: `art/masters/arena/tiles/floor-conduit.svg`.
+- PNG master: `art/masters/arena/tiles/floor-conduit.png`.
+- Delivery: `public/art/arena/tiles/floor-conduit.webp`.
+
+#### Arena authored tile: wall-straight
+
+- Authoring brief: Solid wall top; canonical north/south ports. Rotate by 90 degrees for east/west.
+- Editable source: `art/masters/arena/tiles/wall-straight.svg`.
+- PNG master: `art/masters/arena/tiles/wall-straight.png`.
+- Delivery: `public/art/arena/tiles/wall-straight.webp`.
+
+#### Arena authored tile: wall-corner
+
+- Authoring brief: Solid wall top; canonical north-to-east elbow. Rotate in 90-degree steps.
+- Editable source: `art/masters/arena/tiles/wall-corner.svg`.
+- PNG master: `art/masters/arena/tiles/wall-corner.png`.
+- Delivery: `public/art/arena/tiles/wall-corner.webp`.
+
+#### Arena authored tile: wall-end
+
+- Authoring brief: Solid wall end; canonical south connection, capped at north. Rotate in 90-degree steps.
+- Editable source: `art/masters/arena/tiles/wall-end.svg`.
+- PNG master: `art/masters/arena/tiles/wall-end.png`.
+- Delivery: `public/art/arena/tiles/wall-end.webp`.
+
+#### Arena authored tile: doorway
+
+- Authoring brief: Open north/south doorway; west/east wall ports, 24px clear centre passage. Transparent overlay on floor.
+- Editable source: `art/masters/arena/tiles/doorway.svg`.
+- PNG master: `art/masters/arena/tiles/doorway.png`.
+- Delivery: `public/art/arena/tiles/doorway.webp`.
+
+#### Arena authored tile: hazard-floor
+
+- Authoring brief: Danger floor, red diagonal stripes and pale perimeter; render damage rules in code.
+- Editable source: `art/masters/arena/tiles/hazard-floor.svg`.
+- PNG master: `art/masters/arena/tiles/hazard-floor.png`.
+- Delivery: `public/art/arena/tiles/hazard-floor.webp`.
+
+#### Arena authored tile: team-base-blue
+
+- Authoring brief: Blue team spawn/base floor pad, one 48px tile; repeat for larger base zones.
+- Editable source: `art/masters/arena/tiles/team-base-blue.svg`.
+- PNG master: `art/masters/arena/tiles/team-base-blue.png`.
+- Delivery: `public/art/arena/tiles/team-base-blue.webp`.
+
+#### Arena authored tile: team-base-orange
+
+- Authoring brief: Orange team spawn/base floor pad, one 48px tile; repeat for larger base zones.
+- Editable source: `art/masters/arena/tiles/team-base-orange.svg`.
+- PNG master: `art/masters/arena/tiles/team-base-orange.png`.
+- Delivery: `public/art/arena/tiles/team-base-orange.webp`.

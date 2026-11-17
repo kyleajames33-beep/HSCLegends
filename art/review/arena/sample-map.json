@@ -1,0 +1,1007 @@
+{
+  "grid": 48,
+  "width_tiles": 24,
+  "height_tiles": 14,
+  "placements": [
+    {
+      "group": "tiles",
+      "name": "wall-corner",
+      "tile": [
+        0,
+        0
+      ],
+      "rotation_ccw": 270
+    },
+    {
+      "group": "tiles",
+      "name": "wall-corner",
+      "tile": [
+        23,
+        0
+      ],
+      "rotation_ccw": 180
+    },
+    {
+      "group": "tiles",
+      "name": "wall-corner",
+      "tile": [
+        23,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-corner",
+      "tile": [
+        0,
+        13
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        1,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        1,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        2,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        2,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        3,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        3,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        4,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        4,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        5,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        5,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        6,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        6,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        7,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        7,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        8,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        8,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        9,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        9,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        10,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        10,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        11,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        11,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        12,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        12,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        13,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        13,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        14,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        14,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        15,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        15,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        16,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        16,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        17,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        17,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        18,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        18,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        19,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        19,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        20,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        20,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        21,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        21,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        22,
+        0
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        22,
+        13
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        0,
+        1
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        23,
+        1
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        0,
+        2
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        23,
+        2
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        0,
+        3
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        23,
+        3
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        0,
+        4
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        23,
+        4
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        0,
+        5
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        23,
+        5
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        0,
+        6
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        23,
+        6
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        0,
+        7
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        23,
+        7
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        0,
+        8
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        23,
+        8
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        0,
+        9
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        23,
+        9
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        0,
+        10
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        23,
+        10
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        0,
+        11
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        23,
+        11
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        0,
+        12
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        23,
+        12
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-end",
+      "tile": [
+        7,
+        3
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        8,
+        3
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "doorway",
+      "tile": [
+        9,
+        3
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-end",
+      "tile": [
+        10,
+        3
+      ],
+      "rotation_ccw": 270
+    },
+    {
+      "group": "tiles",
+      "name": "wall-end",
+      "tile": [
+        14,
+        3
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        15,
+        3
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "doorway",
+      "tile": [
+        16,
+        3
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-end",
+      "tile": [
+        17,
+        3
+      ],
+      "rotation_ccw": 270
+    },
+    {
+      "group": "tiles",
+      "name": "wall-end",
+      "tile": [
+        7,
+        10
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        8,
+        10
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "doorway",
+      "tile": [
+        9,
+        10
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-end",
+      "tile": [
+        10,
+        10
+      ],
+      "rotation_ccw": 270
+    },
+    {
+      "group": "tiles",
+      "name": "wall-end",
+      "tile": [
+        14,
+        10
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "wall-straight",
+      "tile": [
+        15,
+        10
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "tiles",
+      "name": "doorway",
+      "tile": [
+        16,
+        10
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "tiles",
+      "name": "wall-end",
+      "tile": [
+        17,
+        10
+      ],
+      "rotation_ccw": 270
+    },
+    {
+      "group": "objects",
+      "name": "reactor-neutral",
+      "centre_tiles": [
+        12,
+        7
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "objects",
+      "name": "reactor-blue",
+      "centre_tiles": [
+        4,
+        3
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "objects",
+      "name": "reactor-orange",
+      "centre_tiles": [
+        20,
+        11
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "objects",
+      "name": "question-terminal-active",
+      "centre_tiles": [
+        7,
+        6
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "objects",
+      "name": "question-terminal-idle",
+      "centre_tiles": [
+        17,
+        8
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "objects",
+      "name": "shield-barrier",
+      "centre_tiles": [
+        12,
+        9.1
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "objects",
+      "name": "energy-pickup",
+      "centre_tiles": [
+        9,
+        8
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "objects",
+      "name": "energy-pickup",
+      "centre_tiles": [
+        15,
+        6
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "objects",
+      "name": "energy-pickup",
+      "centre_tiles": [
+        5,
+        10
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "players",
+      "name": "operative-blue",
+      "centre_tiles": [
+        4,
+        6.6
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "players",
+      "name": "operative-blue",
+      "centre_tiles": [
+        9,
+        5.8
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "players",
+      "name": "operative-orange",
+      "centre_tiles": [
+        20,
+        6.8
+      ],
+      "rotation_ccw": 180
+    },
+    {
+      "group": "players",
+      "name": "operative-orange",
+      "centre_tiles": [
+        14.7,
+        8.2
+      ],
+      "rotation_ccw": 180
+    },
+    {
+      "group": "players",
+      "name": "operative-orange-knocked-out",
+      "centre_tiles": [
+        18.2,
+        4.7
+      ],
+      "rotation_ccw": 90
+    },
+    {
+      "group": "players",
+      "name": "operative-blue-knocked-out",
+      "centre_tiles": [
+        5,
+        8.7
+      ],
+      "rotation_ccw": 270
+    },
+    {
+      "group": "minions",
+      "name": "biology-minion",
+      "centre_tiles": [
+        8.3,
+        8.4
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "minions",
+      "name": "chemistry-minion",
+      "centre_tiles": [
+        15.8,
+        5.2
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "minions",
+      "name": "physics-minion",
+      "centre_tiles": [
+        10,
+        7.3
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "minions",
+      "name": "maths-standard-minion",
+      "centre_tiles": [
+        16,
+        9.5
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "minions",
+      "name": "maths-advanced-minion",
+      "centre_tiles": [
+        8.8,
+        2.2
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "minions",
+      "name": "maths-extension-1-minion",
+      "centre_tiles": [
+        14.4,
+        11.6
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "fx",
+      "name": "neutraliser-projectile",
+      "centre_tiles": [
+        9,
+        4.7
+      ],
+      "rotation_ccw": 0
+    },
+    {
+      "group": "fx",
+      "name": "hit-spark",
+      "centre_tiles": [
+        16.3,
+        6.5
+      ],
+      "rotation_ccw": 0
+    }
+  ],
+  "note": "Review composition; not a collision specification. Base floor assignment is deterministic in build-assets.py."
+}
