@@ -1,7 +1,12 @@
 import type { Subject } from '@/lib/questions';
 
-// Boss art using Kenney CC0 toon-character sprites (in /public/bosses/<subject>/),
-// with the frame chosen by HP: healthy → enraged → hurt → defeated.
+// Subject boss art (locked style, /public/art/bosses/), with the pose chosen by
+// HP: healthy -> attacking -> hurt -> defeated. Same bosses as the live Boss Battle.
+const ART: Record<Subject, string> = {
+  'biology': 'biology', 'chemistry': 'chemistry', 'physics': 'physics',
+  'maths-standard': 'maths-standard', 'maths-advanced': 'maths-advanced', 'maths-ext1': 'maths-extension-1',
+};
+const FILE = { idle: 'idle', attack: 'attack', hurt: 'hurt', defeat: 'defeated' } as const;
 export default function BossArt({
   subject, frac, defeated, className, pose,
 }: {
@@ -14,7 +19,7 @@ export default function BossArt({
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`/bosses/${subject}/${state}.png`}
+      src={`/art/bosses/${ART[subject]}-boss-${FILE[state]}.webp`}
       alt={`${subject} boss`}
       className={className}
       style={{ objectFit: 'contain', filter: 'drop-shadow(0 10px 14px rgba(0,0,0,0.5))', animation: 'bob 2.4s ease-in-out infinite' }}

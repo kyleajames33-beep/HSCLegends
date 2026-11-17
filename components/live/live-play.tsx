@@ -5,7 +5,7 @@ import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, SHAPES, clearPlayerRecovery, readPlayerRecovery, savePlayerSeat, liveClient, msRemaining, ordinal, readTab, rpc, useNow, usePoll, useSession, writeTab, type PlayerView } from '@/lib/live-game';
 import { useOnChange, useSound } from '@/lib/live-sound';
 import { Icon } from './icon';
-import { BOSSES, BossBar, bossLeft } from './boss';
+import { BOSSES, BossBar, ResultArt, bossLeft } from './boss';
 import s from './live.module.css';
 
 const SEAT_KEY = 'hsc-live-seat';
@@ -124,7 +124,7 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
   const shell = (body: React.ReactNode, right?: React.ReactNode) => (
     <div className={s.stage}>
       <header className={s.top}><span className={s.brand}><b>HSC Legends</b> · Live</span>
-        <span className={s.row}><button className={s.link} onClick={sound.toggle} aria-pressed={sound.on}>Sound {sound.on ? 'on' : 'off'}</button>{right}</span></header>
+        <span className={s.row}><button className={`${s.link} ${s.iconRow}`} onClick={sound.toggle} aria-pressed={sound.on} aria-label={sound.on ? 'Sound on. Turn sound off' : 'Sound off. Turn sound on'}><Icon name={sound.on ? 'sound-on' : 'sound-off'} size={22} />{sound.on ? 'On' : 'Off'}</button>{right}</span></header>
       <main className={`${s.main}`}>{body}{error && <p className={`${s.error} ${s.narrow}`} role="alert">{error}</p>}</main>
     </div>
   );
@@ -154,7 +154,7 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
     );
   }
 
-  if (!view) return shell(<p className={s.dim}>{poll.error ? 'Reconnecting…' : 'Joining…'}</p>);
+  if (!view) return shell(poll.error ? <p className={`${s.dim} ${s.iconRow}`}><Icon name="reconnect" size={28} />Reconnecting…</p> : <p className={s.dim}>Joining…</p>);
 
   const scorePill = <span className={`${s.pill} ${s.iconRow}`}><Icon name="spark" size={18} />{view.alias} · {view.score.toLocaleString()}</span>;
 
@@ -173,8 +173,10 @@ export default function LivePlay({ config }: { config: StagingConfig }) {
   if (view.state === 'complete') {
     const bossLeftHp = view.boss ? bossLeft(view.boss) : null;
     return shell(<div className={`${s.narrow} ${s.center}`}>
-      {view.boss && <p className={`${s.banner} ${bossLeftHp === 0 ? s.win : s.lose}`} style={{ marginBottom: 16, fontSize: '1.4rem' }}>
-        {bossLeftHp === 0 ? `Your class defeated ${BOSSES[view.boss.subject].name}!` : `${BOSSES[view.boss.subject].name} escaped`}</p>}
+      {view.boss && <ResultArt boss={view.boss} won={bossLeftHp === 0} compact>
+        <p className={`${s.banner} ${bossLeftHp === 0 ? s.win : s.lose}`} style={{ fontSize: '1.3rem' }}>
+          {bossLeftHp === 0 ? `Your class defeated ${BOSSES[view.boss.subject].name}!` : `${BOSSES[view.boss.subject].name} escaped`}</p>
+      </ResultArt>}
       <div className={`${s.result} ${view.rank <= 3 ? s.good : s.neutral}`}>
         <Icon name={view.rank <= 3 ? 'trophy' : 'star'} size={64} />
         <p>Final place</p>

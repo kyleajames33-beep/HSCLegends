@@ -11,6 +11,17 @@ export const BOSSES: Record<BossSubject, { name: string; subject: string; art: s
   'maths-ext1': { name: 'The Fractal', subject: 'Maths Extension 1', art: '/art/bosses/maths-extension-1', accent: '#e8447f' },
 };
 export const emblem = (k: BossSubject) => `/art/icons/subject-${k === 'maths-ext1' ? 'maths-extension-1' : k}.webp`;
+/** Results scene for the end banner. Only Chemistry has dedicated scenes so far; others show their boss pose. */
+export function ResultArt({ boss, won, children, compact = false }: { boss: BossState; won: boolean; children: React.ReactNode; compact?: boolean }) {
+  const meta = BOSSES[boss.subject];
+  const scene = boss.subject === 'chemistry' ? `/art/results/${won ? 'victory' : 'defeat'}.webp` : null;
+  return (
+    <div className={s.resultArt} style={{ ...(scene ? { backgroundImage: `url(${scene})` } : {}), ...(compact ? { minHeight: 170, marginBottom: 16 } : {}) }}>
+      {!scene && <Image src={`${meta.art}-boss-${won ? 'defeated' : 'attack'}.webp`} alt="" width={compact ? 120 : 170} height={compact ? 120 : 170} className={s.resultBoss} />}
+      {children}
+    </div>
+  );
+}
 export const BOSS_ORDER = Object.keys(BOSSES) as BossSubject[];
 
 export function bossLeft(boss: BossState): number | null {

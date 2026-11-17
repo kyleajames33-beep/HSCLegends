@@ -10,7 +10,7 @@ import { useOnChange, useSound } from '@/lib/live-sound';
 import QRCode from 'qrcode';
 import { Icon } from './icon';
 import Image from 'next/image';
-import { BOSSES, BOSS_ORDER, BossBar, BossPanel, bossLeft, emblem } from './boss';
+import { BOSSES, BOSS_ORDER, BossBar, BossPanel, ResultArt, bossLeft, emblem } from './boss';
 import type { BossSubject } from '@/lib/live-game';
 import s from './live.module.css';
 
@@ -230,7 +230,7 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
   const shell = (body: React.ReactNode, right?: React.ReactNode, backdrop = false) => (
     <div className={`${s.stage} ${backdrop ? s.lobbyArt : ''}`}>
       <header className={s.top}><span className={s.brand}><b>HSC Legends</b> · Live</span>
-        <span className={s.row}><button className={s.link} onClick={sound.toggle} aria-pressed={sound.on}>Sound {sound.on ? 'on' : 'off'}</button>{right}</span></header>
+        <span className={s.row}><button className={`${s.link} ${s.iconRow}`} onClick={sound.toggle} aria-pressed={sound.on} aria-label={sound.on ? 'Sound on. Turn sound off' : 'Sound off. Turn sound on'}><Icon name={sound.on ? 'sound-on' : 'sound-off'} size={22} />{sound.on ? 'On' : 'Off'}</button>{right}</span></header>
       <main className={s.main}>{body}{error && <p className={s.error} role="alert">{error}</p>}</main>
     </div>
   );
@@ -312,7 +312,7 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
     );
   }
 
-  if (!view) return shell(<p className={s.dim}>{poll.error ? 'Reconnecting…' : 'Loading game…'}</p>, signOut);
+  if (!view) return shell(poll.error ? <p className={`${s.dim} ${s.iconRow}`}><Icon name="reconnect" size={28} />Reconnecting…</p> : <p className={s.dim}>Loading game…</p>, signOut);
 
   const players = view.players;
   const endBtn = <button className={s.link} onClick={leave}>Close game</button>;
@@ -352,8 +352,10 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
         const left = bossLeft(view.boss);
         const meta = BOSSES[view.boss.subject];
         return <>
-          <p className={`${s.banner} ${left === 0 ? s.win : s.lose}`}>{left === 0 ? `${meta.name} defeated!` : `${meta.name} escaped with ${left?.toLocaleString()} HP`}</p>
-          <BossPanel boss={view.boss} size={100} caption={`Class damage: ${view.boss.damage.toLocaleString()}`} />
+          <ResultArt boss={view.boss} won={left === 0}>
+            <p className={`${s.banner} ${left === 0 ? s.win : s.lose}`}>{left === 0 ? `${meta.name} defeated!` : `${meta.name} escaped with ${left?.toLocaleString()} HP`}</p>
+            <p className={s.resultCaption}>Class damage: {view.boss.damage.toLocaleString()}</p>
+          </ResultArt>
         </>;
       })()}
       <h1 className={`${s.h1} ${s.iconRow}`}><Icon name="trophy" size={48} />{view.boss ? 'Top damage dealers' : 'Final results'}</h1>
