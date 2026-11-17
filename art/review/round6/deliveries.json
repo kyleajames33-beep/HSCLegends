@@ -1,0 +1,592 @@
+[
+  {
+    "name": "classroom-live-card",
+    "path": "public/art/keyart/classroom-live-card.webp",
+    "size": [
+      1280,
+      720
+    ],
+    "bytes": 57394,
+    "quality": 76
+  },
+  {
+    "name": "lab-rush-card",
+    "path": "public/art/keyart/lab-rush-card.webp",
+    "size": [
+      1280,
+      720
+    ],
+    "bytes": 54456,
+    "quality": 76
+  },
+  {
+    "name": "knockout-solo-card",
+    "path": "public/art/keyart/knockout-solo-card.webp",
+    "size": [
+      1280,
+      720
+    ],
+    "bytes": 57384,
+    "quality": 88
+  },
+  {
+    "name": "biology-boss-attack",
+    "path": "public/art/bosses/biology-boss-attack.webp",
+    "size": [
+      512,
+      512
+    ],
+    "bytes": 50820,
+    "quality": 88
+  },
+  {
+    "name": "chemistry-boss-attack",
+    "path": "public/art/bosses/chemistry-boss-attack.webp",
+    "size": [
+      512,
+      512
+    ],
+    "bytes": 55562,
+    "quality": 82
+  },
+  {
+    "name": "physics-boss-attack",
+    "path": "public/art/bosses/physics-boss-attack.webp",
+    "size": [
+      512,
+      512
+    ],
+    "bytes": 57544,
+    "quality": 76
+  },
+  {
+    "name": "maths-standard-boss-attack",
+    "path": "public/art/bosses/maths-standard-boss-attack.webp",
+    "size": [
+      512,
+      512
+    ],
+    "bytes": 52494,
+    "quality": 88
+  },
+  {
+    "name": "maths-advanced-boss-attack",
+    "path": "public/art/bosses/maths-advanced-boss-attack.webp",
+    "size": [
+      512,
+      512
+    ],
+    "bytes": 35286,
+    "quality": 88
+  },
+  {
+    "name": "maths-extension-1-boss-attack",
+    "path": "public/art/bosses/maths-extension-1-boss-attack.webp",
+    "size": [
+      512,
+      512
+    ],
+    "bytes": 51204,
+    "quality": 88
+  },
+  {
+    "name": "heart",
+    "path": "public/art/icons/heart.webp",
+    "size": [
+      96,
+      96
+    ],
+    "bytes": 5232,
+    "quality": "lossless"
+  },
+  {
+    "name": "gem",
+    "path": "public/art/icons/gem.webp",
+    "size": [
+      96,
+      96
+    ],
+    "bytes": 6386,
+    "quality": "lossless"
+  },
+  {
+    "name": "scan",
+    "path": "public/art/icons/scan.webp",
+    "size": [
+      96,
+      96
+    ],
+    "bytes": 4606,
+    "quality": "lossless"
+  },
+  {
+    "name": "connection",
+    "path": "public/art/icons/connection.webp",
+    "size": [
+      96,
+      96
+    ],
+    "bytes": 7014,
+    "quality": "lossless"
+  },
+  {
+    "name": "reconnect",
+    "path": "public/art/icons/reconnect.webp",
+    "size": [
+      96,
+      96
+    ],
+    "bytes": 6438,
+    "quality": "lossless"
+  },
+  {
+    "name": "sound-on",
+    "path": "public/art/icons/sound-on.webp",
+    "size": [
+      96,
+      96
+    ],
+    "bytes": 6074,
+    "quality": "lossless"
+  },
+  {
+    "name": "sound-off",
+    "path": "public/art/icons/sound-off.webp",
+    "size": [
+      96,
+      96
+    ],
+    "bytes": 3280,
+    "quality": "lossless"
+  },
+  {
+    "name": "victory",
+    "path": "public/art/results/victory.webp",
+    "size": [
+      1600,
+      900
+    ],
+    "bytes": 59082,
+    "quality": 58
+  },
+  {
+    "name": "defeat",
+    "path": "public/art/results/defeat.webp",
+    "size": [
+      1600,
+      900
+    ],
+    "bytes": 59994,
+    "quality": 50
+  },
+  {
+    "name": "frame-common",
+    "path": "public/art/cards/frames/common.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 2676,
+    "quality": "lossless"
+  },
+  {
+    "name": "frame-rare",
+    "path": "public/art/cards/frames/rare.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 2758,
+    "quality": "lossless"
+  },
+  {
+    "name": "frame-epic",
+    "path": "public/art/cards/frames/epic.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 3718,
+    "quality": "lossless"
+  },
+  {
+    "name": "frame-legendary",
+    "path": "public/art/cards/frames/legendary.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 3992,
+    "quality": "lossless"
+  },
+  {
+    "name": "frame-mythic",
+    "path": "public/art/cards/frames/mythic.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 4408,
+    "quality": "lossless"
+  },
+  {
+    "name": "bio-cell",
+    "path": "public/art/cards/bio-cell.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 27018,
+    "quality": 88
+  },
+  {
+    "name": "bio-dna",
+    "path": "public/art/cards/bio-dna.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 35560,
+    "quality": 88
+  },
+  {
+    "name": "bio-leaf",
+    "path": "public/art/cards/bio-leaf.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 33614,
+    "quality": 88
+  },
+  {
+    "name": "bio-microscope",
+    "path": "public/art/cards/bio-microscope.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 23916,
+    "quality": 88
+  },
+  {
+    "name": "bio-boss",
+    "path": "public/art/cards/bio-boss.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 33008,
+    "quality": 88
+  },
+  {
+    "name": "chem-flask",
+    "path": "public/art/cards/chem-flask.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 24316,
+    "quality": 88
+  },
+  {
+    "name": "chem-atom",
+    "path": "public/art/cards/chem-atom.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 31320,
+    "quality": 88
+  },
+  {
+    "name": "chem-fire",
+    "path": "public/art/cards/chem-fire.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 36278,
+    "quality": 88
+  },
+  {
+    "name": "chem-scientist",
+    "path": "public/art/cards/chem-scientist.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 26746,
+    "quality": 88
+  },
+  {
+    "name": "chem-boss",
+    "path": "public/art/cards/chem-boss.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 38852,
+    "quality": 88
+  },
+  {
+    "name": "phys-tele",
+    "path": "public/art/cards/phys-tele.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 20766,
+    "quality": 88
+  },
+  {
+    "name": "phys-magnet",
+    "path": "public/art/cards/phys-magnet.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 24532,
+    "quality": 88
+  },
+  {
+    "name": "phys-bolt",
+    "path": "public/art/cards/phys-bolt.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 34036,
+    "quality": 88
+  },
+  {
+    "name": "phys-rocket",
+    "path": "public/art/cards/phys-rocket.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 22906,
+    "quality": 88
+  },
+  {
+    "name": "phys-boss",
+    "path": "public/art/cards/phys-boss.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 34092,
+    "quality": 88
+  },
+  {
+    "name": "mstd-ruler",
+    "path": "public/art/cards/mstd-ruler.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 23180,
+    "quality": 88
+  },
+  {
+    "name": "mstd-chart",
+    "path": "public/art/cards/mstd-chart.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 29212,
+    "quality": 88
+  },
+  {
+    "name": "mstd-money",
+    "path": "public/art/cards/mstd-money.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 25378,
+    "quality": 88
+  },
+  {
+    "name": "mstd-boss",
+    "path": "public/art/cards/mstd-boss.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 24648,
+    "quality": 88
+  },
+  {
+    "name": "madv-sigma",
+    "path": "public/art/cards/madv-sigma.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 22762,
+    "quality": 88
+  },
+  {
+    "name": "madv-curve",
+    "path": "public/art/cards/madv-curve.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 20968,
+    "quality": 88
+  },
+  {
+    "name": "madv-pi",
+    "path": "public/art/cards/madv-pi.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 25722,
+    "quality": 88
+  },
+  {
+    "name": "madv-boss",
+    "path": "public/art/cards/madv-boss.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 21272,
+    "quality": 88
+  },
+  {
+    "name": "mex1-inf",
+    "path": "public/art/cards/mex1-inf.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 24474,
+    "quality": 88
+  },
+  {
+    "name": "mex1-vector",
+    "path": "public/art/cards/mex1-vector.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 19922,
+    "quality": 88
+  },
+  {
+    "name": "mex1-proof",
+    "path": "public/art/cards/mex1-proof.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 27918,
+    "quality": 88
+  },
+  {
+    "name": "mex1-boss",
+    "path": "public/art/cards/mex1-boss.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 23430,
+    "quality": 88
+  },
+  {
+    "name": "leg-curie",
+    "path": "public/art/cards/leg-curie.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 24020,
+    "quality": 88
+  },
+  {
+    "name": "leg-newton",
+    "path": "public/art/cards/leg-newton.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 27324,
+    "quality": 88
+  },
+  {
+    "name": "leg-einstein",
+    "path": "public/art/cards/leg-einstein.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 23114,
+    "quality": 88
+  },
+  {
+    "name": "leg-darwin",
+    "path": "public/art/cards/leg-darwin.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 22888,
+    "quality": 88
+  },
+  {
+    "name": "leg-ada",
+    "path": "public/art/cards/leg-ada.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 20220,
+    "quality": 88
+  },
+  {
+    "name": "leg-tesla",
+    "path": "public/art/cards/leg-tesla.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 18956,
+    "quality": 88
+  },
+  {
+    "name": "leg-hawking",
+    "path": "public/art/cards/leg-hawking.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 36104,
+    "quality": 88
+  },
+  {
+    "name": "leg-goodall",
+    "path": "public/art/cards/leg-goodall.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 19632,
+    "quality": 88
+  },
+  {
+    "name": "leg-legend",
+    "path": "public/art/cards/leg-legend.webp",
+    "size": [
+      512,
+      704
+    ],
+    "bytes": 21460,
+    "quality": 88
+  }
+]

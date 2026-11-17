@@ -1,0 +1,1096 @@
+{
+  "round": 6,
+  "date": "2026-11-17",
+  "tool": "image_gen.imagegen",
+  "model": "not exposed",
+  "catalog": [
+    {
+      "id": "bio-cell",
+      "title": "Lonely Cell",
+      "subject": "biology",
+      "rarity": "common",
+      "kind": "emoji"
+    },
+    {
+      "id": "bio-dna",
+      "title": "Double Helix",
+      "subject": "biology",
+      "rarity": "rare",
+      "kind": "emoji"
+    },
+    {
+      "id": "bio-leaf",
+      "title": "Photosynth Prodigy",
+      "subject": "biology",
+      "rarity": "epic",
+      "kind": "emoji"
+    },
+    {
+      "id": "bio-microscope",
+      "title": "Field Biologist",
+      "subject": "biology",
+      "rarity": "legendary",
+      "kind": "dicebear"
+    },
+    {
+      "id": "bio-boss",
+      "title": "Apex of Biology",
+      "subject": "biology",
+      "rarity": "mythic",
+      "kind": "boss"
+    },
+    {
+      "id": "chem-flask",
+      "title": "Bubbling Beaker",
+      "subject": "chemistry",
+      "rarity": "common",
+      "kind": "emoji"
+    },
+    {
+      "id": "chem-atom",
+      "title": "Orbital Ace",
+      "subject": "chemistry",
+      "rarity": "rare",
+      "kind": "emoji"
+    },
+    {
+      "id": "chem-fire",
+      "title": "Exothermic Legend",
+      "subject": "chemistry",
+      "rarity": "epic",
+      "kind": "emoji"
+    },
+    {
+      "id": "chem-scientist",
+      "title": "Lab Veteran",
+      "subject": "chemistry",
+      "rarity": "legendary",
+      "kind": "dicebear"
+    },
+    {
+      "id": "chem-boss",
+      "title": "Apex of Chemistry",
+      "subject": "chemistry",
+      "rarity": "mythic",
+      "kind": "boss"
+    },
+    {
+      "id": "phys-tele",
+      "title": "Backyard Stargazer",
+      "subject": "physics",
+      "rarity": "common",
+      "kind": "emoji"
+    },
+    {
+      "id": "phys-magnet",
+      "title": "Field Lines",
+      "subject": "physics",
+      "rarity": "rare",
+      "kind": "emoji"
+    },
+    {
+      "id": "phys-bolt",
+      "title": "Voltage Virtuoso",
+      "subject": "physics",
+      "rarity": "epic",
+      "kind": "emoji"
+    },
+    {
+      "id": "phys-rocket",
+      "title": "Escape Velocity",
+      "subject": "physics",
+      "rarity": "legendary",
+      "kind": "dicebear"
+    },
+    {
+      "id": "phys-boss",
+      "title": "Apex of Physics",
+      "subject": "physics",
+      "rarity": "mythic",
+      "kind": "boss"
+    },
+    {
+      "id": "mstd-ruler",
+      "title": "Steady Surveyor",
+      "subject": "maths-standard",
+      "rarity": "common",
+      "kind": "emoji"
+    },
+    {
+      "id": "mstd-chart",
+      "title": "Data Whisperer",
+      "subject": "maths-standard",
+      "rarity": "rare",
+      "kind": "emoji"
+    },
+    {
+      "id": "mstd-money",
+      "title": "Compound Champion",
+      "subject": "maths-standard",
+      "rarity": "epic",
+      "kind": "emoji"
+    },
+    {
+      "id": "mstd-boss",
+      "title": "Apex of Maths Std",
+      "subject": "maths-standard",
+      "rarity": "legendary",
+      "kind": "boss"
+    },
+    {
+      "id": "madv-sigma",
+      "title": "Sum of All Things",
+      "subject": "maths-advanced",
+      "rarity": "common",
+      "kind": "emoji"
+    },
+    {
+      "id": "madv-curve",
+      "title": "Calculus Climber",
+      "subject": "maths-advanced",
+      "rarity": "rare",
+      "kind": "emoji"
+    },
+    {
+      "id": "madv-pi",
+      "title": "Irrational Hero",
+      "subject": "maths-advanced",
+      "rarity": "epic",
+      "kind": "emoji"
+    },
+    {
+      "id": "madv-boss",
+      "title": "Apex of Maths Adv",
+      "subject": "maths-advanced",
+      "rarity": "legendary",
+      "kind": "boss"
+    },
+    {
+      "id": "mex1-inf",
+      "title": "Infinity Initiate",
+      "subject": "maths-ext1",
+      "rarity": "common",
+      "kind": "emoji"
+    },
+    {
+      "id": "mex1-vector",
+      "title": "Vector Vanguard",
+      "subject": "maths-ext1",
+      "rarity": "rare",
+      "kind": "emoji"
+    },
+    {
+      "id": "mex1-proof",
+      "title": "Proof Phenom",
+      "subject": "maths-ext1",
+      "rarity": "epic",
+      "kind": "emoji"
+    },
+    {
+      "id": "mex1-boss",
+      "title": "Apex of Ext 1",
+      "subject": "maths-ext1",
+      "rarity": "legendary",
+      "kind": "boss"
+    },
+    {
+      "id": "leg-curie",
+      "title": "Marie the Radiant",
+      "subject": null,
+      "rarity": "epic",
+      "kind": "emoji"
+    },
+    {
+      "id": "leg-newton",
+      "title": "Sir Isaac of Apples",
+      "subject": null,
+      "rarity": "epic",
+      "kind": "emoji"
+    },
+    {
+      "id": "leg-einstein",
+      "title": "Relativity Royalty",
+      "subject": null,
+      "rarity": "legendary",
+      "kind": "emoji"
+    },
+    {
+      "id": "leg-darwin",
+      "title": "The Naturalist",
+      "subject": null,
+      "rarity": "rare",
+      "kind": "emoji"
+    },
+    {
+      "id": "leg-ada",
+      "title": "Countess of Code",
+      "subject": null,
+      "rarity": "rare",
+      "kind": "emoji"
+    },
+    {
+      "id": "leg-tesla",
+      "title": "Coil Conjurer",
+      "subject": null,
+      "rarity": "epic",
+      "kind": "emoji"
+    },
+    {
+      "id": "leg-hawking",
+      "title": "Cosmic Sage",
+      "subject": null,
+      "rarity": "legendary",
+      "kind": "emoji"
+    },
+    {
+      "id": "leg-goodall",
+      "title": "Primate Patron",
+      "subject": null,
+      "rarity": "rare",
+      "kind": "emoji"
+    },
+    {
+      "id": "leg-legend",
+      "title": "The HSC Legend",
+      "subject": null,
+      "rarity": "mythic",
+      "kind": "emoji"
+    }
+  ],
+  "assets": [
+    {
+      "group": "keyart",
+      "name": "classroom-live-card",
+      "type": "cover",
+      "accent": "#FF6A2B",
+      "transparent": false,
+      "references": [
+        "art/masters/bosses/chemistry-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#FF6A2B accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: illustration-story. Input image 1 is the exact boss design/style reference, preserve recognisable anatomy and subject palette. A cooperative classroom Boss Battle scene. Three distant late-teen operatives with diverse silhouettes, seen from behind, work together on a dark raised containment platform at right. Ahead towers the exact supplied reaction-vessel crawler boss: orange hexagonal reaction chamber, crystal lattice, two necks and four legs. Emphasise teamwork against one subject boss, no weapon combat. No faces in focus.\n\nWide 16:9 opaque full-bleed composition, at least 1600px wide. Left 45% is calm nearly uniform #0E1020 negative space for later UI title and description. All boss/operative silhouettes, machinery and accent highlights confined to right 55%. Confident simple scene geometry, sharp cel shading and clear focal hierarchy. No text, UI, screens with writing, numbers, title placeholders or bright detail in the left area.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-36b57d80-9e76-409f-a1e0-9f699a1c643d.png",
+      "source_sha256": "82f2680a1d3fcf829b6a344fd5f297e08c3f5f12abf7ba46ffa8310c1a0b9376"
+    },
+    {
+      "group": "keyart",
+      "name": "lab-rush-card",
+      "type": "cover",
+      "accent": "#2F7BEA",
+      "transparent": false,
+      "references": [
+        "art/masters/bosses/physics-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#2F7BEA accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: illustration-story. Input image 1 is the exact boss design/style reference, preserve recognisable anatomy and subject palette. A timed solo laboratory-building scene. On the right a determined late-teen operative seen from behind adjusts one angular lab upgrade console with a blank dark display, beside modular machinery and the exact supplied levitating toroidal Physics boss with coils, crescent vanes and orbiting charges farther behind. Clean industrial laboratory, controlled blue energy conduits suggest progression and machinery upgrades. No faces in focus.\n\nWide 16:9 opaque full-bleed composition, at least 1600px wide. Left 45% is calm nearly uniform #0E1020 negative space for later UI title and description. All boss/operative silhouettes, machinery and accent highlights confined to right 55%. Confident simple scene geometry, sharp cel shading and clear focal hierarchy. No text, UI, screens with writing, numbers, title placeholders or bright detail in the left area.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-0d2c4bed-8270-4da2-abda-957967d4b87a.png",
+      "source_sha256": "2b5e4f19df4b7073f98f5b4a4cf7973af5fe148d699810881cdd078262f5acd4"
+    },
+    {
+      "group": "keyart",
+      "name": "knockout-solo-card",
+      "type": "cover",
+      "accent": "#E8447F",
+      "transparent": false,
+      "references": [
+        "art/masters/bosses/maths-extension-1-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#E8447F accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: illustration-story. Input image 1 is the exact boss design/style reference, preserve recognisable anatomy and subject palette. A competitive solo elimination arena scene. On the right a lone late-teen operative with athletic field gear seen from behind stands on one sharp-edged survival platform; two empty receding platforms are dark in the distance. Opposite rises the supplied heavy fractal Maths Extension 1 boss, with compact central mass, pink trajectory seams and recursive branches, as an arena threat. A finite sequence of angular platforms suggests rounds and survival. No other human competitors, no face focus, no violence.\n\nWide 16:9 opaque full-bleed composition, at least 1600px wide. Left 45% is calm nearly uniform #0E1020 negative space for later UI title and description. All boss/operative silhouettes, machinery and accent highlights confined to right 55%. Confident simple scene geometry, sharp cel shading and clear focal hierarchy. No text, UI, screens with writing, numbers, title placeholders or bright detail in the left area.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-7d289702-ded3-4187-8dda-61d8f9ee0cde.png",
+      "source_sha256": "abac432d6b7f53d6549170583a90c1988c4b5bd48c3b00d4764a1c569d1074ea"
+    },
+    {
+      "group": "bosses",
+      "name": "biology-boss-attack",
+      "type": "attack",
+      "accent": "#1FB070",
+      "transparent": true,
+      "references": [
+        "art/masters/bosses/biology-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#1FB070 accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: identity-preserve. Input image 1 is this boss's approved idle and exact design, proportions, outline-weight, palette and cel-shading reference. Make ONE attack pose of THIS SAME boss. Change only posture/articulation and energy intensity, preserving all component counts and materials. Lunge forward low with its existing front tendril extended, the two other supporting tendrils braced, its three spore sacs swept back, translucent green membrane taut around its helix. Same cell-colony body, no extra tendrils or spores, no gore.\n\nOne complete isolated boss, square canvas at least 1024px, generous padding, genuinely transparent background. Same camera side and scale as idle, no clipping. No scenery, ground shadow, motion streaks, impact bursts, damage-flash colour swaps or added accessories. Exact original design identity.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-93c65be4-df72-43dd-8964-8fa4f88dc0ee.png",
+      "source_sha256": "9cfca92cd900454834be2f7843ac6cd922df990d1d1c59ffb20e4c7a13dd5fcd"
+    },
+    {
+      "group": "bosses",
+      "name": "chemistry-boss-attack",
+      "type": "attack",
+      "accent": "#FF6A2B",
+      "transparent": true,
+      "references": [
+        "art/masters/bosses/chemistry-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#FF6A2B accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: identity-preserve. Input image 1 is this boss's approved idle and exact design, proportions, outline-weight, palette and cel-shading reference. Make ONE attack pose of THIS SAME boss. Change only posture/articulation and energy intensity, preserving all component counts and materials. Rear legs brace while the front two crawler legs lift and reach forward, vessel tilts toward the opponent, orange flame surges inside its unchanged intact hexagonal chamber. Same left crystal lattice and two glass distillation necks, no new cannon or limbs.\n\nOne complete isolated boss, square canvas at least 1024px, generous padding, genuinely transparent background. Same camera side and scale as idle, no clipping. No scenery, ground shadow, motion streaks, impact bursts, damage-flash colour swaps or added accessories. Exact original design identity.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-f471ae3b-4986-44a5-ae73-49f299e294cf.png",
+      "source_sha256": "c0e14a86f68cf7a37332261c7846f3c00916bedb2d81bfa8bc56e815f4dc021a"
+    },
+    {
+      "group": "bosses",
+      "name": "physics-boss-attack",
+      "type": "attack",
+      "accent": "#2F7BEA",
+      "transparent": true,
+      "references": [
+        "art/masters/bosses/physics-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#2F7BEA accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: identity-preserve. Input image 1 is this boss's approved idle and exact design, proportions, outline-weight, palette and cel-shading reference. Make ONE attack pose of THIS SAME boss. Change only posture/articulation and energy intensity, preserving all component counts and materials. Toroid tilts aggressively toward viewer while its two existing crescent field vanes close slightly around it and three blue charges tighten their orbit. Coils glow strongly, no extra coils/charges, no weapon, no lightning-bolt projectile.\n\nOne complete isolated boss, square canvas at least 1024px, generous padding, genuinely transparent background. Same camera side and scale as idle, no clipping. No scenery, ground shadow, motion streaks, impact bursts, damage-flash colour swaps or added accessories. Exact original design identity.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-1ff20ed4-ae3c-4e00-ada6-4b94b1cd3924.png",
+      "source_sha256": "b3fe75743bc6cb3ff905b94d5e1ec755a6b18bdd09eaa356e7e296973e4aceaf"
+    },
+    {
+      "group": "bosses",
+      "name": "maths-standard-boss-attack",
+      "type": "attack",
+      "accent": "#F2B530",
+      "transparent": true,
+      "references": [
+        "art/masters/bosses/maths-standard-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#F2B530 accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: identity-preserve. Input image 1 is this boss's approved idle and exact design, proportions, outline-weight, palette and cel-shading reference. Make ONE attack pose of THIS SAME boss. Change only posture/articulation and energy intensity, preserving all component counts and materials. Balance beam pitches decisively toward viewer, original triangular gold brace thrust forward with the two suspended trays swinging back. Keep original three cubes in left tray and six in right, all in their respective trays, exact stepped base and existing geometry, no arms or new parts.\n\nOne complete isolated boss, square canvas at least 1024px, generous padding, genuinely transparent background. Same camera side and scale as idle, no clipping. No scenery, ground shadow, motion streaks, impact bursts, damage-flash colour swaps or added accessories. Exact original design identity.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-d772786f-8fbd-4162-9e0d-a7bb57d2542b.png",
+      "source_sha256": "5f8d74a4e51e1dc0f7ac2088b5a09c99febc84dc7aa7142846927693dac24e5e"
+    },
+    {
+      "group": "bosses",
+      "name": "maths-advanced-boss-attack",
+      "type": "attack",
+      "accent": "#9B5CFF",
+      "transparent": true,
+      "references": [
+        "art/masters/bosses/maths-advanced-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#9B5CFF accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: identity-preserve. Input image 1 is this boss's approved idle and exact design, proportions, outline-weight, palette and cel-shading reference. Make ONE attack pose of THIS SAME boss. Change only posture/articulation and energy intensity, preserving all component counts and materials. Four original outer octahedral facets rotate forward around the two same nested octahedra; single violet ribbon taut in a forward sweeping curve. Same exact facets, proportions and core; no new shards or projectiles.\n\nOne complete isolated boss, square canvas at least 1024px, generous padding, genuinely transparent background. Same camera side and scale as idle, no clipping. No scenery, ground shadow, motion streaks, impact bursts, damage-flash colour swaps or added accessories. Exact original design identity.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-f230c535-3b82-4c5a-afaf-ee295e52ff14.png",
+      "source_sha256": "1325bc20cae8310255e9d9279dc2bdba805e77ced272c84a86030e963868d05f"
+    },
+    {
+      "group": "bosses",
+      "name": "maths-extension-1-boss-attack",
+      "type": "attack",
+      "accent": "#E8447F",
+      "transparent": true,
+      "references": [
+        "art/masters/bosses/maths-extension-1-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#E8447F accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: identity-preserve. Input image 1 is this boss's approved idle and exact design, proportions, outline-weight, palette and cel-shading reference. Make ONE attack pose of THIS SAME boss. Change only posture/articulation and energy intensity, preserving all component counts and materials. Heavy central tetrahedral mass lunges forward and twists, two recursive branches angle outward and its existing thick tapering tail swings around below. Maintain the revised solid central body, same pink trajectory nodes, exact branch geometry, no new fragments or limbs.\n\nOne complete isolated boss, square canvas at least 1024px, generous padding, genuinely transparent background. Same camera side and scale as idle, no clipping. No scenery, ground shadow, motion streaks, impact bursts, damage-flash colour swaps or added accessories. Exact original design identity.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-d77fe447-b0d9-49b6-8325-bdf1714d3fae.png",
+      "source_sha256": "5b24ad1541d19c9c8edfb177ffd1ce0c172897b355afa6820d8dfad4ec35bb96"
+    },
+    {
+      "group": "icons",
+      "name": "heart",
+      "type": "utility",
+      "accent": "#E8445F",
+      "transparent": true,
+      "references": [
+        "art/masters/icons/shield.png"
+      ],
+      "prompt": "Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base\nwith a single #E8445F accent, angular/hexagonal framing, no gradients beyond one\nsubtle highlight, readable at 24px. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 is a rendering/outline-weight reference ONLY; do not copy its shield subject. Subject: ONE broad angular coral heart silhouette with two sharp upper lobes and pointed bottom, thick dark outline and one restrained pale facet. Health/life icon, no pulse line or face.\n\nOne centered isolated icon, square canvas at least 1024px, occupies about 80% with clear margin, genuinely transparent background. Flat broad shapes and thick outline; no backplate unless essential, no gradients, 3D bevels, shadows or textures. Must be clear at 24px. Use only the specified accent and navy/pale neutrals.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-596fcdf6-c694-453a-ae6b-bb6ad2ff370b.png",
+      "source_sha256": "1bb8580910e75840554988970d23d3710ac4bbc99272ceb9e23749669cb4e7f3"
+    },
+    {
+      "group": "icons",
+      "name": "gem",
+      "type": "utility",
+      "accent": "#6E5BFF",
+      "transparent": true,
+      "references": [
+        "art/masters/icons/shield.png"
+      ],
+      "prompt": "Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base\nwith a single #6E5BFF accent, angular/hexagonal framing, no gradients beyond one\nsubtle highlight, readable at 24px. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 is a rendering/outline-weight reference ONLY; do not copy its shield subject. Subject: ONE faceted violet hexagonal reward gem with three broad planar faces, pale neutral glint and dark outlines. No coin, lettering or additional sparkle.\n\nOne centered isolated icon, square canvas at least 1024px, occupies about 80% with clear margin, genuinely transparent background. Flat broad shapes and thick outline; no backplate unless essential, no gradients, 3D bevels, shadows or textures. Must be clear at 24px. Use only the specified accent and navy/pale neutrals.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-4f2b78e9-df2a-457c-b3e4-393d7284dd4a.png",
+      "source_sha256": "7fadf52a8c5d50b5000f6d333302195fe74a20d54ef2ce170306f0a82383bcf6"
+    },
+    {
+      "group": "icons",
+      "name": "scan",
+      "type": "utility",
+      "accent": "#2F7BEA",
+      "transparent": true,
+      "references": [
+        "art/masters/icons/shield.png"
+      ],
+      "prompt": "Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base\nwith a single #2F7BEA accent, angular/hexagonal framing, no gradients beyond one\nsubtle highlight, readable at 24px. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 is a rendering/outline-weight reference ONLY; do not copy its shield subject. Subject: FOUR thick blue scanner corner brackets around a single small pale central diamond with one short horizontal blue scan bar. No microscopic detail, eye, text or interface.\n\nOne centered isolated icon, square canvas at least 1024px, occupies about 80% with clear margin, genuinely transparent background. Flat broad shapes and thick outline; no backplate unless essential, no gradients, 3D bevels, shadows or textures. Must be clear at 24px. Use only the specified accent and navy/pale neutrals.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-136c414b-4a96-496d-88b3-ba6727823a49.png",
+      "source_sha256": "e600dc66ec94a44131c64281de4a4abe7879420b4574ab058812ec4a165c3e23"
+    },
+    {
+      "group": "icons",
+      "name": "connection",
+      "type": "utility",
+      "accent": "#1FB070",
+      "transparent": true,
+      "references": [
+        "art/masters/icons/shield.png"
+      ],
+      "prompt": "Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base\nwith a single #1FB070 accent, angular/hexagonal framing, no gradients beyond one\nsubtle highlight, readable at 24px. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 is a rendering/outline-weight reference ONLY; do not copy its shield subject. Subject: A connected-network status symbol: THREE thick nested angular green signal arcs above a green dot, dark outline, generous separation. Clear connection shape at 24px.\n\nOne centered isolated icon, square canvas at least 1024px, occupies about 80% with clear margin, genuinely transparent background. Flat broad shapes and thick outline; no backplate unless essential, no gradients, 3D bevels, shadows or textures. Must be clear at 24px. Use only the specified accent and navy/pale neutrals.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-38af1023-2262-4da6-8c06-0f5544263e29.png",
+      "source_sha256": "72b5af75a5a5adeb140a2591b9407bc02b91bf3187d2c8100a5098ccc3c3d745"
+    },
+    {
+      "group": "icons",
+      "name": "reconnect",
+      "type": "utility",
+      "accent": "#F2B530",
+      "transparent": true,
+      "references": [
+        "art/masters/icons/shield.png"
+      ],
+      "prompt": "Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base\nwith a single #F2B530 accent, angular/hexagonal framing, no gradients beyond one\nsubtle highlight, readable at 24px. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 is a rendering/outline-weight reference ONLY; do not copy its shield subject. Subject: TWO broad gold curved angular arrows forming an open circular reconnect loop, clearly separated arrowheads. Dark outline, no lettering.\n\nOne centered isolated icon, square canvas at least 1024px, occupies about 80% with clear margin, genuinely transparent background. Flat broad shapes and thick outline; no backplate unless essential, no gradients, 3D bevels, shadows or textures. Must be clear at 24px. Use only the specified accent and navy/pale neutrals.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-d4f8aae4-8d6d-4a89-9b64-4b32b8118351.png",
+      "source_sha256": "75e4a3da092fc296bcb283667893715a066e4e1cc1131f53fdfd00a4a7c6f468"
+    },
+    {
+      "group": "icons",
+      "name": "sound-on",
+      "type": "utility",
+      "accent": "#F2F2FA",
+      "transparent": true,
+      "references": [
+        "art/masters/icons/shield.png"
+      ],
+      "prompt": "Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base\nwith a single #F2F2FA accent, angular/hexagonal framing, no gradients beyond one\nsubtle highlight, readable at 24px. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 is a rendering/outline-weight reference ONLY; do not copy its shield subject. Subject: ONE pale speaker silhouette with a small square back, broad flared cone and TWO thick angular sound-wave arcs at right. Dark outline, very high contrast, no letters.\n\nOne centered isolated icon, square canvas at least 1024px, occupies about 80% with clear margin, genuinely transparent background. Flat broad shapes and thick outline; no backplate unless essential, no gradients, 3D bevels, shadows or textures. Must be clear at 24px. Use only the specified accent and navy/pale neutrals.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-ee13893d-925e-4558-9acb-403be29a8a1d.png",
+      "source_sha256": "efbe86a3d35dd482d432a4ad8417f241f7cc008a2476f258ee423ba24fcacd04"
+    },
+    {
+      "group": "icons",
+      "name": "sound-off",
+      "type": "utility",
+      "accent": "#9A9CC0",
+      "transparent": true,
+      "references": [
+        "art/masters/icons/shield.png"
+      ],
+      "prompt": "Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base\nwith a single #9A9CC0 accent, angular/hexagonal framing, no gradients beyond one\nsubtle highlight, readable at 24px. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 is a rendering/outline-weight reference ONLY; do not copy its shield subject. Subject: The same angular pale-lavender speaker silhouette with square back and flared cone, plus ONE thick diagonal slash across its right side; no sound waves. Dark outline, clear muted state at 24px.\n\nOne centered isolated icon, square canvas at least 1024px, occupies about 80% with clear margin, genuinely transparent background. Flat broad shapes and thick outline; no backplate unless essential, no gradients, 3D bevels, shadows or textures. Must be clear at 24px. Use only the specified accent and navy/pale neutrals.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-a60b3062-4e5b-4c89-aad1-7fe89f9de022.png",
+      "source_sha256": "6ad216a9a032983059bc1fe0b3f46686c36a1d8f7585e81fd44bd89911a7950d"
+    },
+    {
+      "group": "results",
+      "name": "victory",
+      "type": "result",
+      "accent": "#FF6A2B",
+      "transparent": false,
+      "references": [
+        "art/masters/bosses/chemistry-boss-defeated.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#FF6A2B accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: illustration-story. Input image 1 is the approved Chemistry boss design/state reference. A restrained cooperative victory: three late-teen operatives with diverse silhouettes, seen from behind, stand shoulder to shoulder at right; one gives a small raised-fist gesture. The exact approved Chemistry boss rests powered down behind them with its four folded legs, crystal lattice and two necks intact; faint orange embers in the hexagonal chamber. Team achievement, calm relief and confidence, no cheering faces, confetti or trophies.\n\nWide opaque 16:9 at least 1600px wide, characters and boss on right 55%, left 45% calm dark #0E1020 for results UI copy later. No text, digits, labels or UI drawn. Dark navy environment, one controlled orange accent, readable composition at card size.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-7e15874a-5f7e-46bc-b41d-0207408d2350.png",
+      "source_sha256": "ced630449ba1b4e01b7808638c7f79997babee71394fa04fa40a0b50d365d528"
+    },
+    {
+      "group": "results",
+      "name": "defeat",
+      "type": "result",
+      "accent": "#FF6A2B",
+      "transparent": false,
+      "references": [
+        "art/masters/bosses/chemistry-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#FF6A2B accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: illustration-story. Input image 1 is the approved Chemistry boss design/state reference. A restrained class-defeat scene: three late-teen operatives with diverse silhouettes, seen from behind at a distance, sit or kneel tired on a safe containment platform at right, quietly regrouping. The exact approved Chemistry boss remains intact and active behind a lowered containment barrier in the distance, its reaction chamber emitting controlled orange light. No injury, death, weapons, humiliation or gore; a setback and chance to try again.\n\nWide opaque 16:9 at least 1600px wide, characters and boss on right 55%, left 45% calm dark #0E1020 for results UI copy later. No text, digits, labels or UI drawn. Dark navy environment, one controlled orange accent, readable composition at card size.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-19a3f8a7-a34b-4cd9-8f4a-f6c66f08db25.png",
+      "source_sha256": "806e896aba8625a6e0958c02143014e9f48c5c66fdf4ee09de4ed689e833cbdf"
+    },
+    {
+      "group": "cards/art",
+      "name": "bio-cell",
+      "type": "collectible-art",
+      "accent": "#1FB070",
+      "transparent": true,
+      "card": {
+        "id": "bio-cell",
+        "title": "Lonely Cell",
+        "subject": "biology",
+        "rarity": "common",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/biology-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#1FB070 accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: A compact armoured living cell creature with a faceted translucent green membrane enclosing one luminous nucleus, three firm dark root-like stabilisers, no face. Foundational organism, solid substantial silhouette.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-96e19db6-c603-4218-8b13-c75e24694a6a.png",
+      "source_sha256": "c5b2245dd03221c04a1e5bbdf7f56a220d90dec681dbe1ebe13cce27ef6aac77"
+    },
+    {
+      "group": "cards/art",
+      "name": "bio-dna",
+      "type": "collectible-art",
+      "accent": "#1FB070",
+      "transparent": true,
+      "card": {
+        "id": "bio-dna",
+        "title": "Double Helix",
+        "subject": "biology",
+        "rarity": "rare",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/biology-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#1FB070 accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: A double-helix sentinel creature, two thick green helical spines interwoven through a navy ribbed containment exoskeleton, balanced on two broad root claws. No face or literal letters. Solid creature rather than a thin diagram.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-e8815191-2845-4fbe-a9f1-311f8fc789e3.png",
+      "source_sha256": "867b6c9ac3f139848a9d7533d9f658b76f4026af939b6fffb833eef57c7782ba"
+    },
+    {
+      "group": "cards/art",
+      "name": "bio-leaf",
+      "type": "collectible-art",
+      "accent": "#1FB070",
+      "transparent": true,
+      "card": {
+        "id": "bio-leaf",
+        "title": "Photosynth Prodigy",
+        "subject": "biology",
+        "rarity": "epic",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/biology-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#1FB070 accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An imposing photosynthetic organism, three broad angular green leaf-like membrane sails growing from a dense dark botanical core on four stout roots. Sharp powerful silhouette, no face or cute plant pot.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-b7c51ba1-1fc6-47cd-80ac-dab65bd3b27b.png",
+      "source_sha256": "14319c27c7be0edaf44218f1e897187484097a4248a718d2f757b9b2708b97d6"
+    },
+    {
+      "group": "cards/art",
+      "name": "bio-microscope",
+      "type": "collectible-art",
+      "accent": "#1FB070",
+      "transparent": true,
+      "card": {
+        "id": "bio-microscope",
+        "title": "Field Biologist",
+        "subject": "biology",
+        "rarity": "legendary",
+        "kind": "dicebear"
+      },
+      "references": [
+        "art/masters/bosses/biology-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#1FB070 accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original young-adult female field biologist, warm brown skin, long dark braid, focused calm expression, navy angular field jacket with green seams, sturdy boots and gloves; holding a compact unlabeled optical sample scanner. Full body with realistic proportions.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-e1d6bbe6-3e54-40a3-83e8-6243be820f22.png",
+      "source_sha256": "24b359b914c8983c314e8dad37c34a0a7eeceaff2251c8c71da530d42e5af35f"
+    },
+    {
+      "group": "cards/art",
+      "name": "chem-flask",
+      "type": "collectible-art",
+      "accent": "#FF6A2B",
+      "transparent": true,
+      "card": {
+        "id": "chem-flask",
+        "title": "Bubbling Beaker",
+        "subject": "chemistry",
+        "rarity": "common",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/chemistry-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#FF6A2B accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original angular chemical-vessel creature: a heavy sealed orange reaction ampoule nested inside three dark ceramic claw-like supports, controlled orange bubbles and cubic crystal growth visible inside. No face, happy beaker or generic humanoid.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-68950b1a-c0af-4352-9b82-e86bdd5682c7.png",
+      "source_sha256": "b017a7221d7b7dab73c9ca1cdbf43eb842320dc2ee4c842b28f2bb753d0e61b3"
+    },
+    {
+      "group": "cards/art",
+      "name": "chem-atom",
+      "type": "collectible-art",
+      "accent": "#FF6A2B",
+      "transparent": true,
+      "card": {
+        "id": "chem-atom",
+        "title": "Orbital Ace",
+        "subject": "chemistry",
+        "rarity": "rare",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/chemistry-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#FF6A2B accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original orbital crystal sentinel: a solid orange faceted nucleus held between two thick navy rotating containment hoops, a few orange spherical nodes mounted on the hoops. Physical powerful construct, no atom badge or diagram, no face.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-45f44348-d354-4468-86f7-31c872c38258.png",
+      "source_sha256": "684b993d0f3c1c9e51ae71caf404391469406be0503fe3dfd86eb59e56ec5600"
+    },
+    {
+      "group": "cards/art",
+      "name": "chem-fire",
+      "type": "collectible-art",
+      "accent": "#FF6A2B",
+      "transparent": true,
+      "card": {
+        "id": "chem-fire",
+        "title": "Exothermic Legend",
+        "subject": "chemistry",
+        "rarity": "epic",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/chemistry-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#FF6A2B accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original exothermic containment creature: broad dark ceramic carapace opening at the centre to reveal a controlled orange flame, two thick crystalline side fins and three low gripping legs. Solid dangerous experimental technology, no face.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-9587bec2-5780-40ec-9369-237b2f6fc692.png",
+      "source_sha256": "bf4490a61a0e7e5d3c57dfb7e455c2cfabff7b907ce58189a603be0461b851a9"
+    },
+    {
+      "group": "cards/art",
+      "name": "chem-scientist",
+      "type": "collectible-art",
+      "accent": "#FF6A2B",
+      "transparent": true,
+      "card": {
+        "id": "chem-scientist",
+        "title": "Lab Veteran",
+        "subject": "chemistry",
+        "rarity": "legendary",
+        "kind": "dicebear"
+      },
+      "references": [
+        "art/masters/bosses/chemistry-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#FF6A2B accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original young-adult East Asian male laboratory operative, focused expression, short straight black hair, protective goggles pushed above eyes, dark angular lab coat with orange seams over practical trousers and boots; carrying a sealed orange reaction cartridge in both gloved hands. Full body, realistic proportions.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-22bfa6be-9232-4ddd-bf73-3112cc18372b.png",
+      "source_sha256": "00674cf3c02eea28482982720f88ba10f0a48fd09849ae98697543a0861be84d"
+    },
+    {
+      "group": "cards/art",
+      "name": "phys-tele",
+      "type": "collectible-art",
+      "accent": "#2F7BEA",
+      "transparent": true,
+      "card": {
+        "id": "phys-tele",
+        "title": "Backyard Stargazer",
+        "subject": "physics",
+        "rarity": "common",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/physics-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#2F7BEA accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original young-adult astronomy field operative, freckled pale skin, short wavy auburn hair, androgynous presentation, navy insulated field jacket with blue seams, boots and gloves, carrying an angular compact telescope rig on one shoulder. Focused expression, full body.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-914ff9ec-707d-4faf-a83c-cfd8077af3e6.png",
+      "source_sha256": "efc69e22c98f4889eeccb89ce41b5eb451458fe9abf6bb1bc9f92161256adb0c"
+    },
+    {
+      "group": "cards/art",
+      "name": "phys-magnet",
+      "type": "collectible-art",
+      "accent": "#2F7BEA",
+      "transparent": true,
+      "card": {
+        "id": "phys-magnet",
+        "title": "Field Lines",
+        "subject": "physics",
+        "rarity": "rare",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/physics-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#2F7BEA accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original magnetic manta-like field creature, broad angular dark crescent wings enclosing a solid toroidal blue coil core, two small orbiting blue charges, no face or animal eyes. Hovering substantial silhouette, clear electromagnetic identity.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-8c062d4a-9ed3-416b-aa76-8f61f3e420e0.png",
+      "source_sha256": "317214d1b03ab3c14c87baa01b82d0c4a35707b0dcb2fd4ec7f2e34d25ba9f8a"
+    },
+    {
+      "group": "cards/art",
+      "name": "phys-bolt",
+      "type": "collectible-art",
+      "accent": "#2F7BEA",
+      "transparent": true,
+      "card": {
+        "id": "phys-bolt",
+        "title": "Voltage Virtuoso",
+        "subject": "physics",
+        "rarity": "epic",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/physics-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#2F7BEA accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original voltage coil guardian, three heavy dark coil segments around a bright contained blue plasma channel on a low triangular base. Broad sculptural electrical technology, no lightning-bolt icon, face, text or humanoid body.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-67e9acc2-a90b-43d7-98c6-08652eaa40a4.png",
+      "source_sha256": "bd7d3668bbe6047f17359c6422aeccbc26294faf11b54f4e1e09c6138e9f5077"
+    },
+    {
+      "group": "cards/art",
+      "name": "phys-rocket",
+      "type": "collectible-art",
+      "accent": "#2F7BEA",
+      "transparent": true,
+      "card": {
+        "id": "phys-rocket",
+        "title": "Escape Velocity",
+        "subject": "physics",
+        "rarity": "legendary",
+        "kind": "dicebear"
+      },
+      "references": [
+        "art/masters/bosses/physics-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#2F7BEA accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original young-adult Black male propulsion operative, close cropped hair, focused expression, navy angular pressure suit with blue seams, boots and a compact twin-thruster field pack. Braced grounded stance, no weapon, flag or agency logo. Full body.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-7170d9a3-1969-4a2d-9264-b33f9d4bc782.png",
+      "source_sha256": "e7c1f6c8a0d1b4663cb44ff2fa07de9c1eff14b4406f4ce71b475a9b9dc50b67"
+    },
+    {
+      "group": "cards/art",
+      "name": "mstd-ruler",
+      "type": "collectible-art",
+      "accent": "#F2B530",
+      "transparent": true,
+      "card": {
+        "id": "mstd-ruler",
+        "title": "Steady Surveyor",
+        "subject": "maths-standard",
+        "rarity": "common",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/maths-standard-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#F2B530 accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original young-adult South Asian male surveyor with short dark hair, focused expression, angular dark field coat with gold seams, practical boots, holding a folded geometric surveying tripod. No numerical scales or writing, full body.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-e1037efc-6cbb-43ff-8963-dc18c0e3e34e.png",
+      "source_sha256": "c9479272bcd23cc5ba2b2fccfbca30ba911e57307a66fa5ee0b224e16582d0ed"
+    },
+    {
+      "group": "cards/art",
+      "name": "mstd-chart",
+      "type": "collectible-art",
+      "accent": "#F2B530",
+      "transparent": true,
+      "card": {
+        "id": "mstd-chart",
+        "title": "Data Whisperer",
+        "subject": "maths-standard",
+        "rarity": "rare",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/maths-standard-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#F2B530 accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original statistical data construct, five solid dark geometric columns stepping upward from a broad trapezoid platform with gold illuminated edges, held within an open angular triangular cage. No axes labels or numbers, no face, substantial monolith.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-0861089b-cb65-4dee-bb46-44fb32735591.png",
+      "source_sha256": "621e11c3a37cc6d35adaf4d55cf4bf0c965beb324597d49237112d7dc672a261"
+    },
+    {
+      "group": "cards/art",
+      "name": "mstd-money",
+      "type": "collectible-art",
+      "accent": "#F2B530",
+      "transparent": true,
+      "card": {
+        "id": "mstd-money",
+        "title": "Compound Champion",
+        "subject": "maths-standard",
+        "rarity": "epic",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/maths-standard-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#F2B530 accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original geometric growth construct: three progressively larger interlocking dark cubic volumes ascending around a solid central stepped gold crystal spine. Embodiment of compounding growth and proportion, not a money bag, coin pile or smiling object.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-4f23b4f0-8098-4ae9-ac3d-84bb42d6dbe6.png",
+      "source_sha256": "9e985b56c565e7345e6d2789e6b826b84f385a46cbdfa56a7ca09d9770a279d6"
+    },
+    {
+      "group": "cards/art",
+      "name": "madv-sigma",
+      "type": "collectible-art",
+      "accent": "#9B5CFF",
+      "transparent": true,
+      "card": {
+        "id": "madv-sigma",
+        "title": "Sum of All Things",
+        "subject": "maths-advanced",
+        "rarity": "common",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/maths-advanced-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#9B5CFF accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original recursive summation creature: five chunky dark cubic terms fold into one larger suspended angular polyhedron, violet seams clearly join them. Compact solid mass, no written sigma or formula, no face.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-c75751d8-7256-4dd5-8138-b7fe56cbadc8.png",
+      "source_sha256": "e6e18000dde2f4025a72c91d199954b44c83e1187f4cd3283288a6b1cc48d102"
+    },
+    {
+      "group": "cards/art",
+      "name": "madv-curve",
+      "type": "collectible-art",
+      "accent": "#9B5CFF",
+      "transparent": true,
+      "card": {
+        "id": "madv-curve",
+        "title": "Calculus Climber",
+        "subject": "maths-advanced",
+        "rarity": "rare",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/maths-advanced-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#9B5CFF accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original young-adult Southeast Asian female mathematics operative, short straight dark bob, focused expression, angular navy field jacket and boots with violet seams; hands guiding a single broad curved violet geometric ribbon around a small dark octahedron. No text or plotted axes, full body.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-31c90755-dab0-43b0-8a36-765fb4eb5f42.png",
+      "source_sha256": "3bfc99c5d642d79dbc182cd614e0bc2bb13a5163c443d41a550b1498e3662182"
+    },
+    {
+      "group": "cards/art",
+      "name": "madv-pi",
+      "type": "collectible-art",
+      "accent": "#9B5CFF",
+      "transparent": true,
+      "card": {
+        "id": "madv-pi",
+        "title": "Irrational Hero",
+        "subject": "maths-advanced",
+        "rarity": "epic",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/maths-advanced-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#9B5CFF accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original irrational-orbit construct: two solid interlocked faceted dark toroidal rings surrounding a dense violet crystalline centre, asymmetrical angular silhouette. Embodiment of unending geometric rotation; no pi symbol, pastry, face or numerical digits.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-d976d92c-028e-4faf-ac93-e051582dd1c0.png",
+      "source_sha256": "61d85ba00d2ef97cb4180ea3ce4f26670bef55a00458c865748195e572679a74"
+    },
+    {
+      "group": "cards/art",
+      "name": "mex1-inf",
+      "type": "collectible-art",
+      "accent": "#E8447F",
+      "transparent": true,
+      "card": {
+        "id": "mex1-inf",
+        "title": "Infinity Initiate",
+        "subject": "maths-ext1",
+        "rarity": "common",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/maths-extension-1-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#E8447F accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original recursive loop entity: two thick interlocked dark tetrahedral chains form a compact double-loop around a solid pink crystalline central mass. Chunky self-similar geometry, no literal infinity glyph floating outside body, no face.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-d891aad0-ea11-4090-9c7e-06b19c756bca.png",
+      "source_sha256": "d77e6579bd14b8af7817f31c003709261e82a97ae16f8c24df1aac67cc169d8a"
+    },
+    {
+      "group": "cards/art",
+      "name": "mex1-vector",
+      "type": "collectible-art",
+      "accent": "#E8447F",
+      "transparent": true,
+      "card": {
+        "id": "mex1-vector",
+        "title": "Vector Vanguard",
+        "subject": "maths-ext1",
+        "rarity": "rare",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/maths-extension-1-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#E8447F accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original young-adult Middle Eastern female vector-navigation operative wearing a close-fitting dark hijab, focused expression, angular navy field jacket and boots with pink seams; holding a broad three-pronged geometric navigation instrument with no labels. Full body, realistic adult proportions.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-e51ab843-7b21-4b0f-ac83-7329597c4245.png",
+      "source_sha256": "fd057d0fb8a69ab22cb5cd566be01c64a7a7f686787c08f371078dd846cb297f"
+    },
+    {
+      "group": "cards/art",
+      "name": "mex1-proof",
+      "type": "collectible-art",
+      "accent": "#E8447F",
+      "transparent": true,
+      "card": {
+        "id": "mex1-proof",
+        "title": "Proof Phenom",
+        "subject": "maths-ext1",
+        "rarity": "epic",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/bosses/maths-extension-1-boss-idle.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#E8447F accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An original inductive fractal sentinel: a dense central navy tetrahedron branches twice into thick self-similar smaller tetrahedra, pink edges link each geometric level. Strong substantial body, no magic wand, readable proof, face or ornamental particles.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-37f84ee6-c881-4be7-93ad-3b52f52b2ce9.png",
+      "source_sha256": "2e4bbe9b61de020437b16733e76122fd4fe39d56d5512511aeec1d9df3aee86d"
+    },
+    {
+      "group": "cards/art",
+      "name": "leg-curie",
+      "type": "collectible-art",
+      "accent": "#FF6A2B",
+      "transparent": true,
+      "card": {
+        "id": "leg-curie",
+        "title": "Marie the Radiant",
+        "subject": null,
+        "rarity": "epic",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/keyart/home-hero.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#FF6A2B accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An ORIGINAL fictional young-adult female isotope researcher, dark brown skin, short natural coiled hair, focused expression, charcoal angular protective coat and orange-glowing sealed containment case held safely in gloved hands. No actual historical-person likeness or radiation badge, full body.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e684-f741-7780-9861-fbada9bdff31/exec-e2aa4c36-9e5f-4a67-b467-ee4ded4973f1.png",
+      "source_sha256": "9b472a5ed6c1176e4f1d5b26972178f73f3dfe309f24815278b56240f2de8bb7"
+    },
+    {
+      "group": "cards/art",
+      "name": "leg-newton",
+      "type": "collectible-art",
+      "accent": "#F2B530",
+      "transparent": true,
+      "card": {
+        "id": "leg-newton",
+        "title": "Sir Isaac of Apples",
+        "subject": null,
+        "rarity": "epic",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/keyart/home-hero.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#F2B530 accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An ORIGINAL fictional young-adult male gravity researcher, medium brown skin, tightly curled dark hair, focused expression, angular navy field coat with gold seams; one dense faceted gold sphere floats within a compact dark gravity clamp above his gloved hand. No actual historical-person likeness or apple clich\u00e9, full body.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e7ef-bd5b-7d70-b961-08f8e8125fc1/exec-e8e1f214-1c7c-4f39-8c68-6d3b2e2b41b5.png",
+      "source_sha256": "97fd050ff2285d4210f8fdfc322eb7936a5df0d05f181693fd4fd41aa2f75e96"
+    },
+    {
+      "group": "cards/art",
+      "name": "leg-einstein",
+      "type": "collectible-art",
+      "accent": "#2F7BEA",
+      "transparent": true,
+      "card": {
+        "id": "leg-einstein",
+        "title": "Relativity Royalty",
+        "subject": null,
+        "rarity": "legendary",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/keyart/home-hero.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#2F7BEA accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An ORIGINAL fictional young-adult female spacetime operative, fair skin, straight dark undercut hair, focused expression, angular dark field suit with blue seams, carrying a compact folded field-lens frame that bends a short blue light ribbon. No actual historical-person likeness or wild white hair, full body.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e7ef-bd5b-7d70-b961-08f8e8125fc1/exec-fcddefc9-6e25-4c49-acc2-a0ce1f90a4c1.png",
+      "source_sha256": "b44279f688f7b2e2cc94cef57342ab29100bd852c1f89290724b0cbfb629dd9a"
+    },
+    {
+      "group": "cards/art",
+      "name": "leg-darwin",
+      "type": "collectible-art",
+      "accent": "#1FB070",
+      "transparent": true,
+      "card": {
+        "id": "leg-darwin",
+        "title": "The Naturalist",
+        "subject": null,
+        "rarity": "rare",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/keyart/home-hero.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#1FB070 accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An ORIGINAL fictional young-adult Pacific Islander male adaptation researcher, broad strong build, short dark curls, focused expression, navy angular expedition jacket with green seams, holding one sealed faceted green living-specimen pod. No actual historical-person likeness, full body.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e7ef-bd5b-7d70-b961-08f8e8125fc1/exec-2fed9318-a104-40a4-b05c-aa4cc2a56293.png",
+      "source_sha256": "15063f08295b7d5ad6530cefc2fdc55ab0c08ad71ee8af652fd5e09386f3f41b"
+    },
+    {
+      "group": "cards/art",
+      "name": "leg-ada",
+      "type": "collectible-art",
+      "accent": "#6E5BFF",
+      "transparent": true,
+      "card": {
+        "id": "leg-ada",
+        "title": "Countess of Code",
+        "subject": null,
+        "rarity": "rare",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/keyart/home-hero.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#6E5BFF accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An ORIGINAL fictional young-adult South Asian female algorithm operative, long dark braid, focused expression, navy angular field coat with violet seams, one gloved hand arranging three solid geometric logic blocks in a compact floating stack. No text, symbols, actual historical-person likeness or old-fashioned costume, full body.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e7ef-bd5b-7d70-b961-08f8e8125fc1/exec-da647c99-02bc-4722-b7da-602f0e108e04.png",
+      "source_sha256": "36892c1393638d51b056eb382cc482c3840311c0d516883a77fb1c5b77d8189b"
+    },
+    {
+      "group": "cards/art",
+      "name": "leg-tesla",
+      "type": "collectible-art",
+      "accent": "#2F7BEA",
+      "transparent": true,
+      "card": {
+        "id": "leg-tesla",
+        "title": "Coil Conjurer",
+        "subject": null,
+        "rarity": "epic",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/keyart/home-hero.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#2F7BEA accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An ORIGINAL fictional young-adult East Asian androgynous induction operative, short swept black hair, focused expression, angular charcoal field suit with blue seams and a compact shoulder-mounted toroidal induction coil. No actual historical-person likeness, lightning-bolt badge or weapon, full body.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e7ef-bd5b-7d70-b961-08f8e8125fc1/exec-66a7cb7e-4545-439d-b9f7-cb655123a4c2.png",
+      "source_sha256": "c95d549c24b4ea57c03fe89330f2ee8d96f42e86033400e7cd0c83723bdbde71"
+    },
+    {
+      "group": "cards/art",
+      "name": "leg-hawking",
+      "type": "collectible-art",
+      "accent": "#6E5BFF",
+      "transparent": true,
+      "card": {
+        "id": "leg-hawking",
+        "title": "Cosmic Sage",
+        "subject": null,
+        "rarity": "legendary",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/keyart/home-hero.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#6E5BFF accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An ORIGINAL fictional young-adult Black female cosmic researcher, short locs, focused expression, seated in a robust angular dark research wheelchair with violet seams, holding a small gravitational-lens sphere inside a protective ring. Respectful realistic proportions, no actual historical-person likeness, full body and complete mobility device.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e7ef-bd5b-7d70-b961-08f8e8125fc1/exec-b57f7397-6030-4afd-bf82-5992ffc71652.png",
+      "source_sha256": "4b48c70a481af6f6e7f035e453e5d0abbf4c04a111e31a7b1c3f3e2cee9467cb"
+    },
+    {
+      "group": "cards/art",
+      "name": "leg-goodall",
+      "type": "collectible-art",
+      "accent": "#1FB070",
+      "transparent": true,
+      "card": {
+        "id": "leg-goodall",
+        "title": "Primate Patron",
+        "subject": null,
+        "rarity": "rare",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/keyart/home-hero.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#1FB070 accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An ORIGINAL fictional young-adult East African female ecology operative, dark skin, tied natural hair, focused expression, navy angular expedition suit with green seams, carrying a compact folded observation scope and one sealed seed archive case. No actual historical-person likeness or animal companion, full body.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e7ef-bd5b-7d70-b961-08f8e8125fc1/exec-1abc1567-bc26-4857-9a27-085d38864119.png",
+      "source_sha256": "242bb6eba5c72f419f82f9527ac5ec722340fcaa8162316cae51a14a504455e1"
+    },
+    {
+      "group": "cards/art",
+      "name": "leg-legend",
+      "type": "collectible-art",
+      "accent": "#6E5BFF",
+      "transparent": true,
+      "card": {
+        "id": "leg-legend",
+        "title": "The HSC Legend",
+        "subject": null,
+        "rarity": "mythic",
+        "kind": "emoji"
+      },
+      "references": [
+        "art/masters/keyart/home-hero.png"
+      ],
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark\noutlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing\n#6E5BFF accent, light painterly texture, dramatic rim light, readable\nat card size. Original design.\n\nAudience: HSC students aged 16\u201318; mature, focused, confident or menacing. Original designs, no franchise likenesses or signature looks. Palette neutrals #0E1020 #171A31 #22264A #07080F #9A9CC0 #F2F2FA with the specified single saturated accent. No text, letters, digits, readable equations, logos, watermarks or signatures. No kawaii/chibi proportions, big cartoon eyes, smiling objects, toy forms, candy pastels, science stickers or atom badges. Decorative game art, not scientific diagrams.\n\nUse case: stylized-concept. Input image 1 supplies rendering style, subject motif and materials ONLY, not the identity of the new character. Create one NEW original collectible character: An ORIGINAL young-adult Australian female team captain of mixed heritage, warm medium skin, short curly dark hair, focused confident expression, angular navy field coat with violet seams, practical boots and a simple three-point geometric crown-like visor pushed above her forehead. No resemblance to any known person or franchise. Full body, mature strong stance, no superhero cape or weapon.\n\nComposition: isolated full-body character or complete creature/construct on a square canvas at least 1024px, generous padding and genuine transparent background. Realistic adult proportions for human operatives, no chibi. Calm poised idle stance, clear focal silhouette. Occupy about 80% of frame, keep hands, feet, tools and any mobility device complete, unclipped. Simple readable structure, do not clutter with props or orbiting particles. No scene or ground shadow. This is character art for a later portrait rarity-card layout: do NOT draw any card border, labels, rarity badge, title, letters, digits or text. Preserve original colours and rendering style.",
+      "source": "/home/codespace/.codex/generated_images/01a1e7ef-bd5b-7d70-b961-08f8e8125fc1/exec-978ef93c-104e-4617-a606-f1dd7b61143e.png",
+      "source_sha256": "22cac474efb45f4542fbb214aa53b979bc2c7724bf5e01eeb4c04e599899f59f"
+    }
+  ]
+}
