@@ -661,3 +661,416 @@ Subject: a mature competitive science-game live lobby backdrop, an original monu
 
 Composition: opaque full-bleed wide 16:9, at least 1536px wide. The central 60% width and central 70% height must be a LARGE CALM EMPTY dark navy #0E1020 area with no lights, structures, particles, beams, bright perspective vanishing point, lines or detail; a big join code will later be overlaid there by the app, but DO NOT DRAW any code, text, digits, UI or placeholder. Any floor perspective stays dark and only along the bottom outer edge. Architecture and all violet highlights confined to outer left/right 20% edges. Restrained border framing composition, centre deliberately plain and very low contrast, not an action scene.
 ```
+
+## Round 4 — approved-design pose expansion and two revisions (2026-11-17)
+
+Round 3 was approved with two fixes. This batch replaces `maths-extension-1-boss-idle` with a more substantial central fractal mass, replaces `icons/timer` with a pale-face/high-contrast variant, and adds hurt and defeated poses for all six bosses. Earlier round 3 entries and its review sheet are historical; the two replaced assets are now described here. The other five idle masters and web copies are unchanged.
+
+- Date for every generation/edit: **2026-11-17** (Australia/Sydney).
+- Tool: built-in **`image_gen.imagegen`** (`image_gen__imagegen`), with transparent background requested in every call. The tool does not expose its exact underlying model/version.
+- Every pose call supplied its own idle PNG via `referenced_image_paths`. Extension 1 poses use the **revised round 4 idle**, not the thin round 3 design. Revisions used the previous round 3 asset as their edit target. Original round 3 versions remain recoverable from commit `f20260f`.
+- All generated PNG masters are saved unchanged; all new/revised boss web copies are 512 × 512 RGBA (2× for display at 256px) and the timer is 96 × 96 RGBA (2× for display at 48px; also reviewed at 24px). Pillow resizes with Lanczos; bosses use lossy WebP with preserved alpha and timer uses lossless WebP. Delivery inventory below records actual sizes and bytes.
+- Standard pose count correction: the initial pose generation added a fourth cube in the left tray. A targeted second edit used both idle and initial pose images, restoring **three left / six right**. Both prompt stages and correction-reference hashes are recorded below; discarded initial candidates are not shipped.
+- Review sheet: `art/review/round4-sheet.png`, 1800 × 3320 RGB, composed with Pillow on `#0E1020`, one subject per row and idle/hurt/defeated columns. Labels use DejaVu Sans outside artwork. The corrected timer is shown at native **96px and 24px from the delivered WebP**. Round 3 sheet remains unchanged for historical comparison.
+- Reviewed for design continuity, outline/rendering consistency, subject colours, complete framing, pose distinction and lack of in-art text/logos. Hurt states recoil; defeated states settle and reduce energy while retaining their components. Palette hex values are prompt targets with shading. This remains decorative game art, not a teaching diagram. Awaiting owner review.
+
+### Round 4 delivery inventory
+
+| Asset | Master size | Web size | Web bytes |
+|---|---|---|---:|
+| `bosses/maths-extension-1-boss-idle` | 1254 × 1254 | 512 × 512 | 38,128 |
+| `icons/timer` | 1254 × 1254 | 96 × 96 | 6,254 |
+| `bosses/biology-boss-hurt` | 1254 × 1254 | 512 × 512 | 36,922 |
+| `bosses/biology-boss-defeated` | 1254 × 1254 | 512 × 512 | 26,860 |
+| `bosses/chemistry-boss-hurt` | 1254 × 1254 | 512 × 512 | 52,922 |
+| `bosses/chemistry-boss-defeated` | 1254 × 1254 | 512 × 512 | 43,896 |
+| `bosses/physics-boss-hurt` | 1254 × 1254 | 512 × 512 | 54,438 |
+| `bosses/physics-boss-defeated` | 1254 × 1254 | 512 × 512 | 29,304 |
+| `bosses/maths-standard-boss-hurt` | 1254 × 1254 | 512 × 512 | 49,738 |
+| `bosses/maths-standard-boss-defeated` | 1254 × 1254 | 512 × 512 | 31,322 |
+| `bosses/maths-advanced-boss-hurt` | 1254 × 1254 | 512 × 512 | 43,858 |
+| `bosses/maths-advanced-boss-defeated` | 1254 × 1254 | 512 × 512 | 24,236 |
+| `bosses/maths-extension-1-boss-hurt` | 1254 × 1254 | 512 × 512 | 36,262 |
+| `bosses/maths-extension-1-boss-defeated` | 1254 × 1254 | 512 × 512 | 26,166 |
+
+### Round 4 reference inventory
+
+SHA-256 identifies the exact supplied images, including superseded edit targets.
+
+| Reference | SHA-256 |
+|---|---|
+| `art/masters/bosses/biology-boss-idle.png` (pose reference) | `377579bd276ecf36d25d625a6af45b92c25d7a57e9bf748bb68dc11814c4b859` |
+| `art/masters/bosses/chemistry-boss-idle.png` (pose reference) | `528d32ee8afe9df8a59e457497844f02ab70492b1726556a78dc5f2b409153f8` |
+| `art/masters/bosses/physics-boss-idle.png` (pose reference) | `c0b03485772fdc020990033278d9c6b7b9c8ffde00e0a5c5918b333b8b3235bd` |
+| `art/masters/bosses/maths-standard-boss-idle.png` (pose reference) | `082bff165d0bc7db9f762e95ee628dfad1cc50b53bf9a8fc96ed7665cac1df80` |
+| `art/masters/bosses/maths-advanced-boss-idle.png` (pose reference) | `f2e9fe1712190b5fcda2c56ed737a33c29bc06489cf266e5c67653dd346700ee` |
+| `art/masters/bosses/maths-extension-1-boss-idle.png` (pose reference) | `8cadb4a37b98cda50a87a196dd5fbf383efc4d227359f85c24c15d9c885a29ef` |
+| `art/masters/bosses/maths-extension-1-boss-idle.png` at `f20260f` (revision edit target) | `58947a48a9141fb979776091304fbd92d8cc2433c617ef189c8d825cc069b7c1` |
+| `art/masters/icons/timer.png` at `f20260f` (revision edit target) | `8faa4ee011c8cadb6fa88b1e3496a8f5ef26f9c4ddb4aca36c1a47b9aecb3b9a` |
+| Initial `maths-standard-boss-hurt` candidate (discarded; correction edit target) | `fe7051b413e51c5f020f08b23bfadcd135b874d2434b4b01529075640aca2d6d` |
+| Initial `maths-standard-boss-defeated` candidate (discarded; correction edit target) | `96849431c94f5983185fe2459e673acb7b14fea7e565dce9dd2c4873edcd0572` |
+
+### Round 4: maths-extension-1-boss-idle
+
+- Master: `art/masters/bosses/maths-extension-1-boss-idle.png`.
+- Web copy: `public/art/bosses/maths-extension-1-boss-idle.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent `#E8447F`.
+- Input image 1: `art/masters/bosses/maths-extension-1-boss-idle.png` (round 3 version, from commit `f20260f`).
+- Exact submitted prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#E8447F accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: precise-object-edit. Input image 1 is the existing Maths Extension 1 idle boss, supplied as the design/style reference and edit target. Revise this one design only: it is currently too thin and sparse. Retain its dark navy/charcoal triangular tetrahedral facets, pink #E8447F central trajectory seams, self-similar geometric recursion, crisp dark outline weight, lighting and cel-shaded materials. Build a BROAD SOLID CENTRAL MASS from a compact interlocking cluster of three large tetrahedral volumes, approximately 55% of the overall silhouette width and height; very little empty space within this central body. Thick tapering geometric extensions curve around this body in a compact angular S, and two short recursive triangular branches grow from its upper shoulders. Geometric menacing construct, no head, face or humanoid torso. Few large self-similar volumes with short attached branching, not a wispy chain or wireframe. Strong substantial silhouette that has comparable visual weight to the other bosses at 256px.
+
+Pose: idle, stable suspended form; centered isolated complete body on a square canvas at least 1024px. Preserve transparent background, generous clear padding, no floor or ground shadow. Palette #0E1020 #171A31 #22264A #07080F, neutral highlights #9A9CC0 #F2F2FA, single saturated accent #E8447F. Exclude all text, letters, numbers, logos, watermark, equations, existing franchise likenesses, cute/chibi/toy forms and extra scenery.
+```
+
+### Round 4: timer
+
+- Master: `art/masters/icons/timer.png`.
+- Web copy: `public/art/icons/timer.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 2 (graphic emblem); accent `#F2B530`.
+- Input image 1: `art/masters/icons/timer.png` (round 3 version, from commit `f20260f`).
+- Exact submitted prompt:
+
+```text
+Flat geometric vector emblem, thick #07080F outline, 2-3 flat tones, deep navy base
+with a single #F2B530 accent, angular/hexagonal framing, no gradients beyond one
+subtle highlight, readable at 24px. Original design.
+
+Use case: precise-object-edit. Input image 1 is the current timer icon, supplied as edit target and exact shape reference. Fix its dark-on-dark legibility while keeping its angular stopwatch body, top stem, octagonal rim, broad two clock hands and mature geometric construction. Change the entire inner clock FACE to solid pale #F2F2FA; make its two thick hands and centre hub dark #07080F for high contrast. Add a broad bright gold #F2B530 rim band around the face to separate the silhouette clearly from a #0E1020 app background; keep a dark outline and top stem with a pale highlight. Only three main tones: pale face, gold rim, navy/dark outline and hands. No tiny ticks, numbers, letters or small detail. Ensure the clock face and both hands remain immediately recognisable at 24px.
+
+Centered isolated one icon on square canvas at least 1024px, occupying 80% of canvas with clear padding, genuinely transparent background, preserve alpha. No text, numbers, logos, watermark, gradient, 3D bevel, scenery, shadows outside the subject or cute/toy styling. Original design.
+```
+
+### Round 4: biology-boss-hurt
+
+- Master: `art/masters/bosses/biology-boss-hurt.png`.
+- Web copy: `public/art/bosses/biology-boss-hurt.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent `#1FB070`.
+- Input image 1: `art/masters/bosses/biology-boss-idle.png` (current idle, exact identity/style reference).
+- Exact submitted prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#1FB070 accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: identity-preserve. Input image 1 is this boss's approved idle PNG and is the exact identity, design, proportions, outline-weight, palette and material reference. Produce ONE alternate pose of THIS SAME boss, not a new design. Preserve the exact navy chitinous cell-colony body, translucent green membrane enclosing one helix, three spore sacs and splayed articulated tendrils.
+
+Change ONLY articulation/posture and energy intensity to show the hurt state. Recoil sideways in a tight defensive crouch: the front tendril draws inward, membrane compresses slightly, three spore stalks bend back together, nucleus intact. A short interruption in the green internal glow indicates pain. No gore or new objects.
+
+Invariants: same component shapes/counts, same facet construction and thickness of dark #07080F outlines, same cel-shading, light texture, camera side and neutral highlights. Keep the reference base colours with the sole accent #1FB070; no red damage flash, white washout or palette swaps. Do not change it into a humanoid or invent a face.
+
+Composition: one complete full-body boss on square canvas at least 1024px; same camera scale as idle, clear padding all around, no clipping, genuinely transparent background. No scene, floor, ground shadow, labels, UI, motion lines, impact stars or detached decorative particles. No text, numbers, equations, logos, watermark, franchise likenesses, cute or toy styling. Decorative game art, not a scientific diagram.
+```
+
+### Round 4: biology-boss-defeated
+
+- Master: `art/masters/bosses/biology-boss-defeated.png`.
+- Web copy: `public/art/bosses/biology-boss-defeated.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent `#1FB070`.
+- Input image 1: `art/masters/bosses/biology-boss-idle.png` (current idle, exact identity/style reference).
+- Exact submitted prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#1FB070 accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: identity-preserve. Input image 1 is this boss's approved idle PNG and is the exact identity, design, proportions, outline-weight, palette and material reference. Produce ONE alternate pose of THIS SAME boss, not a new design. Preserve the exact navy chitinous cell-colony body, translucent green membrane enclosing one helix, three spore sacs and splayed articulated tendrils.
+
+Change ONLY articulation/posture and energy intensity to show the defeated state. Slumped low with its main membrane body resting near the bottom, existing tendrils folded underneath and three spore sacs drooping down beside the body. Helix and membranes intact, green glow reduced but still recognisably green; inert and unmistakably defeated. No gore, no missing or newly invented parts.
+
+Invariants: same component shapes/counts, same facet construction and thickness of dark #07080F outlines, same cel-shading, light texture, camera side and neutral highlights. Keep the reference base colours with the sole accent #1FB070; no red damage flash, white washout or palette swaps. Do not change it into a humanoid or invent a face.
+
+Composition: one complete full-body boss on square canvas at least 1024px; same camera scale as idle, clear padding all around, no clipping, genuinely transparent background. No scene, floor, ground shadow, labels, UI, motion lines, impact stars or detached decorative particles. No text, numbers, equations, logos, watermark, franchise likenesses, cute or toy styling. Decorative game art, not a scientific diagram.
+```
+
+### Round 4: chemistry-boss-hurt
+
+- Master: `art/masters/bosses/chemistry-boss-hurt.png`.
+- Web copy: `public/art/bosses/chemistry-boss-hurt.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent `#FF6A2B`.
+- Input image 1: `art/masters/bosses/chemistry-boss-idle.png` (current idle, exact identity/style reference).
+- Exact submitted prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#FF6A2B accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: identity-preserve. Input image 1 is this boss's approved idle PNG and is the exact identity, design, proportions, outline-weight, palette and material reference. Produce ONE alternate pose of THIS SAME boss, not a new design. Preserve the exact orange reaction chamber, glass hexagonal vessel, dark clamps, four crawler legs, cubic crystal lattice on the left and two glass distillation necks above/right.
+
+Change ONLY articulation/posture and energy intensity to show the hurt state. Recoil with vessel tilting backward slightly, front legs pulling inward while rear legs brace; glass and crystal lattice intact. Internal orange flame contracts unevenly as if reaction destabilised. Two necks remain attached and same shape. No new anatomy or explosions.
+
+Invariants: same component shapes/counts, same facet construction and thickness of dark #07080F outlines, same cel-shading, light texture, camera side and neutral highlights. Keep the reference base colours with the sole accent #FF6A2B; no red damage flash, white washout or palette swaps. Do not change it into a humanoid or invent a face.
+
+Composition: one complete full-body boss on square canvas at least 1024px; same camera scale as idle, clear padding all around, no clipping, genuinely transparent background. No scene, floor, ground shadow, labels, UI, motion lines, impact stars or detached decorative particles. No text, numbers, equations, logos, watermark, franchise likenesses, cute or toy styling. Decorative game art, not a scientific diagram.
+```
+
+### Round 4: chemistry-boss-defeated
+
+- Master: `art/masters/bosses/chemistry-boss-defeated.png`.
+- Web copy: `public/art/bosses/chemistry-boss-defeated.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent `#FF6A2B`.
+- Input image 1: `art/masters/bosses/chemistry-boss-idle.png` (current idle, exact identity/style reference).
+- Exact submitted prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#FF6A2B accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: identity-preserve. Input image 1 is this boss's approved idle PNG and is the exact identity, design, proportions, outline-weight, palette and material reference. Produce ONE alternate pose of THIS SAME boss, not a new design. Preserve the exact orange reaction chamber, glass hexagonal vessel, dark clamps, four crawler legs, cubic crystal lattice on the left and two glass distillation necks above/right.
+
+Change ONLY articulation/posture and energy intensity to show the defeated state. Settled low on its folded four crawler legs, entire same glass vessel slumped gently to one side, both distillation necks and crystal lattice remain attached and intact. Internal flame has subsided to a small dull orange ember in vessel. Clearly powered down; no shattered parts or new objects.
+
+Invariants: same component shapes/counts, same facet construction and thickness of dark #07080F outlines, same cel-shading, light texture, camera side and neutral highlights. Keep the reference base colours with the sole accent #FF6A2B; no red damage flash, white washout or palette swaps. Do not change it into a humanoid or invent a face.
+
+Composition: one complete full-body boss on square canvas at least 1024px; same camera scale as idle, clear padding all around, no clipping, genuinely transparent background. No scene, floor, ground shadow, labels, UI, motion lines, impact stars or detached decorative particles. No text, numbers, equations, logos, watermark, franchise likenesses, cute or toy styling. Decorative game art, not a scientific diagram.
+```
+
+### Round 4: physics-boss-hurt
+
+- Master: `art/masters/bosses/physics-boss-hurt.png`.
+- Web copy: `public/art/bosses/physics-boss-hurt.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent `#2F7BEA`.
+- Input image 1: `art/masters/bosses/physics-boss-idle.png` (current idle, exact identity/style reference).
+- Exact submitted prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#2F7BEA accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: identity-preserve. Input image 1 is this boss's approved idle PNG and is the exact identity, design, proportions, outline-weight, palette and material reference. Produce ONE alternate pose of THIS SAME boss, not a new design. Preserve the exact toroidal reactor with three blue wound coil sections, central gravity-well opening, two large separate curved crescent vanes above/below and three small orbiting blue charges.
+
+Change ONLY articulation/posture and energy intensity to show the hurt state. Recoil with the complete toroid tilted abruptly to the left, existing two crescent vanes skewed slightly out of stable alignment; three charges drawn nearer ring on a distorted blue elliptical field. Coils remain fully attached. A visible unstable posture, not a redesign or damage explosion.
+
+Invariants: same component shapes/counts, same facet construction and thickness of dark #07080F outlines, same cel-shading, light texture, camera side and neutral highlights. Keep the reference base colours with the sole accent #2F7BEA; no red damage flash, white washout or palette swaps. Do not change it into a humanoid or invent a face.
+
+Composition: one complete full-body boss on square canvas at least 1024px; same camera scale as idle, clear padding all around, no clipping, genuinely transparent background. No scene, floor, ground shadow, labels, UI, motion lines, impact stars or detached decorative particles. No text, numbers, equations, logos, watermark, franchise likenesses, cute or toy styling. Decorative game art, not a scientific diagram.
+```
+
+### Round 4: physics-boss-defeated
+
+- Master: `art/masters/bosses/physics-boss-defeated.png`.
+- Web copy: `public/art/bosses/physics-boss-defeated.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent `#2F7BEA`.
+- Input image 1: `art/masters/bosses/physics-boss-idle.png` (current idle, exact identity/style reference).
+- Exact submitted prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#2F7BEA accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: identity-preserve. Input image 1 is this boss's approved idle PNG and is the exact identity, design, proportions, outline-weight, palette and material reference. Produce ONE alternate pose of THIS SAME boss, not a new design. Preserve the exact toroidal reactor with three blue wound coil sections, central gravity-well opening, two large separate curved crescent vanes above/below and three small orbiting blue charges.
+
+Change ONLY articulation/posture and energy intensity to show the defeated state. Entire ring rests low at a shallow angle, both crescent vanes drooped down close beside it, three charge spheres settled adjacent to the coil. Blue arcs lose their extended orbit and hang slack close to the entity, blue coil light dimmed. Keep all same components and central opening; unmistakably inert, no missing parts.
+
+Invariants: same component shapes/counts, same facet construction and thickness of dark #07080F outlines, same cel-shading, light texture, camera side and neutral highlights. Keep the reference base colours with the sole accent #2F7BEA; no red damage flash, white washout or palette swaps. Do not change it into a humanoid or invent a face.
+
+Composition: one complete full-body boss on square canvas at least 1024px; same camera scale as idle, clear padding all around, no clipping, genuinely transparent background. No scene, floor, ground shadow, labels, UI, motion lines, impact stars or detached decorative particles. No text, numbers, equations, logos, watermark, franchise likenesses, cute or toy styling. Decorative game art, not a scientific diagram.
+```
+
+### Round 4: maths-standard-boss-hurt
+
+- Master: `art/masters/bosses/maths-standard-boss-hurt.png`.
+- Web copy: `public/art/bosses/maths-standard-boss-hurt.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent `#F2B530`.
+- Input image 1: `art/masters/bosses/maths-standard-boss-idle.png` (current idle, exact identity/style reference).
+- Exact initial pose-generation prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#F2B530 accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: identity-preserve. Input image 1 is this boss's approved idle PNG and is the exact identity, design, proportions, outline-weight, palette and material reference. Produce ONE alternate pose of THIS SAME boss, not a new design. Preserve the exact angular balance construct: dark broad beam with gold divisions, central triangular gold brace and dark upright support on stepped plinth, two triangular suspended trays, three cubes on one tray and six on the other.
+
+Change ONLY articulation/posture and energy intensity to show the hurt state. Whole construct recoils off balance: beam tips about 20 degrees, one tray rises and the other drops, same three and six cubes remain in their respective trays, plinth and triangular brace intact. Gold accents flicker faintly. No limbs, eyes or new parts.
+
+Invariants: same component shapes/counts, same facet construction and thickness of dark #07080F outlines, same cel-shading, light texture, camera side and neutral highlights. Keep the reference base colours with the sole accent #F2B530; no red damage flash, white washout or palette swaps. Do not change it into a humanoid or invent a face.
+
+Composition: one complete full-body boss on square canvas at least 1024px; same camera scale as idle, clear padding all around, no clipping, genuinely transparent background. No scene, floor, ground shadow, labels, UI, motion lines, impact stars or detached decorative particles. No text, numbers, equations, logos, watermark, franchise likenesses, cute or toy styling. Decorative game art, not a scientific diagram.
+```
+
+- Final count-correction inputs, in order: `art/masters/bosses/maths-standard-boss-idle.png` (idle), initial generated hurt image (discarded intermediate; SHA-256 in reference inventory).
+- Exact final correction prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#F2B530 accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: precise-object-edit. Input image 1 is the approved idle design reference. Input image 2 is the hurt pose EDIT TARGET. Keep input image 2 exactly: its pose, framing, body geometry, tilted or collapsed beam, trays, outline weight, highlights, base, palette, transparent background. Change ONLY the cube count in the LEFT tray to match the idle image. There must be exactly THREE cubes in the left tray: TWO cubes on the bottom row and ONE cube resting above, no third cube on the bottom row. The RIGHT tray must contain exactly SIX cubes: THREE bottom, TWO middle, ONE on top. Preserve the pose target's other details and existing component designs. No extra cubes, no scattered cubes, no changes outside the trays. Keep the same #F2B530 gold and navy tones. One complete boss, transparent square PNG at least 1024px. No text, numbers, labels, symbols, scenery or logos.
+```
+
+### Round 4: maths-standard-boss-defeated
+
+- Master: `art/masters/bosses/maths-standard-boss-defeated.png`.
+- Web copy: `public/art/bosses/maths-standard-boss-defeated.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent `#F2B530`.
+- Input image 1: `art/masters/bosses/maths-standard-boss-idle.png` (current idle, exact identity/style reference).
+- Exact initial pose-generation prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#F2B530 accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: identity-preserve. Input image 1 is this boss's approved idle PNG and is the exact identity, design, proportions, outline-weight, palette and material reference. Produce ONE alternate pose of THIS SAME boss, not a new design. Preserve the exact angular balance construct: dark broad beam with gold divisions, central triangular gold brace and dark upright support on stepped plinth, two triangular suspended trays, three cubes on one tray and six on the other.
+
+Change ONLY articulation/posture and energy intensity to show the defeated state. Main beam and support have folded down at their existing pivot, both trays lowered and resting near the stepped plinth; original three and six cubes still present in their respective trays, no extra cubes. Angular brace and gold measuring divisions remain, gold glow subdued. Low collapsed inactive silhouette, same construct, no destruction or missing parts.
+
+Invariants: same component shapes/counts, same facet construction and thickness of dark #07080F outlines, same cel-shading, light texture, camera side and neutral highlights. Keep the reference base colours with the sole accent #F2B530; no red damage flash, white washout or palette swaps. Do not change it into a humanoid or invent a face.
+
+Composition: one complete full-body boss on square canvas at least 1024px; same camera scale as idle, clear padding all around, no clipping, genuinely transparent background. No scene, floor, ground shadow, labels, UI, motion lines, impact stars or detached decorative particles. No text, numbers, equations, logos, watermark, franchise likenesses, cute or toy styling. Decorative game art, not a scientific diagram.
+```
+
+- Final count-correction inputs, in order: `art/masters/bosses/maths-standard-boss-idle.png` (idle), initial generated defeated image (discarded intermediate; SHA-256 in reference inventory).
+- Exact final correction prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#F2B530 accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: precise-object-edit. Input image 1 is the approved idle design reference. Input image 2 is the defeated pose EDIT TARGET. Keep input image 2 exactly: its pose, framing, body geometry, tilted or collapsed beam, trays, outline weight, highlights, base, palette, transparent background. Change ONLY the cube count in the LEFT tray to match the idle image. There must be exactly THREE cubes in the left tray: TWO cubes on the bottom row and ONE cube resting above, no third cube on the bottom row. The RIGHT tray must contain exactly SIX cubes: THREE bottom, TWO middle, ONE on top. Preserve the pose target's other details and existing component designs. No extra cubes, no scattered cubes, no changes outside the trays. Keep the same #F2B530 gold and navy tones. One complete boss, transparent square PNG at least 1024px. No text, numbers, labels, symbols, scenery or logos.
+```
+
+### Round 4: maths-advanced-boss-hurt
+
+- Master: `art/masters/bosses/maths-advanced-boss-hurt.png`.
+- Web copy: `public/art/bosses/maths-advanced-boss-hurt.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent `#9B5CFF`.
+- Input image 1: `art/masters/bosses/maths-advanced-boss-idle.png` (current idle, exact identity/style reference).
+- Exact submitted prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#9B5CFF accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: identity-preserve. Input image 1 is this boss's approved idle PNG and is the exact identity, design, proportions, outline-weight, palette and material reference. Produce ONE alternate pose of THIS SAME boss, not a new design. Preserve the exact nested octahedral structure, four large separated navy outer facets, two smaller nested central octahedra and the single violet curved ribbon passing through the centre.
+
+Change ONLY articulation/posture and energy intensity to show the hurt state. Outer four facets recoil asymmetrically away from centre by a small distance and tilt, nested octahedra remain the same size and shape, continuous violet ribbon flexes sharply around core. Unstable but intact. Preserve part count, rendering and original materials exactly.
+
+Invariants: same component shapes/counts, same facet construction and thickness of dark #07080F outlines, same cel-shading, light texture, camera side and neutral highlights. Keep the reference base colours with the sole accent #9B5CFF; no red damage flash, white washout or palette swaps. Do not change it into a humanoid or invent a face.
+
+Composition: one complete full-body boss on square canvas at least 1024px; same camera scale as idle, clear padding all around, no clipping, genuinely transparent background. No scene, floor, ground shadow, labels, UI, motion lines, impact stars or detached decorative particles. No text, numbers, equations, logos, watermark, franchise likenesses, cute or toy styling. Decorative game art, not a scientific diagram.
+```
+
+### Round 4: maths-advanced-boss-defeated
+
+- Master: `art/masters/bosses/maths-advanced-boss-defeated.png`.
+- Web copy: `public/art/bosses/maths-advanced-boss-defeated.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent `#9B5CFF`.
+- Input image 1: `art/masters/bosses/maths-advanced-boss-idle.png` (current idle, exact identity/style reference).
+- Exact submitted prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#9B5CFF accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: identity-preserve. Input image 1 is this boss's approved idle PNG and is the exact identity, design, proportions, outline-weight, palette and material reference. Produce ONE alternate pose of THIS SAME boss, not a new design. Preserve the exact nested octahedral structure, four large separated navy outer facets, two smaller nested central octahedra and the single violet curved ribbon passing through the centre.
+
+Change ONLY articulation/posture and energy intensity to show the defeated state. Four same outer facets sag down into a low resting cluster around both same nested octahedra, original violet ribbon lies slack through the structure, light reduced but still violet. Inactive collapsed geometric silhouette, no extra fragments, no new spheres, no missing parts.
+
+Invariants: same component shapes/counts, same facet construction and thickness of dark #07080F outlines, same cel-shading, light texture, camera side and neutral highlights. Keep the reference base colours with the sole accent #9B5CFF; no red damage flash, white washout or palette swaps. Do not change it into a humanoid or invent a face.
+
+Composition: one complete full-body boss on square canvas at least 1024px; same camera scale as idle, clear padding all around, no clipping, genuinely transparent background. No scene, floor, ground shadow, labels, UI, motion lines, impact stars or detached decorative particles. No text, numbers, equations, logos, watermark, franchise likenesses, cute or toy styling. Decorative game art, not a scientific diagram.
+```
+
+### Round 4: maths-extension-1-boss-hurt
+
+- Master: `art/masters/bosses/maths-extension-1-boss-hurt.png`.
+- Web copy: `public/art/bosses/maths-extension-1-boss-hurt.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent `#E8447F`.
+- Input image 1: `art/masters/bosses/maths-extension-1-boss-idle.png` (current idle, exact identity/style reference).
+- Exact submitted prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#E8447F accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: identity-preserve. Input image 1 is this boss's approved idle PNG and is the exact identity, design, proportions, outline-weight, palette and material reference. Produce ONE alternate pose of THIS SAME boss, not a new design. Preserve the REVISED idle design exactly: broad solid central body of interlocking large navy tetrahedra, two compact recursive upper branch structures, tapering angular tail and pink trajectory seams with nodes. Do not revert to the earlier thin chain design.
+
+Change ONLY articulation/posture and energy intensity to show the hurt state. Massive central geometric body twists and recoils to the left, two existing recursive branches draw inward, tail curls tighter below; pink seam momentarily uneven but follows the same facets and nodes. Central mass stays solid and substantial. Same part count and scale, no added limbs.
+
+Invariants: same component shapes/counts, same facet construction and thickness of dark #07080F outlines, same cel-shading, light texture, camera side and neutral highlights. Keep the reference base colours with the sole accent #E8447F; no red damage flash, white washout or palette swaps. Do not change it into a humanoid or invent a face.
+
+Composition: one complete full-body boss on square canvas at least 1024px; same camera scale as idle, clear padding all around, no clipping, genuinely transparent background. No scene, floor, ground shadow, labels, UI, motion lines, impact stars or detached decorative particles. No text, numbers, equations, logos, watermark, franchise likenesses, cute or toy styling. Decorative game art, not a scientific diagram.
+```
+
+### Round 4: maths-extension-1-boss-defeated
+
+- Master: `art/masters/bosses/maths-extension-1-boss-defeated.png`.
+- Web copy: `public/art/bosses/maths-extension-1-boss-defeated.webp`.
+- Date: 2026-11-17 (Australia/Sydney).
+- Tool/model: built-in `image_gen.imagegen`; exact model not exposed.
+- Style: 1 (stylised hero); accent `#E8447F`.
+- Input image 1: `art/masters/bosses/maths-extension-1-boss-idle.png` (current idle, exact identity/style reference).
+- Exact submitted prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark
+outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing
+#E8447F accent, light painterly texture, dramatic rim light, readable
+at card size. Original design.
+
+Use case: identity-preserve. Input image 1 is this boss's approved idle PNG and is the exact identity, design, proportions, outline-weight, palette and material reference. Produce ONE alternate pose of THIS SAME boss, not a new design. Preserve the REVISED idle design exactly: broad solid central body of interlocking large navy tetrahedra, two compact recursive upper branch structures, tapering angular tail and pink trajectory seams with nodes. Do not revert to the earlier thin chain design.
+
+Change ONLY articulation/posture and energy intensity to show the defeated state. Broad same tetrahedral core slumps low at an angle, both original recursive branches droop inward beside it and original tail folds around its base. Pink trajectory glow reduced but still pink, core remains solid and intact. Compact heavy inactive silhouette, no new fragments or missing parts.
+
+Invariants: same component shapes/counts, same facet construction and thickness of dark #07080F outlines, same cel-shading, light texture, camera side and neutral highlights. Keep the reference base colours with the sole accent #E8447F; no red damage flash, white washout or palette swaps. Do not change it into a humanoid or invent a face.
+
+Composition: one complete full-body boss on square canvas at least 1024px; same camera scale as idle, clear padding all around, no clipping, genuinely transparent background. No scene, floor, ground shadow, labels, UI, motion lines, impact stars or detached decorative particles. No text, numbers, equations, logos, watermark, franchise likenesses, cute or toy styling. Decorative game art, not a scientific diagram.
+```
