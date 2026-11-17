@@ -174,8 +174,8 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
       events.push(...step(g, dt, inputs));
       pending.current.push(...events);
       for (const e of events) {
-        if (e.type === 'tag') { const v = g.players[e.victim], by = g.players[e.by]; fx.current.push({ x: v.x, y: v.y, r: 8, life: 1, color: TEAM_COLOR[by?.team ?? 'blue'] }); pushFeed(`${by?.name ?? '?'} tagged ${v?.name ?? '?'}`, by?.team ?? 'info'); }
-        else if (e.type === 'capture') { pushFeed(`${e.team === 'blue' ? 'Blue' : 'Orange'} captured the ${e.reactor} reactor`, e.team); sound.cue('start'); }
+        if (e.type === 'tag') { const v = g.players[e.victim], by = g.players[e.by]; fx.current.push({ x: v.x, y: v.y, r: 8, life: 1, color: TEAM_COLOR[by?.team ?? 'blue'], kind: 'spark' }); pushFeed(`${by?.name ?? '?'} tagged ${v?.name ?? '?'}`, by?.team ?? 'info'); }
+        else if (e.type === 'capture') { const rc = g.reactors.find(x => x.id === e.reactor); if (rc) fx.current.push({ x: rc.x, y: rc.y, r: 30, life: 1, color: TEAM_COLOR[e.team], kind: 'pulse' }); pushFeed(`${e.team === 'blue' ? 'Blue' : 'Orange'} captured the ${e.reactor} reactor`, e.team); sound.cue('start'); }
         else if (e.type === 'boss-spawn') { pushFeed('Reactor Prime has arrived! Most damage wins +60', 'info'); sound.cue('fanfare'); }
         else if (e.type === 'boss-down') pushFeed(e.team ? `${e.team === 'blue' ? 'Blue' : 'Orange'} wins the boss bonus` : 'Boss bonus tied', e.team ?? 'info');
       }

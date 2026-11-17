@@ -1,18 +1,34 @@
 // Canvas 2D renderer for Reactor Clash, shared by practice, student and projector views.
-import { terminalLocked, BASES, BOSS_HP, MAX_ENERGY, PLAYER_R, REACTOR_R, TILE, WALLS, WORLD_H, WORLD_W, type ClashState, type Team } from '@/lib/clash/sim';
+// Uses the locked-style top-down art in /public/art/arena (all sprites face north),
+// falling back to simple shapes while images load.
+import { terminalLocked, BASES, BOSS_HP, COLS, MAX_ENERGY, PLAYER_R, REACTOR_R, ROWS, TILE, WALLS, WORLD_H, WORLD_W, type ClashState, type Team } from '@/lib/clash/sim';
 
 export const TEAM_COLOR: Record<Team, string> = { blue: '#2f7bea', orange: '#ff6a2b' };
-export type Fx = { x: number; y: number; r: number; life: number; color: string };
+export type Fx = { x: number; y: number; r: number; life: number; color: string; kind?: 'ring' | 'spark' | 'pulse' };
 export type Cam = { x: number; y: number; scale: number };
+type Sprites = Record<string, HTMLImageElement> & { __static?: unknown };
 
-/** Preload decorative sprites; shapes are drawn until they load. */
+const A = '/art/arena';
+const SPRITES: Record<string, string> = {
+  floor: `${A}/tiles/floor-plain.webp`, vent: `${A}/tiles/floor-vent.webp`, conduit: `${A}/tiles/floor-conduit.webp`,
+  wall: `${A}/tiles/wall-straight.webp`, corner: `${A}/tiles/wall-corner.webp`,
+  baseBlue: `${A}/tiles/team-base-blue.webp`, baseOrange: `${A}/tiles/team-base-orange.webp`,
+  termIdle: `${A}/objects/question-terminal-idle.webp`, termActive: `${A}/objects/question-terminal-active.webp`,
+  reactorNeutral: `${A}/objects/reactor-neutral.webp`, reactorBlue: `${A}/objects/reactor-blue.webp`, reactorOrange: `${A}/objects/reactor-orange.webp`,
+  orb: `${A}/objects/energy-pickup.webp`,
+  blue: `${A}/players/operative-blue.webp`, orange: `${A}/players/operative-orange.webp`,
+  minion: `${A}/minions/chemistry-minion.webp`,
+  shot: `${A}/fx/neutraliser-projectile.webp`, spark: `${A}/fx/hit-spark.webp`, pulse: `${A}/fx/capture-pulse-ring.webp`,
+  boss: '/art/bosses/chemistry-boss-idle.webp', bossHurt: '/art/bosses/chemistry-boss-hurt.webp',
+};
+
+/** Preload sprites; shapes are drawn until each loads. */
 export function loadSprites(): Record<string, HTMLImageElement> {
   const out: Record<string, HTMLImageElement> = {};
-  for (const [k, src] of Object.entries({ boss: '/art/bosses/chemistry-boss-idle.webp', bossHurt: '/art/bosses/chemistry-boss-hurt.webp', minion: '/art/icons/subject-chemistry.webp', orb: '/art/icons/spark.webp' })) {
-    const img = new Image(); img.src = src; out[k] = img;
-  }
+  for (const [k, src] of Object.entries(SPRITES)) { const img = new Image(); img.src = src; out[k] = img; }
   return out;
 }
+const ready = (img: HTMLImageElement | undefined): img is HTMLImageElement => !!img && img.complete && img.naturalWidth > 0;
 
 /** Camera that follows a point (player view) or fits the whole map (projector view). */
 export function followCam(cam: Cam, canvas: HTMLCanvasElement, focus: { x: number; y: number } | null, viewTilesW = 22) {
@@ -27,92 +43,106 @@ export function followCam(cam: Cam, canvas: HTMLCanvasElement, focus: { x: numbe
   cam.y = halfH * 2 > WORLD_H ? WORLD_H / 2 : Math.max(halfH, Math.min(WORLD_H - halfH, focus.y));
 }
 
-export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, g: ClashState, cam: { x: number; y: number; scale: number },
+function drawRotated(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, size: number, angle: number) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.drawImage(img, -size / 2, -size / 2, size, size); ctx.restore();
+}
+
+/** Floor, bases and walls never change: render them once into an offscreen layer. */
+function staticLayer(img: Sprites): HTMLCanvasElement | null {
+  const needed = ['floor', 'vent', 'conduit', 'wall', 'corner', 'baseBlue', 'baseOrange'];
+  if (!needed.every(k => ready(img[k]))) return null;
+  if (img.__static instanceof HTMLCanvasElement) return img.__static;
+  const layer = document.createElement('canvas');
+  layer.width = WORLD_W; layer.height = WORLD_H;
+  const c = layer.getContext('2d')!;
+  for (let r = 0; r < ROWS; r++) for (let col = 0; col < COLS; col++) {
+    const h = (col * 73 + r * 151) % 23;
+    c.drawImage(h === 0 ? img.vent : h === 7 ? img.conduit : img.floor, col * TILE, r * TILE, TILE, TILE);
+  }
+  for (const team of ['blue', 'orange'] as Team[]) {
+    const b = BASES[team];
+    for (let y = b.y; y < b.y + b.h; y += TILE) for (let x = b.x; x < b.x + b.w; x += TILE) c.drawImage(team === 'blue' ? img.baseBlue : img.baseOrange, x, y, TILE, TILE);
+  }
+  for (const w of WALLS) {
+    const horizontal = w.w > w.h;
+    for (let y = w.y; y < w.y + w.h; y += TILE) for (let x = w.x; x < w.x + w.w; x += TILE) {
+      const corner = (x === 0 || x === WORLD_W - TILE) && (y === 0 || y === WORLD_H - TILE);
+      if (corner) {
+        const angle = x === 0 ? (y === 0 ? 0 : -Math.PI / 2) : (y === 0 ? Math.PI / 2 : Math.PI);
+        c.save(); c.translate(x + TILE / 2, y + TILE / 2); c.rotate(angle); c.drawImage(img.corner, -TILE / 2, -TILE / 2, TILE, TILE); c.restore();
+      } else if (horizontal) {
+        c.save(); c.translate(x + TILE / 2, y + TILE / 2); c.rotate(Math.PI / 2); c.drawImage(img.wall, -TILE / 2, -TILE / 2, TILE, TILE); c.restore();
+      } else c.drawImage(img.wall, x, y, TILE, TILE);
+    }
+  }
+  img.__static = layer;
+  return layer;
+}
+
+export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, g: ClashState, cam: Cam,
   effects: Fx[], img: Record<string, HTMLImageElement>, dt: number, now: number, meId: string | null) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = '#07080f';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.setTransform(cam.scale, 0, 0, cam.scale, canvas.width / 2 - cam.x * cam.scale, canvas.height / 2 - cam.y * cam.scale);
+  ctx.imageSmoothingEnabled = true;
 
-  // Floor + grid
-  ctx.fillStyle = '#12142b';
-  ctx.fillRect(0, 0, WORLD_W, WORLD_H);
-  ctx.strokeStyle = 'rgba(154,156,192,.07)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  for (let x = 0; x <= WORLD_W; x += TILE) { ctx.moveTo(x, 0); ctx.lineTo(x, WORLD_H); }
-  for (let y = 0; y <= WORLD_H; y += TILE) { ctx.moveTo(0, y); ctx.lineTo(WORLD_W, y); }
-  ctx.stroke();
-
-  // Bases
-  for (const team of ['blue', 'orange'] as Team[]) {
-    const b = BASES[team];
-    ctx.fillStyle = team === 'blue' ? 'rgba(47,123,234,.16)' : 'rgba(255,106,43,.16)';
-    ctx.fillRect(b.x, b.y, b.w, b.h);
-    ctx.strokeStyle = TEAM_COLOR[team];
-    ctx.setLineDash([8, 8]); ctx.strokeRect(b.x, b.y, b.w, b.h); ctx.setLineDash([]);
+  // Floor, bases, walls
+  const layer = staticLayer(img as Sprites);
+  if (layer) ctx.drawImage(layer, 0, 0);
+  else {
+    ctx.fillStyle = '#12142b'; ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+    for (const team of ['blue', 'orange'] as Team[]) { const b = BASES[team]; ctx.fillStyle = team === 'blue' ? 'rgba(47,123,234,.16)' : 'rgba(255,106,43,.16)'; ctx.fillRect(b.x, b.y, b.w, b.h); }
+    ctx.fillStyle = '#22264a'; for (const w of WALLS) ctx.fillRect(w.x, w.y, w.w, w.h);
   }
 
-  // Walls
-  for (const w of WALLS) {
-    ctx.fillStyle = '#22264a';
-    ctx.fillRect(w.x, w.y, w.w, w.h);
-    ctx.fillStyle = '#2e3366';
-    ctx.fillRect(w.x, w.y, w.w, Math.min(8, w.h));
-    ctx.strokeStyle = '#07080f'; ctx.lineWidth = 2; ctx.strokeRect(w.x, w.y, w.w, w.h);
-  }
-
-  // Reactors
+  // Reactors: sprite by owner + capture progress ring
   for (const r of g.reactors) {
-    const owner = r.owner ? TEAM_COLOR[r.owner] : '#9a9cc0';
-    ctx.fillStyle = r.owner ? (r.owner === 'blue' ? 'rgba(47,123,234,.18)' : 'rgba(255,106,43,.18)') : 'rgba(154,156,192,.08)';
+    ctx.fillStyle = r.owner ? (r.owner === 'blue' ? 'rgba(47,123,234,.14)' : 'rgba(255,106,43,.14)') : 'rgba(154,156,192,.06)';
     ctx.beginPath(); ctx.arc(r.x, r.y, REACTOR_R, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = 'rgba(154,156,192,.35)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = 'rgba(154,156,192,.3)'; ctx.lineWidth = 2; ctx.setLineDash([6, 6]); ctx.stroke(); ctx.setLineDash([]);
     if (r.control !== 0) {
       ctx.strokeStyle = r.control < 0 ? TEAM_COLOR.blue : TEAM_COLOR.orange;
       ctx.lineWidth = 6;
       ctx.beginPath(); ctx.arc(r.x, r.y, REACTOR_R - 4, -Math.PI / 2, -Math.PI / 2 + Math.abs(r.control) * Math.PI * 2); ctx.stroke();
     }
-    const pulse = 0.6 + 0.4 * Math.sin(now / 300);
-    ctx.fillStyle = owner;
-    ctx.globalAlpha = r.owner ? pulse : 0.7;
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i; ctx.lineTo(r.x + Math.cos(a) * 20, r.y + Math.sin(a) * 20); }
-    ctx.closePath(); ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = '#07080f'; ctx.lineWidth = 3; ctx.stroke();
-    ctx.fillStyle = '#f2f2fa'; ctx.font = '700 12px system-ui'; ctx.textAlign = 'center';
+    const sprite = r.owner === 'blue' ? img.reactorBlue : r.owner === 'orange' ? img.reactorOrange : img.reactorNeutral;
+    const pulse = r.owner ? 1 + 0.04 * Math.sin(now / 250) : 1;
+    if (ready(sprite)) { const sz = 96 * pulse; ctx.drawImage(sprite, r.x - sz / 2, r.y - sz / 2, sz, sz); }
+    else { ctx.fillStyle = r.owner ? TEAM_COLOR[r.owner] : '#9a9cc0'; ctx.beginPath(); ctx.arc(r.x, r.y, 20, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = '#f2f2fa'; ctx.font = '800 12px system-ui'; ctx.textAlign = 'center';
     ctx.fillText(r.id.toUpperCase(), r.x, r.y + REACTOR_R + 16);
   }
 
   // Terminals
   const me = meId ? g.players[meId] : undefined;
   for (const term of g.terminals) {
-    const locked = me && terminalLocked(g, me, term.id);
-    const near = me && !locked && Math.hypot(me.x - term.x, me.y - term.y) < 56;
-    ctx.fillStyle = locked ? '#3a3d5c' : '#6e5bff';
-    ctx.shadowColor = locked ? 'transparent' : '#6e5bff';
-    ctx.shadowBlur = near ? 26 : 12;
-    ctx.beginPath(); ctx.roundRect(term.x - 17, term.y - 17, 34, 34, 7); ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = '#07080f'; ctx.lineWidth = 3; ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = '900 18px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(locked ? '×' : '?', term.x, term.y + 1);
-    ctx.textBaseline = 'alphabetic';
+    const locked = !!me && terminalLocked(g, me, term.id);
+    const near = !!me && !locked && Math.hypot(me.x - term.x, me.y - term.y) < 56;
+    const sprite = locked ? img.termIdle : img.termActive;
+    ctx.save();
+    if (near) { ctx.shadowColor = '#6e5bff'; ctx.shadowBlur = 24; }
+    if (locked) ctx.globalAlpha = 0.5;
+    if (ready(sprite)) ctx.drawImage(sprite, term.x - 36, term.y - 36, 72, 72);
+    else { ctx.fillStyle = locked ? '#3a3d5c' : '#6e5bff'; ctx.fillRect(term.x - 17, term.y - 17, 34, 34); }
+    ctx.restore();
+    if (near) { ctx.fillStyle = '#ffffff'; ctx.font = '900 13px system-ui'; ctx.textAlign = 'center'; ctx.fillText('E', term.x, term.y - 30); }
   }
 
-  // Orbs
+  // Energy orbs
   for (const o of g.orbs) {
     const bob = Math.sin(now / 200 + o.id) * 3;
-    if (img.orb?.complete) ctx.drawImage(img.orb, o.x - 12, o.y - 12 + bob, 24, 24);
+    if (ready(img.orb)) ctx.drawImage(img.orb, o.x - 16, o.y - 16 + bob, 32, 32);
     else { ctx.fillStyle = '#f2b530'; ctx.beginPath(); ctx.arc(o.x, o.y + bob, 8, 0, Math.PI * 2); ctx.fill(); }
   }
 
-  // Minions
+  // Minions (face the reactor they are heading for)
   for (const m of g.minions) {
-    if (img.minion?.complete) ctx.drawImage(img.minion, m.x - 18, m.y - 18, 36, 36);
+    const target = g.reactors.filter(r => r.owner).sort((a, b) => Math.hypot(a.x - m.x, a.y - m.y) - Math.hypot(b.x - m.x, b.y - m.y))[0] ?? g.reactors[1];
+    const angle = Math.atan2(target.y - m.y, target.x - m.x) + Math.PI / 2;
+    if (ready(img.minion)) drawRotated(ctx, img.minion, m.x, m.y, 44, angle);
     else { ctx.fillStyle = '#ff6a2b'; ctx.beginPath(); ctx.arc(m.x, m.y, 14, 0, Math.PI * 2); ctx.fill(); }
-    if (m.hp < 2) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(m.x, m.y, 20, 0, Math.PI * 2); ctx.stroke(); }
+    if (m.hp < 2) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(m.x, m.y, 22, 0, Math.PI * 2); ctx.stroke(); }
   }
 
   // Boss
@@ -121,7 +151,7 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, g
     const pic = hurt ? img.bossHurt : img.boss;
     ctx.save();
     ctx.shadowColor = '#ff6a2b'; ctx.shadowBlur = 30;
-    if (pic?.complete) ctx.drawImage(pic, b.x - 70, b.y - 80, 140, 140);
+    if (ready(pic)) ctx.drawImage(pic, b.x - 70, b.y - 80, 140, 140);
     else { ctx.fillStyle = '#ff6a2b'; ctx.beginPath(); ctx.arc(b.x, b.y, 44, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
     const left = Math.max(0, (b.pulseAt - g.t) / 3.5);
@@ -131,34 +161,31 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, g
 
   // Shots
   for (const sh of g.shots) {
-    ctx.strokeStyle = TEAM_COLOR[sh.team]; ctx.lineWidth = 5; ctx.lineCap = 'round';
-    ctx.shadowColor = TEAM_COLOR[sh.team]; ctx.shadowBlur = 12;
-    ctx.beginPath(); ctx.moveTo(sh.x, sh.y); ctx.lineTo(sh.x - sh.vx * 0.03, sh.y - sh.vy * 0.03); ctx.stroke();
-    ctx.shadowBlur = 0;
+    const angle = Math.atan2(sh.vy, sh.vx) + Math.PI / 2;
+    ctx.save(); ctx.shadowColor = TEAM_COLOR[sh.team]; ctx.shadowBlur = 14;
+    if (ready(img.shot)) drawRotated(ctx, img.shot, sh.x, sh.y, 34, angle);
+    else { ctx.strokeStyle = TEAM_COLOR[sh.team]; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(sh.x, sh.y); ctx.lineTo(sh.x - sh.vx * 0.03, sh.y - sh.vy * 0.03); ctx.stroke(); }
+    ctx.restore();
   }
 
   // Players
   for (const p of Object.values(g.players)) {
     if (!p.alive) continue;
-    const c = TEAM_COLOR[p.team];
-    // aim barrel
-    ctx.strokeStyle = '#07080f'; ctx.lineWidth = 9; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + Math.cos(p.aim) * 26, p.y + Math.sin(p.aim) * 26); ctx.stroke();
-    ctx.strokeStyle = '#f2f2fa'; ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + Math.cos(p.aim) * 25, p.y + Math.sin(p.aim) * 25); ctx.stroke();
-    // body
-    ctx.fillStyle = c;
-    ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = p.id === meId ? '#ffffff' : '#07080f'; ctx.lineWidth = p.id === meId ? 4 : 3; ctx.stroke();
-    // energy ring
+    const mine = p.id === meId;
+    // team ring under the operative (white for you)
+    ctx.strokeStyle = mine ? '#ffffff' : TEAM_COLOR[p.team]; ctx.lineWidth = mine ? 3 : 2;
+    ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R + 6, 0, Math.PI * 2); ctx.stroke();
+    // energy arc
     ctx.strokeStyle = '#f2b530'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R + 5, -Math.PI / 2, -Math.PI / 2 + (p.energy / MAX_ENERGY) * Math.PI * 2); ctx.stroke();
-    // label
-    ctx.fillStyle = p.id === meId ? '#ffffff' : '#c9cbe6'; ctx.font = `${p.id === meId ? 800 : 600} 12px system-ui`; ctx.textAlign = 'center';
-    ctx.fillText(p.answering ? `${p.name} · answering` : p.name, p.x, p.y - PLAYER_R - 10);
+    ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R + 10, -Math.PI / 2, -Math.PI / 2 + (p.energy / MAX_ENERGY) * Math.PI * 2); ctx.stroke();
+    const sprite = img[p.team];
+    if (ready(sprite)) drawRotated(ctx, sprite, p.x, p.y, 54, p.aim + Math.PI / 2);
+    else { ctx.fillStyle = TEAM_COLOR[p.team]; ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = mine ? '#ffffff' : '#c9cbe6'; ctx.font = `${mine ? 800 : 600} 12px system-ui`; ctx.textAlign = 'center';
+    ctx.fillText(p.answering ? `${p.name} · answering` : p.name, p.x, p.y - PLAYER_R - 16);
     if (p.answering) {
       ctx.strokeStyle = '#6e5bff'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
-      ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R + 11, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R + 15, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
     }
   }
 
@@ -166,8 +193,9 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, g
   for (const e of effects) {
     e.life -= dt * 1.6; e.r += dt * 120;
     ctx.globalAlpha = Math.max(0, e.life);
-    ctx.strokeStyle = e.color; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.stroke();
+    const sprite = e.kind === 'spark' ? img.spark : e.kind === 'pulse' ? img.pulse : undefined;
+    if (ready(sprite)) { const sz = e.kind === 'pulse' ? e.r * 2 + 40 : 56; ctx.drawImage(sprite, e.x - sz / 2, e.y - sz / 2, sz, sz); }
+    else { ctx.strokeStyle = e.color; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.stroke(); }
   }
   ctx.globalAlpha = 1;
   for (let i = effects.length - 1; i >= 0; i--) if (effects[i].life <= 0) effects.splice(i, 1);

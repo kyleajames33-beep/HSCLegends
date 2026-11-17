@@ -158,10 +158,10 @@ export default function ClashGame() {
       for (const e of events) {
         if (e.type === 'tag') {
           const v = g.players[e.victim], by = g.players[e.by];
-          fx.current.push({ x: v.x, y: v.y, r: 8, life: 1, color: TEAM_COLOR[by?.team ?? 'blue'] });
+          fx.current.push({ x: v.x, y: v.y, r: 8, life: 1, color: TEAM_COLOR[by?.team ?? 'blue'], kind: 'spark' });
           if (e.by === ME) { pushFeed(`You tagged ${v.name}`, 'blue'); sound.cue('correct'); }
           else if (e.victim === ME) { pushFeed(`${by?.name ?? 'Someone'} tagged you`, 'orange'); sound.cue('wrong'); setQuestion(null); }
-        } else if (e.type === 'capture') { pushFeed(`${e.team === 'blue' ? 'Your team' : 'Orange'} captured the ${e.reactor} reactor`, e.team); sound.cue(e.team === 'blue' ? 'start' : 'reveal'); }
+        } else if (e.type === 'capture') { const rc = g.reactors.find(x => x.id === e.reactor); if (rc) fx.current.push({ x: rc.x, y: rc.y, r: 30, life: 1, color: TEAM_COLOR[e.team], kind: 'pulse' }); pushFeed(`${e.team === 'blue' ? 'Your team' : 'Orange'} captured the ${e.reactor} reactor`, e.team); sound.cue(e.team === 'blue' ? 'start' : 'reveal'); }
         else if (e.type === 'boss-spawn') { pushFeed('Reactor Prime has arrived! Most damage wins +60', 'info'); sound.cue('fanfare'); }
         else if (e.type === 'boss-down') pushFeed(e.team ? `${e.team === 'blue' ? 'Your team' : 'Orange'} wins the boss bonus` : 'Boss bonus tied', e.team ?? 'info');
         else if (e.type === 'pickup' && e.player === ME) sound.cue('join');

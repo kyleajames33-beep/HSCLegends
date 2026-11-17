@@ -110,10 +110,10 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
           const mine = seatRef.current?.playerId;
           if (e.type === 'tag') {
             const v = g.players[e.victim], by = g.players[e.by];
-            if (v) fx.current.push({ x: v.x, y: v.y, r: 8, life: 1, color: TEAM_COLOR[by?.team ?? 'blue'] });
+            if (v) fx.current.push({ x: v.x, y: v.y, r: 8, life: 1, color: TEAM_COLOR[by?.team ?? 'blue'], kind: 'spark' });
             if (e.by === mine) { pushFeed(`You tagged ${v?.name ?? 'someone'}`, by?.team ?? 'info'); sound.cue('correct'); }
             else if (e.victim === mine) { pushFeed(`${by?.name ?? 'Someone'} tagged you`, by?.team ?? 'info'); sound.cue('wrong'); }
-          } else if (e.type === 'capture') pushFeed(`${e.team === 'blue' ? 'Blue' : 'Orange'} captured the ${e.reactor} reactor`, e.team);
+          } else if (e.type === 'capture') { const rc = g.reactors.find(x => x.id === e.reactor); if (rc) fx.current.push({ x: rc.x, y: rc.y, r: 30, life: 1, color: TEAM_COLOR[e.team], kind: 'pulse' }); pushFeed(`${e.team === 'blue' ? 'Blue' : 'Orange'} captured the ${e.reactor} reactor`, e.team); }
           else if (e.type === 'boss-spawn') { pushFeed('Reactor Prime has arrived! Most damage wins +60', 'info'); sound.cue('fanfare'); }
           else if (e.type === 'end') sound.cue('fanfare');
         }
