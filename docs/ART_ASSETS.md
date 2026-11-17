@@ -3103,3 +3103,30 @@ Tool: original SVG drawing commands in `art/review/arena/build-assets.py`, raste
 - Editable source: `art/masters/arena/tiles/team-base-orange.svg`.
 - PNG master: `art/masters/arena/tiles/team-base-orange.png`.
 - Delivery: `public/art/arena/tiles/team-base-orange.webp`.
+
+## Reactor Clash arena round 2 (2026-11-18)
+
+The cover shows both teams contesting the hexagonal capture reactor. The leftmost 720px of the 1600 × 900 export are reserved for page copy. The final-minute Reactor Prime sprite uses the Chemistry minion’s orange vessel, four angular legs and crystal lattice.
+
+Date for all assets is **18 November 2026 (Australia/Sydney)**. The built-in `image_gen.imagegen` tool generated the PNG masters in locked Style 1. The underlying model was not exposed. Exact prompts, ordered references and source hashes are in [the generation manifest](../art/review/arena-round2/manifest.json), including the first passes for the cover and boss.
+
+The blue walk atlas establishes four poses in row-major order. The orange atlas uses the blue atlas as its pose and placement reference. Play frames 1 → 2 → 3 → 4 in a loop, with north as the default heading and a centre anchor at (0.5, 0.5). Contact frames alternate the leading arm and boot. The passing frames bring the boots under the torso. Each answering sprite includes the lit console above the operative, so it can serve as the combined player-and-console visual in that state.
+
+Pillow exports the cover as opaque WebP and uses lossless transparent WebP for the sprites. Walk frames share a fixed crop relative to their atlas cells to preserve the helmet position and shoulder scale. [The review sheet](../art/review/arena-round2-sheet.png) shows the existing idle beside each walk cycle, both answering poses, and Reactor Prime next to the Chemistry minion on 48px tiles.
+
+Rebuild and check the deliveries with `python art/review/arena-round2/build-assets.py`. The script checks master hashes, decoded dimensions, alpha and padding, distinct walk silhouettes, and cover luminance in the text area.
+
+| Delivery | Purpose | Dimensions | Bytes | PNG master |
+|---|---|---|---:|---|
+| `public/art/keyart/reactor-clash-card.webp` | Home-page Reactor Clash card | 1600 × 900 | 59,428 | `art/masters/keyart/reactor-clash-card.png` |
+| `public/art/arena/players/operative-blue-walk-1.webp` | Blue walk frame 1, left contact | 96 × 96 | 5,702 | `art/masters/arena/players/operative-blue-walk-atlas.png` |
+| `public/art/arena/players/operative-blue-walk-2.webp` | Blue walk frame 2, passing after left contact | 96 × 96 | 5,652 | `art/masters/arena/players/operative-blue-walk-atlas.png` |
+| `public/art/arena/players/operative-blue-walk-3.webp` | Blue walk frame 3, right contact | 96 × 96 | 5,812 | `art/masters/arena/players/operative-blue-walk-atlas.png` |
+| `public/art/arena/players/operative-blue-walk-4.webp` | Blue walk frame 4, passing after right contact | 96 × 96 | 5,676 | `art/masters/arena/players/operative-blue-walk-atlas.png` |
+| `public/art/arena/players/operative-blue-answering.webp` | Blue operative answering at lit terminal | 96 × 96 | 7,704 | `art/masters/arena/players/operative-blue-answering.png` |
+| `public/art/arena/players/operative-orange-walk-1.webp` | Orange walk frame 1, left contact | 96 × 96 | 5,760 | `art/masters/arena/players/operative-orange-walk-atlas.png` |
+| `public/art/arena/players/operative-orange-walk-2.webp` | Orange walk frame 2, passing after left contact | 96 × 96 | 5,698 | `art/masters/arena/players/operative-orange-walk-atlas.png` |
+| `public/art/arena/players/operative-orange-walk-3.webp` | Orange walk frame 3, right contact | 96 × 96 | 5,942 | `art/masters/arena/players/operative-orange-walk-atlas.png` |
+| `public/art/arena/players/operative-orange-walk-4.webp` | Orange walk frame 4, passing after right contact | 96 × 96 | 5,748 | `art/masters/arena/players/operative-orange-walk-atlas.png` |
+| `public/art/arena/players/operative-orange-answering.webp` | Orange operative answering at lit terminal | 96 × 96 | 7,874 | `art/masters/arena/players/operative-orange-answering.png` |
+| `public/art/arena/boss/chemistry-boss-topdown.webp` | Final-minute Reactor Prime boss | 192 × 192 | 37,330 | `art/masters/arena/boss/chemistry-boss-topdown.png` |

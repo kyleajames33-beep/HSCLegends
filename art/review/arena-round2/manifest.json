@@ -1,0 +1,203 @@
+{
+  "date": "2026-11-18",
+  "tool": "image_gen.imagegen",
+  "model": "not exposed",
+  "generations": [
+    {
+      "id": "cover",
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing team-specific blue #2F7BEA or orange #FF6A2B accent, light painterly texture, dramatic rim light, readable at card size. Original design. Wide 16:9 landscape cover for Reactor Clash, full bleed. Dramatic elevated three-quarter camera inside a sci-fi laboratory arena. On the RIGHT 55% ONLY, two squads of adult-proportioned helmets-on operatives in the referenced angular navy armour, blue accents versus orange, converge from opposite sides to tag each other with clean stylised energy in a competitive contest around the referenced hexagonal capture reactor with a brilliant pale lilac core. Two operatives per team, a few energetic poses and a strong clear silhouette. Industrial lab floor, cable channels, segmented wall architecture. LEFT 45% is completely reserved for UI text: calm very dark navy #0E1020, minimal low-contrast shadows with a smooth transition into the scene; no characters, hits, lights, equipment or hard edges there. No text, logo, gore, or realistic guns. Keep all action comfortably inside crop.",
+      "transparent": false,
+      "references": [
+        "art/masters/arena/players/operative-blue.png",
+        "art/masters/arena/players/operative-orange.png",
+        "art/masters/arena/objects/reactor-neutral.png"
+      ],
+      "master": null,
+      "sha256": "d8cecd72e2fcf476916351f44c5ae4bb2b7225e73842aee6fc173f0f868a181e",
+      "retained": false
+    },
+    {
+      "id": "walk",
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing #2F7BEA accent, light painterly texture, dramatic rim light, readable at card size. Original design. Make one transparent 2-by-2 WALK CYCLE sprite atlas, square canvas, four isolated copies of this EXACT BLUE operative, camera straight down vertically (orthographic plan), facing north in every frame, no face. Match this compact reference silhouette, helmet stripe, broad blue shoulder plates, torso shape and same equipment. The body/helmet stay centered at the exact same point within each quadrant, and same scale in every cell. Top left: LEFT boot reaches north/past hip, right boot extends south clearly behind, right arm forward blue device gripped near north, left elbow back. Top right: passing position, boots close alongside each other beneath torso, left boot midway back, one arm bent in mid-swing. Bottom left: opposite contact, RIGHT boot reaches north, left boot extends south clearly behind, left arm forward and right elbow back. Bottom right: opposite passing position, right boot midway back, other arm bent in mid-swing. Slight but unmistakable alternation at small size. Do not tilt the figure off north. Each whole figure occupies central 65% of its cell, 4 identical square quadrants, wide empty gutters, genuinely transparent with no props, floor, shadows, separators, numbers or labels. Arms stay close; preserve the compact vertical bird's-eye anatomy. Use the atlas as four consecutive animation cels.",
+      "transparent": true,
+      "references": [
+        "art/masters/arena/players/operative-blue.png"
+      ],
+      "master": "art/masters/arena/players/operative-blue-walk-atlas.png",
+      "sha256": "cee6c268031008dcfdf477561089737cd5ed601a729c9e4d1480f0c8de0aae29"
+    },
+    {
+      "id": "answer",
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing #2F7BEA accent, light painterly texture, dramatic rim light, readable at card size. Original design. One transparent sprite, precisely straight down vertical orthographic top-down, north up. The same compact blue operative from image 1 hunched forward, head between shoulders, over a lab terminal in front of them at north. Helmet lowered close over desk, elbows bent, hands on controls. Visually match the blue shoulder armour and helmet. The north third contains a small recognizable violet lit console matching image 2 with blank screen and pads. A single bundled operative-at-console silhouette, centered, same relative body proportions and appearance as image 1, complete boots, no face, scenery, shadow, text or backdrop. Leave clear transparent padding on all sides.",
+      "transparent": true,
+      "references": [
+        "art/masters/arena/players/operative-blue.png",
+        "art/masters/arena/objects/question-terminal-active.png"
+      ],
+      "master": "art/masters/arena/players/operative-blue-answering.png",
+      "sha256": "2af9a2a59164e2ce71ac1a728a69dcbd991c4c33d076dd63c4e018965fb0cb88"
+    },
+    {
+      "id": "boss",
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing #FF6A2B accent, light painterly texture, dramatic rim light, readable at card size. Original design. One isolated final-minute Reactor Prime boss, camera vertically straight DOWN from directly above, strictly orthographic like image 1, not three-quarter, no visible front walls. Preserve family with Chemistry minion but clearly more powerful than a scaled-up minion: wide black armoured hexagonal reaction vessel, large swirling flame-orange top viewing window, two glass exhaust necks with hexagonal openings above it, oversized angular crystal lattice bolted along the left flank, four heavy articulated pointed legs spread to corners and visibly reinforced with armour. Faceted charcoal dark outlines, substantial planar highlights and amber refraction. No face, no ground/shadow/backdrop, no symbols or writing. North-facing centered sprite, square transparent canvas with all legs contained and generous margins. Clean readable silhouette for a 192px sprite.",
+      "transparent": true,
+      "references": [
+        "art/masters/arena/minions/chemistry-minion.png",
+        "art/masters/bosses/chemistry-boss-idle.png"
+      ],
+      "master": null,
+      "sha256": "2fe7748d5444b5c93da04c7a844651c6ab6beaa0300540ee7a1706ed2f8c2783",
+      "retained": false
+    },
+    {
+      "id": "walkOrange",
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing #FF6A2B accent, light painterly texture, dramatic rim light, readable at card size. Original design. Edit the supplied four-frame sprite atlas. Keep EXACT same orthographic top-down north-facing poses, the exact positions, sizes, cell spacing, transparency, outlines, shading, hardware and limb positions in all four cells. ONLY recolor the saturated blue shoulder plates, stripe, and device cell to team orange #FF6A2B. Never change geometry, arms, legs, dark neutral panels or placement. Preserve clean transparent background. Four perfectly registered frames, top left through bottom right.",
+      "transparent": true,
+      "references": [
+        "art/masters/arena/players/operative-blue-walk-atlas.png"
+      ],
+      "master": "art/masters/arena/players/operative-orange-walk-atlas.png",
+      "sha256": "09f5e2943e3ea08adf377207239c18bafaf740432e79b8542760fdd63b691d99"
+    },
+    {
+      "id": "answerOrange",
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing #FF6A2B accent, light painterly texture, dramatic rim light, readable at card size. Original design. Recolor ONLY the blue team accents on the operative in the reference to orange #FF6A2B. Preserve the exact pixel positioning, body design, transparency and silhouette. The purple terminal and its glow must stay unchanged. No new elements. Camera straight down vertical orthographic, north up.",
+      "transparent": true,
+      "references": [
+        "art/masters/arena/players/operative-blue-answering.png"
+      ],
+      "master": "art/masters/arena/players/operative-orange-answering.png",
+      "sha256": "1ae6a7a5803543ea4dcec11e203f03ba30a1a066ebf2c627ad8a0f15a4eca233"
+    },
+    {
+      "id": "coverFinal",
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing team-specific blue #2F7BEA or orange #FF6A2B accent, light painterly texture, dramatic rim light, readable at card size. Original design. Wide 16:9 landscape cover for Reactor Clash, full bleed. Dramatic elevated three-quarter camera inside a sci-fi laboratory arena. On the RIGHT 55% ONLY, two squads of adult-proportioned helmets-on operatives in the referenced angular navy armour, blue accents versus orange, converge from opposite sides to tag each other with clean stylised energy in a competitive contest around the referenced hexagonal capture reactor with a brilliant pale lilac core. Two operatives per team, a few energetic poses and a strong clear silhouette. Industrial lab floor, cable channels, segmented wall architecture. LEFT 45% is completely reserved for UI text: calm very dark navy #0E1020, minimal low-contrast shadows with a smooth transition into the scene; no characters, hits, lights, equipment or hard edges there. No text, logo, gore, or realistic guns. Keep all action comfortably inside crop. Revise the composition of the input image. Reframe the entire scene on the right half, slightly smaller so all operatives and reactor fit. Hard layout requirement at all heights: the leftmost 45% of the canvas has only near-uniform dark navy #0E1020 and subtle atmospheric gradient; nothing recognizable or high contrast in this zone, including at the bottom-left. All blue foreground operative pixels start AFTER 48% of width. Move the central reactor toward 74% of width. No seams at the boundary. Retain the elevated three-quarter view and same armor and reactor.",
+      "transparent": false,
+      "references": [
+        "Earlier cover generation (discarded)"
+      ],
+      "master": "art/masters/keyart/reactor-clash-card.png",
+      "sha256": "19eaf75bad1ecbb88d5cf115c5ec416fa372c69f4f5a0eefd11f44d1862c8980"
+    },
+    {
+      "id": "bossFinal",
+      "prompt": "Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing #FF6A2B accent, light painterly texture, dramatic rim light, readable at card size. Original design. One isolated final-minute Reactor Prime boss, camera vertically straight DOWN from directly above, strictly orthographic like image 1, not three-quarter, no visible front walls. Preserve family with Chemistry minion but clearly more powerful than a scaled-up minion: wide black armoured hexagonal reaction vessel, large swirling flame-orange top viewing window, two glass exhaust necks with hexagonal openings above it, oversized angular crystal lattice bolted along the left flank, four heavy articulated pointed legs spread to corners and visibly reinforced with armour. Faceted charcoal dark outlines, substantial planar highlights and amber refraction. No face, no ground/shadow/backdrop, no symbols or writing. North-facing centered sprite, square transparent canvas with all legs contained and generous margins. Clean readable silhouette for a 192px sprite. Edit the reference to an even stricter overhead orthographic plan view. Change both tall upward exhaust necks into two staggered flat circular inset vent caps, showing only top surfaces and small dark central openings. Their heights should be impossible to see. Simplify left crystal lattice into top faces with sharp faceted highlights. Keep the main hexagonal face, four strong angular legs and the orange/charcoal chemistry motif. Keep the bowl shaped viewport visually flat and geometrically regular. No perspective, no elevation, no horizon, transparent.",
+      "transparent": true,
+      "references": [
+        "Earlier boss generation (discarded)"
+      ],
+      "master": "art/masters/arena/boss/chemistry-boss-topdown.png",
+      "sha256": "fe667cac4152fa9dac88bd1ea96fde32712b812c8ab53e009ea255d5f3bc84e6"
+    }
+  ],
+  "deliveries": {
+    "cover": {
+      "path": "public/art/keyart/reactor-clash-card.webp",
+      "size": [
+        1600,
+        900
+      ],
+      "bytes": 59428,
+      "source": "coverFinal"
+    },
+    "blue-walk-1": {
+      "path": "public/art/arena/players/operative-blue-walk-1.webp",
+      "size": [
+        96,
+        96
+      ],
+      "bytes": 5702,
+      "source": "walk"
+    },
+    "blue-walk-2": {
+      "path": "public/art/arena/players/operative-blue-walk-2.webp",
+      "size": [
+        96,
+        96
+      ],
+      "bytes": 5652,
+      "source": "walk"
+    },
+    "blue-walk-3": {
+      "path": "public/art/arena/players/operative-blue-walk-3.webp",
+      "size": [
+        96,
+        96
+      ],
+      "bytes": 5812,
+      "source": "walk"
+    },
+    "blue-walk-4": {
+      "path": "public/art/arena/players/operative-blue-walk-4.webp",
+      "size": [
+        96,
+        96
+      ],
+      "bytes": 5676,
+      "source": "walk"
+    },
+    "blue-answering": {
+      "path": "public/art/arena/players/operative-blue-answering.webp",
+      "size": [
+        96,
+        96
+      ],
+      "bytes": 7704,
+      "source": "answer"
+    },
+    "orange-walk-1": {
+      "path": "public/art/arena/players/operative-orange-walk-1.webp",
+      "size": [
+        96,
+        96
+      ],
+      "bytes": 5760,
+      "source": "walkOrange"
+    },
+    "orange-walk-2": {
+      "path": "public/art/arena/players/operative-orange-walk-2.webp",
+      "size": [
+        96,
+        96
+      ],
+      "bytes": 5698,
+      "source": "walkOrange"
+    },
+    "orange-walk-3": {
+      "path": "public/art/arena/players/operative-orange-walk-3.webp",
+      "size": [
+        96,
+        96
+      ],
+      "bytes": 5942,
+      "source": "walkOrange"
+    },
+    "orange-walk-4": {
+      "path": "public/art/arena/players/operative-orange-walk-4.webp",
+      "size": [
+        96,
+        96
+      ],
+      "bytes": 5748,
+      "source": "walkOrange"
+    },
+    "orange-answering": {
+      "path": "public/art/arena/players/operative-orange-answering.webp",
+      "size": [
+        96,
+        96
+      ],
+      "bytes": 7874,
+      "source": "answerOrange"
+    },
+    "boss": {
+      "path": "public/art/arena/boss/chemistry-boss-topdown.webp",
+      "size": [
+        192,
+        192
+      ],
+      "bytes": 37330,
+      "source": "bossFinal"
+    }
+  }
+}
