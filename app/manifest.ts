@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'HSC Legends',
     short_name: 'Legends',
-    description: 'The phone-first HSC arena. Quick games, duels, weekly bosses.',
+    description: 'Live HSC classroom games. Team up, answer fast, take down the boss.',
     start_url: '/',
     display: 'standalone',
     background_color: '#09090b',

@@ -9,7 +9,8 @@ const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dmsans' });
 
 export const metadata: Metadata = {
   title: 'HSC Legends',
-  description: 'The phone-first HSC arena. Quick games, duels, weekly bosses.',
+  description: 'Live HSC classroom games. Team up, answer fast, take down the boss.',
+  icons: { icon: [{ url: '/favicon-32.png', sizes: '32x32', type: 'image/png' }, { url: '/icon-192.png', sizes: '192x192', type: 'image/png' }], apple: '/apple-touch-icon.png' },
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Legends' },
 };
 

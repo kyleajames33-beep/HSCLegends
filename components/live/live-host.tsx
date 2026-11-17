@@ -9,7 +9,8 @@ import type { QuestionDraft } from '@/lib/classroom-v2';
 import { useOnChange, useSound } from '@/lib/live-sound';
 import QRCode from 'qrcode';
 import { Icon } from './icon';
-import { BOSSES, BOSS_ORDER, BossBar, BossPanel, bossLeft } from './boss';
+import Image from 'next/image';
+import { BOSSES, BOSS_ORDER, BossBar, BossPanel, bossLeft, emblem } from './boss';
 import type { BossSubject } from '@/lib/live-game';
 import s from './live.module.css';
 
@@ -225,11 +226,17 @@ export default function LiveHost({ config }: { config: StagingConfig }) {
           <button role="radio" aria-checked={mode === 'boss'} className={`${s.modeBtn} ${mode === 'boss' ? s.modeOn : ''}`} onClick={() => setMode('boss')}>Boss Battle<small>The class teams up to take down a boss</small></button>
           <button role="radio" aria-checked={mode === 'classic'} className={`${s.modeBtn} ${mode === 'classic' ? s.modeOn : ''}`} onClick={() => setMode('classic')}>Classic<small>Everyone for themselves</small></button>
         </div>
-        {mode === 'boss' && <label className={s.field}>Boss
-          <select className={s.input} value={bossSubject} onChange={e => setBossSubject(e.target.value as BossSubject)}>
-            {BOSS_ORDER.map(k => <option key={k} value={k}>{BOSSES[k].name} ({BOSSES[k].subject})</option>)}
-          </select>
-        </label>}
+        {mode === 'boss' && <fieldset className={s.field} style={{ border: 0, padding: 0 }}>
+          <legend style={{ marginBottom: 6 }}>Boss</legend>
+          <div className={s.bossPick} role="radiogroup" aria-label="Boss">
+            {BOSS_ORDER.map(k => (
+              <button key={k} role="radio" aria-checked={bossSubject === k} className={`${s.bossOpt} ${bossSubject === k ? s.modeOn : ''}`} onClick={() => setBossSubject(k)}>
+                <Image src={emblem(k)} alt="" width={36} height={36} />
+                <span><b>{BOSSES[k].name}</b><small>{BOSSES[k].subject}</small></span>
+              </button>
+            ))}
+          </div>
+        </fieldset>}
         <p className={s.field} style={{ marginBottom: 4 }}>Questions</p>
         <p className={s.dim} style={{ marginBottom: 10 }}>{questionSet.name}</p>
         <div className={s.row} style={{ justifyContent: 'flex-start', marginBottom: 14 }}>

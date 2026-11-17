@@ -1,12 +1,13 @@
 import Link from 'next/link';
-import { Gamepad2, Sparkles } from 'lucide-react';
+import Image from 'next/image';
+import { Gamepad2 } from 'lucide-react';
 import WalletChip from '@/components/wallet-chip';
 
 export default function ArcadeHeader({ active }: { active: 'home' | 'games' }) {
   return (
     <header className="mb-5 flex min-h-12 flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4 sm:flex-nowrap">
       <Link href="/" aria-label="HSC Legends home" className="flex shrink-0 items-center gap-2 font-display text-sm font-black tracking-[.12em] text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#c3f67a]">
-        <span className="grid h-9 w-9 place-items-center rounded-xl border border-[#c3f67a]/30 bg-[#c3f67a]/10 text-[#c3f67a]"><Sparkles aria-hidden size={19} /></span>
+        <Image src="/icon-192.png" alt="" width={36} height={36} className="h-9 w-9" priority />
         HSC LEGENDS
       </Link>
       <nav aria-label="Desktop" className="hidden items-center gap-1 text-sm font-bold text-[#bfc8df] lg:flex">

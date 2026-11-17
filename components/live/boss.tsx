@@ -10,6 +10,7 @@ export const BOSSES: Record<BossSubject, { name: string; subject: string; art: s
   'maths-advanced': { name: 'Prism', subject: 'Maths Advanced', art: '/art/bosses/maths-advanced', accent: '#9b5cff' },
   'maths-ext1': { name: 'The Fractal', subject: 'Maths Extension 1', art: '/art/bosses/maths-extension-1', accent: '#e8447f' },
 };
+export const emblem = (k: BossSubject) => `/art/icons/subject-${k === 'maths-ext1' ? 'maths-extension-1' : k}.webp`;
 export const BOSS_ORDER = Object.keys(BOSSES) as BossSubject[];
 
 export function bossLeft(boss: BossState): number | null {
@@ -22,7 +23,7 @@ export function BossBar({ boss, showName = true }: { boss: BossState; showName?:
   const pct = boss.hp && left !== null ? (left / boss.hp) * 100 : 100;
   return (
     <div className={`${s.bossBar} ${showName ? '' : s.bossBarBare}`} style={{ ['--accent' as string]: meta.accent }}>
-      {showName && <span className={s.bossBarName}>{meta.name}</span>}
+      {showName && <span className={`${s.bossBarName} ${s.iconRow}`}><Image src={emblem(boss.subject)} alt="" width={24} height={24} />{meta.name}</span>}
       <span className={s.hpTrack}><span className={s.hpFill} style={{ width: `${pct}%` }} /></span>
       <span className={s.bossBarHp}>{left === null ? '' : `${left.toLocaleString()} HP`}</span>
     </div>
@@ -39,6 +40,7 @@ export function BossPanel({ boss, size = 260, hit = false, caption }: { boss: Bo
     <div className={s.bossPanel} style={{ ['--accent' as string]: meta.accent }}>
       <div className={`${s.bossArt} ${hit && boss.round_damage > 0 ? s.bossHit : ''} ${defeated ? s.bossDown : ''}`}>
         <Image src={`${meta.art}-boss-${pose}.webp`} alt={`${meta.name}, the ${meta.subject} boss`} width={size} height={size} priority />
+        {hit && boss.round_damage > 0 && <Image src="/art/fx/impact.webp" alt="" width={size} height={size} className={s.impact} />}
         {hit && boss.round_damage > 0 && <span className={s.damage}>−{boss.round_damage.toLocaleString()}</span>}
       </div>
       <p className={s.bossName}>{meta.name}</p>

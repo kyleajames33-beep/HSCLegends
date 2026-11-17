@@ -74,15 +74,16 @@ export function ConnectedModes() {
 
 export function LobbyHero() {
   return (
-    <section className="relative overflow-hidden rounded-[26px] border border-[#5c5981] bg-[#252044] bg-cover bg-center px-5 py-8 text-white sm:px-10 sm:py-10" style={{ backgroundImage: 'linear-gradient(90deg, rgba(20, 22, 48, .98) 0%, rgba(20, 22, 48, .91) 48%, rgba(20, 22, 48, .45) 100%), url(/art/arena-hero.webp)' }}>
-      <div aria-hidden className="absolute -right-16 -top-32 h-80 w-80 rounded-full bg-[#7256bb]/30 blur-3xl" />
-      <Image src="/art/lab-scientist.webp" alt="" width={592} height={800} className="pointer-events-none absolute -bottom-16 -right-12 h-[95%] w-auto object-contain object-bottom opacity-40 sm:-bottom-20 sm:right-2 sm:h-[115%] sm:opacity-90 lg:right-10" />
+    <section className="relative overflow-hidden rounded-[26px] border border-[#3a3560] bg-[#0e1020] px-5 py-8 text-white sm:px-10 sm:py-14">
+      <Image src="/art/keyart/home-hero.webp" alt="" fill priority sizes="(max-width: 1280px) 100vw, 1200px" className="pointer-events-none object-cover object-right opacity-45 sm:opacity-100" />
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-[#0e1020] via-[#0e1020]/80 to-transparent sm:via-[#0e1020]/60" />
       <div className="relative z-10 max-w-lg">
         <p className="inline-flex items-center gap-2 rounded-full border border-[#b6a8ef]/30 bg-[#413868]/80 px-3 py-1 text-[10px] font-black tracking-[.16em] text-[#e4d9ff]"><span className="h-2 w-2 rounded-full bg-[#c3f67a]" /> THE HSC GAME ARENA</p>
         <h1 className="mt-4 max-w-sm font-display text-4xl font-black leading-[1.02] tracking-tight sm:text-6xl">Ready, set,<br /><span className="text-[#c3f67a]">legend.</span></h1>
-        <p className="mt-3 max-w-xs text-sm font-semibold leading-relaxed text-[#e1dcef] sm:text-base">Answer. Power up. Play again.</p>
+        <p className="mt-3 max-w-xs text-sm font-semibold leading-relaxed text-[#e1dcef] sm:text-base">Team up with your class. Answer fast. Take down the boss.</p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/demo" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#c3f67a] px-5 font-display font-black text-[#1c2b20] transition hover:bg-white focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-white motion-reduce:transition-none">Play Lab Rush <ArrowRight aria-hidden size={18} /></Link>
+          <Link href="/live" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#c3f67a] px-5 font-display font-black text-[#1c2b20] transition hover:bg-white focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-white motion-reduce:transition-none">Join a game <ArrowRight aria-hidden size={18} /></Link>
+          <Link href="/live/host" className="inline-flex min-h-12 items-center rounded-xl border border-[#ff6a2b]/70 bg-[#2a1a22]/80 px-5 font-display font-bold text-white transition hover:bg-[#4a2630] focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-white motion-reduce:transition-none">Host a Boss Battle</Link>
           <Link href="/games" className="inline-flex min-h-12 items-center rounded-xl border border-white/50 bg-[#242441]/80 px-5 font-display font-bold text-white transition hover:bg-[#43356a] focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-white motion-reduce:transition-none">All games</Link>
         </div>
       </div>
