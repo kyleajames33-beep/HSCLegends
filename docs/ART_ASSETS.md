@@ -3130,3 +3130,62 @@ Rebuild and check the deliveries with `python art/review/arena-round2/build-asse
 | `public/art/arena/players/operative-orange-walk-4.webp` | Orange walk frame 4, passing after right contact | 96 × 96 | 5,748 | `art/masters/arena/players/operative-orange-walk-atlas.png` |
 | `public/art/arena/players/operative-orange-answering.webp` | Orange operative answering at lit terminal | 96 × 96 | 7,874 | `art/masters/arena/players/operative-orange-answering.png` |
 | `public/art/arena/boss/chemistry-boss-topdown.webp` | Final-minute Reactor Prime boss | 192 × 192 | 37,330 | `art/masters/arena/boss/chemistry-boss-topdown.png` |
+
+## Reactor Clash arena round 3 (2026-11-18)
+
+Five north-facing boss sprites for subject-themed matches. Each was generated with built-in `image_gen.imagegen` on 18 November 2026 (Australia/Sydney). The underlying image model and version are undisclosed. The first input supplies the overhead style and the second supplies the creature design. Each lossless transparent 192 × 192 WebP fits within the existing Chemistry boss footprint on the 48px arena grid. The matching arena minions appear beneath the bosses on [the review sheet](../art/review/arena-round3-sheet.png).
+
+### Biology
+
+- Master: `art/masters/arena/boss/biology-boss-topdown.png`.
+- Delivery: `public/art/arena/boss/biology-boss-topdown.webp` (27,650 bytes).
+- References in order: `public/art/arena/boss/chemistry-boss-topdown.webp`, `public/art/bosses/biology-boss-idle.webp`.
+- Prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing #1FB070 accent, light painterly texture, dramatic rim light, readable at card size. Original design. Reference 1 supplies CAMERA, lighting, scale, and outline weight only. Reference 2 is the exact biology boss DESIGN to reinterpret viewed from directly above, orthographic camera pointing vertically down, facing north. Preserve the idle's body plan, appendages, palette and signature motif. Green translucent spore sacs, a helix inside a faceted membrane, three swept-back locomotor tendrils; front tip points north and sacs sit to rear. Match the style reference's clean cel planes, upper-left highlights, dark contours and large boss weight on a 48px tile grid. One complete sprite isolated with genuine alpha on a square canvas, centered with 6–10% clear padding. No tilt, horizon, ground shadow, floor, chemistry parts or orange secondary accents, letters or UI.
+```
+
+### Physics
+
+- Master: `art/masters/arena/boss/physics-boss-topdown.png`.
+- Delivery: `public/art/arena/boss/physics-boss-topdown.webp` (35,398 bytes).
+- References in order: `public/art/arena/boss/chemistry-boss-topdown.webp`, `public/art/bosses/physics-boss-idle.webp`.
+- Prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing #2F7BEA accent, light painterly texture, dramatic rim light, readable at card size. Original design. Reference 1 supplies CAMERA, lighting, scale, and outline weight only. Reference 2 is the exact physics boss DESIGN to reinterpret viewed from directly above, orthographic camera pointing vertically down, facing north. Preserve the idle's body plan, appendages, palette and signature motif. Heavy toroidal core with truly open centre, blue coil bands, two crescent field vanes and three orbiting charges; strongest axis aligned north. Match the style reference's clean cel planes, upper-left highlights, dark contours and large boss weight on a 48px tile grid. One complete sprite isolated with genuine alpha on a square canvas, centered with 6–10% clear padding. No tilt, horizon, ground shadow, floor, chemistry parts or orange secondary accents, letters or UI.
+```
+
+### Maths Standard
+
+- Master: `art/masters/arena/boss/maths-standard-boss-topdown.png`.
+- Delivery: `public/art/arena/boss/maths-standard-boss-topdown.webp` (24,438 bytes).
+- References in order: `public/art/arena/boss/chemistry-boss-topdown.webp`, `public/art/bosses/maths-standard-boss-idle.webp`.
+- Prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing #F2B530 accent, light painterly texture, dramatic rim light, readable at card size. Original design. Reference 1 supplies CAMERA, lighting, scale, and outline weight only. Reference 2 is the exact maths-standard boss DESIGN to reinterpret viewed from directly above, orthographic camera pointing vertically down, facing north. Preserve the idle's body plan, appendages, palette and signature motif. Gold measuring beam horizontal across a triangular brace, two square weighing tray tops holding three blocks on left and six on right. See the top planes of the mechanism, central heavy stepped plinth and triangular north-leading nose. Flatten the supporting hardware in plan view. Match the style reference's clean cel planes, upper-left highlights, dark contours and large boss weight on a 48px tile grid. One complete sprite isolated with genuine alpha on a square canvas, centered with 6–10% clear padding. No tilt, horizon, ground shadow, floor, chemistry parts or orange secondary accents, letters or UI.
+```
+
+### Maths Advanced
+
+- Master: `art/masters/arena/boss/maths-advanced-boss-topdown.png`.
+- Delivery: `public/art/arena/boss/maths-advanced-boss-topdown.webp` (26,350 bytes).
+- References in order: `public/art/arena/boss/chemistry-boss-topdown.webp`, `public/art/bosses/maths-advanced-boss-idle.webp`.
+- Prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing #9B5CFF accent, light painterly texture, dramatic rim light, readable at card size. Original design. Reference 1 supplies CAMERA, lighting, scale, and outline weight only. Reference 2 is the exact maths-advanced boss DESIGN to reinterpret viewed from directly above, orthographic camera pointing vertically down, facing north. Preserve the idle's body plan, appendages, palette and signature motif. Violet nested octahedra seen along vertical axis, four large dark outer diamond facets and one continuous violet ribbon curling around central jewel. One tip toward north. Match the style reference's clean cel planes, upper-left highlights, dark contours and large boss weight on a 48px tile grid. One complete sprite isolated with genuine alpha on a square canvas, centered with 6–10% clear padding. No tilt, horizon, ground shadow, floor, chemistry parts or orange secondary accents, letters or UI.
+```
+
+### Maths Extension 1
+
+- Master: `art/masters/arena/boss/maths-extension-1-boss-topdown.png`.
+- Delivery: `public/art/arena/boss/maths-extension-1-boss-topdown.webp` (22,612 bytes).
+- References in order: `public/art/arena/boss/chemistry-boss-topdown.webp`, `public/art/bosses/maths-extension-1-boss-idle.webp`.
+- Prompt:
+
+```text
+Stylised hero game art for a mature teen audience (16-18). Cel-shaded, crisp dark outlines, sharp angular silhouette, deep navy/charcoal forms with a single glowing #E8447F accent, light painterly texture, dramatic rim light, readable at card size. Original design. Reference 1 supplies CAMERA, lighting, scale, and outline weight only. Reference 2 is the exact maths-extension-1 boss DESIGN to reinterpret viewed from directly above, orthographic camera pointing vertically down, facing north. Preserve the idle's body plan, appendages, palette and signature motif. Pink solid tetrahedral body with broad armour facets, two recursive branches swept toward rear sides, tail pointing south, north-leading point and pink trajectory seams. Match the style reference's clean cel planes, upper-left highlights, dark contours and large boss weight on a 48px tile grid. One complete sprite isolated with genuine alpha on a square canvas, centered with 6–10% clear padding. No tilt, horizon, ground shadow, floor, chemistry parts or orange secondary accents, letters or UI. Critical camera revision: mount camera on ceiling looking straight down. See a symmetric triangular dorsal roof from directly overhead, like the plan of an angular manta. Arrange left and right branches symmetrically, spreading sideways around rear hips on the same ground plane. Tail extends due south down centreline, nose points due north straight up centreline. Force a dramatically different contour from the angled idle reference. No sidewall or side elevation, no diagonal body pose.
+```
