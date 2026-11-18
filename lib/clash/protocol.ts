@@ -5,7 +5,7 @@
 // Every student message carries the player's secret token; the host ignores
 // messages whose token does not match the server roster.
 
-import { createClash, moveCircle, PLAYER_R, SPRINT_SPEED, type Vec, type ClashEvent, type ClashState, type Input, type Player, type Team } from './sim';
+import { createClash, EMERGENCY, moveCircle, PLAYER_R, SPRINT_SPEED, type Vec, type ClashEvent, type ClashState, type Input, type Player, type Team } from './sim';
 
 const TEAMS: Team[] = ['blue', 'orange'];
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -33,7 +33,7 @@ export function encodeSnapshot(g: ClashState, events: ClashEvent[]): Snapshot {
     t: Math.round(g.t * 1000) / 1000, e: g.ended ? 1 : 0, sc: [r1(g.score.blue), r1(g.score.orange)],
     p: Object.values(g.players).map(p => [
       p.id, r0(p.x), r0(p.y), Math.round(p.aim * 100) / 100, p.team === 'blue' ? 0 : 1, p.alive ? 1 : 0,
-      p.answering ? termIndex.get(p.answering) ?? -1 : -1, r0(p.energy), p.streak, r1(p.respawnAt),
+      p.answering === EMERGENCY ? -2 : termIndex.get(p.answering ?? '') ?? -1, Math.ceil(p.energy * 100) / 100, p.streak, r1(p.respawnAt),
       Object.entries(p.locks).flatMap(([id, until]) => (until > g.t ? [termIndex.get(id) ?? -1, r1(until)] : [])),
       p.reportSeq ?? 0,
     ]),
@@ -60,7 +60,7 @@ export function decodeSnapshot(s: Snapshot, names: Map<string, string>): ClashSt
     const p: Player = {
       id, name: names.get(id) ?? '…', team: TEAMS[team], bot: false, x, y, aim,
       energy, streak, alive: alive === 1, respawnAt, reportSeq, cooldown: 0,
-      answering: answering >= 0 ? terms[answering]?.id ?? null : null, locks: {},
+      answering: answering === -2 ? EMERGENCY : answering >= 0 ? terms[answering]?.id ?? null : null, locks: {},
       stats: { tags: 0, captures: 0, answered: 0, correct: 0, bossDamage: 0 },
     };
     for (let i = 0; i + 1 < locks.length; i += 2) if (terms[locks[i]]) p.locks[terms[locks[i]].id] = locks[i + 1];

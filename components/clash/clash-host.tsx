@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, liveClient, readTab, rpc, useSession, writeTab } from '@/lib/live-game';
-import { addPlayer, answerResult, applyRemotePosition, beginAnswer, cancelAnswer, createClash, step, type ClashEvent, type ClashState, type Input, type Team } from '@/lib/clash/sim';
+import { addPlayer, answerResult, applyRemotePosition, beginAnswer, cancelAnswer, createClash, EMERGENCY, step, type ClashEvent, type ClashState, type Input, type Team } from '@/lib/clash/sim';
 import { botInputs, type BotBrain } from '@/lib/clash/bots';
 import { encodeRoster, encodeSnapshot, inputFromMsg, PROJECTOR_TIMEOUT_MS, type InputMsg, type TerminalMsg } from '@/lib/clash/protocol';
 import { openClashChannel, type ClashNet } from '@/lib/clash/net';
@@ -55,7 +55,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   const [subject, setSubject] = useState<ClashSubject>('chemistry');
   const bossName = BOSSES[subject].name;
   const [origin, setOrigin] = useState('');
-  const [hud, setHud] = useState<{ t: number; score: Record<Team, number>; answering: number; boss: number | null } | null>(null);
+  const [hud, setHud] = useState<{ t: number; score: Record<Team, number>; answering: number; exhausted: number; boss: number | null } | null>(null);
   const [paused, setPaused] = useState(false);
   const [feed, setFeed] = useState<Feed[]>([]);
   const [results, setResults] = useState<Results | null>(null);
@@ -175,6 +175,23 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
     const consumedAt = new Map<string, number>();
     let finished = g.ended;
 
+    // Answers recorded by the database become energy.
+    let active = true;
+    let nextReceiptAt = 0;
+    const readReceipts = async () => {
+      receiptBusy = true;
+      try {
+        const list = await rpc<{ seq: number; player_id: string; correct: boolean }[]>(client, 'clash_receipts', { p_room: roomId, p_since: lastSeq.current });
+        if (!active || g.ended) return;
+        for (const r of list) {
+          if (r.seq <= lastSeq.current) continue;
+          lastSeq.current = r.seq;
+          answerResult(g, r.player_id, r.correct, pending.current);
+        }
+      } catch { /* retry next tick */ }
+      finally { receiptBusy = false; }
+    };
+
     const tick = () => {
       const now = performance.now();
       if (g.ended) return;
@@ -192,7 +209,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
           const previous = consumedAt.get(id);
           if (previous !== report.at) {
             const elapsed = previous === undefined ? stepMs : report.at - previous;
-            applyRemotePosition(g, id, report.x, report.y, elapsed / 1000);
+            applyRemotePosition(g, id, report.x, report.y, elapsed / 1000, report.input.sprint);
             consumedAt.set(id, report.at);
             player.reportSeq = report.seq;
           }
@@ -215,6 +232,10 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
         pending.current = [];
       }
       if (now - rosterAt > 2000) { rosterAt = now; net.current?.send('roster', { r: encodeRoster(g), state: 'active', seconds: g.duration, subject }); }
+      if (!g.ended && !receiptBusy && now >= nextReceiptAt) {
+        nextReceiptAt = now + 700;
+        void readReceipts();
+      }
       if (g.ended && !finished) { finished = true; void finish(g); }
     };
     const worker = new Worker(new URL('./clash-clock.worker.ts', import.meta.url));
@@ -232,17 +253,6 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
     const watchdog = setInterval(checkClock, 250);
     document.addEventListener('visibilitychange', checkClock);
 
-    // Answers recorded by the database become energy.
-    const receipts = setInterval(async () => {
-      if (receiptBusy || g.ended) return;
-      receiptBusy = true;
-      try {
-        const list = await rpc<{ seq: number; player_id: string; correct: boolean }[]>(client, 'clash_receipts', { p_room: roomId, p_since: lastSeq.current });
-        for (const r of list) { lastSeq.current = Math.max(lastSeq.current, r.seq); answerResult(g, r.player_id, r.correct, pending.current); }
-      } catch { /* retry next tick */ }
-      receiptBusy = false;
-    }, 700);
-
     // Projector rendering
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
@@ -258,16 +268,16 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
       lastFrame = now;
       if (now - hudAt > 150) {
         hudAt = now;
-        setHud({ t: g.t, score: { ...g.score }, answering: Object.values(g.players).filter(p => p.answering).length, boss: g.boss ? g.boss.hp : null });
+        setHud({ t: g.t, score: { ...g.score }, answering: Object.values(g.players).filter(p => p.answering).length, exhausted: Object.values(g.players).filter(p => p.answering === EMERGENCY).length, boss: g.boss ? g.boss.hp : null });
       }
       if (!g.ended) raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
     return () => {
+      active = false;
       worker.terminate();
       clearInterval(watchdog);
       document.removeEventListener('visibilitychange', checkClock);
-      clearInterval(receipts);
       cancelAnimationFrame(raf);
     };
   }, [view?.state, roomId, client, fillBots, finish, pushFeed, sound, bossName, subject]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -406,7 +416,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
             <span className={s.clock}>{mmss(view.seconds - hud.t)}</span>
             <span className={`${s.team} ${s.orange}`}>{Math.floor(hud.score.orange)} Orange</span>
           </div>
-          <div className={s.codeTag}>Join: <b>{view.short_code}</b> · {hud.answering} answering questions now</div>
+          <div className={s.codeTag}>Join: <b>{view.short_code}</b> · {hud.answering} answering questions{hud.exhausted > 0 && ` · ${hud.exhausted} out of energy`}</div>
           <ul className={s.feed}>{feed.map(f => <li key={f.id} className={f.tone === 'info' ? s.feedInfo : f.tone === 'blue' ? s.feedBlue : s.feedOrange}>{f.text}</li>)}</ul>
           <button className={s.sound} onClick={sound.toggle}>{sound.on ? 'Sound on' : 'Sound off'}</button>
         </>

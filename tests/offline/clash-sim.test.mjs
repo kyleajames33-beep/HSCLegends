@@ -19,7 +19,7 @@ test('correct answers grant energy with a streak bonus; wrong answers lock the t
   const s = createClash(1);
   const p = addPlayer(s, 'a', 'A', 'blue');
   const term = s.terminals[0];
-  p.x = term.x; p.y = term.y; p.energy = 0;
+  p.x = term.x; p.y = term.y; p.energy = 1;
   assert.equal(terminalNear(s, p).id, term.id);
   assert.ok(beginAnswer(s, 'a', term.id));
   assert.equal(answerResult(s, 'a', true), sim.ANSWER_REWARD);
@@ -158,7 +158,7 @@ test('remote positions are accepted only as far as plausible', () => {
   const p = addPlayer(s, 'r', 'R', 'blue');
   p.remote = true; p.x = 400; p.y = 330; p.energy = 0;
   sim.applyRemotePosition(s, 'r', 1400, 330, 1 / 30);
-  assert.ok(p.x - 400 <= sim.SPEED / 30 * 1.25 + 2.01, `teleport clamped to walking speed (${p.x - 400})`);
+  assert.equal(p.x, 400, 'zero energy rejects remote movement');
   p.energy = 50; const x0 = p.x;
   sim.applyRemotePosition(s, 'r', p.x + 13, 330, 1 / 30);
   assert.ok(p.x - x0 > 12 && p.energy < 50, 'sprint-speed move allowed with energy, and costs energy');
@@ -186,7 +186,7 @@ test('late movement uses the report interval and cannot tunnel through cover', (
   p.x = 400; p.y = 330;
   sim.applyRemotePosition(s, 'r', p.x + sim.SPEED, p.y, 1);
   assert.equal(p.x, 400 + sim.SPEED);
-  assert.equal(p.energy, sim.START_ENERGY, 'a delayed walk is still a walk');
+  assert.equal(p.energy, sim.START_ENERGY - sim.WALK_COST, 'a delayed walk costs only walking energy');
   const wall = sim.WALLS[4];
   p.x = wall.x - sim.PLAYER_R - 4; p.y = wall.y + 20;
   sim.applyRemotePosition(s, 'r', wall.x + wall.w + 100, p.y, 1);
@@ -254,4 +254,63 @@ test('remote rendering respects respawns, terminal locks, walls and projectile i
   const wire = g => protocol.decodeSnapshot(protocol.encodeSnapshot(g, []), new Map());
   const view = protocol.lerpState(wire(a), wire(b), 0.5);
   assert.deepEqual(Array.from(view.shots, s => [s.id, s.x]), [[1, 500], [2, 628]]);
+});
+
+test('walking and sprinting charge for distance travelled and stop at exact exhaustion', () => {
+  for (const remote of [false, true]) for (const sprint of [false, true]) {
+    const g = createClash();
+    const p = addPlayer(g, 'p', 'Player', 'blue');
+    const speed = sprint ? sim.SPRINT_SPEED : sim.SPEED;
+    const cost = sprint ? sim.SPRINT_COST : sim.WALK_COST;
+    Object.assign(p, { remote, x: 400, y: 330, energy: cost / 4 });
+    tick(g, 1);
+    assert.equal(p.energy, cost / 4, 'no idle drain');
+    const input = { ...IDLE, mx: 1, sprint };
+    for (let i = 0; i < 30; i++) {
+      if (remote) sim.applyRemotePosition(g, p.id, p.x + speed / 30, p.y, 1 / 30, sprint);
+      step(g, 1 / 30, { p: input });
+    }
+    assert.ok(Math.abs(p.x - 400 - speed / 4) < 1e-6);
+    assert.equal(p.energy, 0);
+    assert.equal(p.answering, sim.EMERGENCY);
+    assert.equal(protocol.decodeSnapshot(protocol.encodeSnapshot(g, []), new Map()).players.p.answering, sim.EMERGENCY);
+  }
+});
+
+test('emergency refuels in place without a terminal or streak bonus and wrong answers leave you frozen', () => {
+  const g = createClash();
+  const p = addPlayer(g, 'p', 'Player', 'blue');
+  assert.equal(terminalNear(g, p), null);
+  assert.equal(answerResult(g, p.id, true), 0, 'a receipt alone at positive energy grants nothing');
+  p.energy = sim.SHOT_COST;
+  step(g, 1 / 30, { p: { ...IDLE, fire: true } });
+  assert.equal(p.answering, sim.EMERGENCY, 'last shot triggers emergency');
+  sim.cancelAnswer(g, p.id);
+  assert.equal(p.answering, sim.EMERGENCY);
+  answerResult(g, p.id, false);
+  const x = p.x;
+  tick(g, 1, { p: { ...IDLE, mx: 1 } });
+  assert.equal(p.x, x);
+  assert.equal(p.energy, 0);
+  assert.equal(Object.keys(p.locks).length, 0);
+  p.streak = 3;
+  assert.equal(answerResult(g, p.id, true), sim.EMERGENCY_REWARD);
+  assert.equal(answerResult(g, p.id, true), 0, 'cannot grant the same refuel again');
+  assert.equal(p.stats.answered, 2);
+  assert.equal(p.streak, 3);
+  assert.equal(p.x, x);
+  tick(g, 0.2, { p: { ...IDLE, mx: 1 } });
+  assert.ok(p.x > x);
+  p.energy = 0; p.alive = false;
+  assert.equal(answerResult(g, p.id, true), 0);
+  step(g, 1 / 30, {});
+  assert.equal(p.answering, sim.EMERGENCY, 'empty respawn opens a fresh question');
+});
+
+test('an idle heartbeat at the wire-rounded position cannot spend a fresh refuel', () => {
+  const g = createClash(), p = addPlayer(g, 'r', 'Remote', 'blue');
+  Object.assign(p, { remote: true, x: 400.4, y: 330.5, energy: 0 });
+  answerResult(g, p.id, true);
+  sim.applyRemotePosition(g, p.id, 400, 331, 0.4);
+  assert.deepEqual([p.x, p.y, p.energy], [400.4, 330.5, sim.EMERGENCY_REWARD]);
 });

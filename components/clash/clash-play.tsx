@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, liveClient, readTab, rpc, useSession, writeTab } from '@/lib/live-game';
-import { moveCircle, terminalLocked, terminalNear, BOSS_HP, MAX_ENERGY, PLAYER_R, SPEED, SPRINT_SPEED, type Team } from '@/lib/clash/sim';
+import { moveCircle, terminalLocked, terminalNear, BOSS_HP, EMERGENCY, EMERGENCY_REWARD, MAX_ENERGY, PLAYER_R, SPEED, SPRINT_SPEED, type Team } from '@/lib/clash/sim';
 import { decodeSnapshot, SnapshotBuffer, PROJECTOR_TIMEOUT_MS, type Roster, type Snapshot } from '@/lib/clash/protocol';
 import { PositionCorrection } from '@/lib/clash/prediction';
 import { openClashChannel, type ClashNet } from '@/lib/clash/net';
@@ -19,7 +19,7 @@ import s from './clash.module.css';
 const SEAT_KEY = 'hsc-clash-seat';
 type Seat = { roomId: string; playerId: string; token: string; team: Team; alias: string };
 type Me = { state: 'lobby' | 'active' | 'complete'; alias: string; team: Team; token: string; seconds: number; answered: number; correct: number; results: { score: Record<Team, number>; winner: Team | null } | null };
-type Question = { issueId: string; stem: string; options: string[]; picked: number | null; correctIndex: number | null; explanation: string | null; opened: number };
+type Question = { issueId: string; stem: string; options: string[]; picked: number | null; correctIndex: number | null; explanation: string | null; opened: number; closeAt: number; emergency: boolean; life: number };
 type Feed = { id: number; text: string; tone: Team | 'info' };
 const mmss = (sec: number) => `${Math.floor(Math.max(0, sec) / 60)}:${String(Math.max(0, Math.floor(sec % 60))).padStart(2, '0')}`;
 
@@ -34,7 +34,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   const [error, setError] = useState('');
   const [me, setMe] = useState<Me | null>(null);
   const [roster, setRoster] = useState<Roster>([]);
-  const [question, setQuestion] = useState<Question | null>(null);
+  const [question, renderQuestion] = useState<Question | null>(null);
   const [hud, setHud] = useState<{ t: number; score: Record<Team, number>; energy: number; streak: number; alive: boolean; respawnIn: number; near: 'ready' | 'locked' | null; lockIn: number; boss: number | null } | null>(null);
   const [feed, setFeed] = useState<Feed[]>([]);
   const [live, setLive] = useState(false);
@@ -54,7 +54,12 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   const fx = useRef<Fx[]>([]);
   const images = useRef<Record<string, HTMLImageElement>>({});
   const questionRef = useRef(question);
-  useEffect(() => { questionRef.current = question; }, [question]);
+  const opening = useRef(false);
+  const retryAt = useRef(0);
+  const setQuestion = useCallback((next: Question | null) => {
+    questionRef.current = next;
+    renderQuestion(next);
+  }, []);
   const seatRef = useRef(seat);
   useEffect(() => { seatRef.current = seat; }, [seat]);
 
@@ -132,32 +137,49 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
 
   const openQuestion = useCallback(async () => {
     const st = seatRef.current, snapshot = snaps.current.latest;
-    if (!st || !snapshot || questionRef.current || performance.now() - snapshot.at > PROJECTOR_TIMEOUT_MS) return;
+    const now = performance.now();
+    if (!st || !snapshot || opening.current || questionRef.current || now < retryAt.current || now - snapshot.at > PROJECTOR_TIMEOUT_MS) return;
     const latest = snapshot.g;
     const mine = latest.players[st.playerId];
-    if (!mine?.alive) return;
-    const pos = { ...mine, x: local.current.x, y: local.current.y };
-    const term = terminalNear(latest, pos);
-    if (!term || terminalLocked(latest, mine, term.id)) return;
-    net.current?.send('begin', { id: st.playerId, k: st.token, term: term.id });
-    sound.cue('lock');
+    if (!mine?.alive || latest.ended) return;
+    const emergency = mine.answering === EMERGENCY;
+    if (!emergency) {
+      const term = terminalNear(latest, { ...mine, x: local.current.x, y: local.current.y });
+      if (!term || (mine.answering && mine.answering !== term.id) || terminalLocked(latest, mine, term.id)) return;
+      net.current?.send('begin', { id: st.playerId, k: st.token, term: term.id });
+    }
+    opening.current = true;
     try {
       const q = await rpc<{ issue_id: string; stem: string; options: string[] }>(client, 'clash_question', { p_room: st.roomId, p_player: st.playerId });
-      setQuestion({ issueId: q.issue_id, stem: q.stem, options: q.options, picked: null, correctIndex: null, explanation: null, opened: performance.now() });
-    } catch { net.current?.send('cancel', { id: st.playerId, k: st.token }); }
-  }, [client, sound]);
+      const world = snaps.current.latest?.g, player = world?.players[st.playerId];
+      if (seatRef.current !== st || world?.ended || !player?.alive || player.respawnAt !== mine.respawnAt) return;
+      if (emergency && player.answering !== EMERGENCY) return;
+      sound.cue('lock');
+      setQuestion({ issueId: q.issue_id, stem: q.stem, options: q.options, picked: null, correctIndex: null, explanation: null,
+        opened: performance.now(), closeAt: 0, emergency, life: mine.respawnAt });
+    } catch {
+      retryAt.current = performance.now() + 1500;
+      if (seatRef.current === st && !emergency) net.current?.send('cancel', { id: st.playerId, k: st.token });
+    } finally { opening.current = false; }
+  }, [client, sound, setQuestion]);
 
   const answer = useCallback(async (i: number) => {
     const st = seatRef.current, q = questionRef.current;
     if (!st || !q || q.picked !== null || i >= q.options.length) return;
-    setQuestion({ ...q, picked: i });
+    const picked = { ...q, picked: i };
+    setQuestion(picked);
     try {
-      const r = await rpc<{ correct: boolean; correct_index: number; explanation: string | null }>(client, 'clash_answer', { p_room: st.roomId, p_player: st.playerId, p_issue: q.issueId, p_choice: i });
+      const r = await rpc<{ correct: boolean; correct_index: number; choice: number; explanation: string | null }>(client, 'clash_answer', { p_room: st.roomId, p_player: st.playerId, p_issue: q.issueId, p_choice: i });
+      if (questionRef.current !== picked || seatRef.current !== st) return;
       sound.cue(r.correct ? 'correct' : 'wrong');
-      setQuestion(cur => (cur && cur.issueId === q.issueId ? { ...cur, correctIndex: r.correct_index, explanation: r.explanation } : cur));
-      setTimeout(() => setQuestion(cur => (cur && cur.issueId === q.issueId ? null : cur)), r.correct ? 700 : 1800);
-    } catch { setQuestion(null); }
-  }, [client, sound]);
+      setQuestion({ ...picked, picked: r.choice, correctIndex: r.correct_index, explanation: r.explanation, closeAt: performance.now() + (r.correct ? 700 : 1800) });
+    } catch {
+      if (questionRef.current === picked) {
+        setQuestion(q);
+        pushFeed('Answer could not be confirmed. Try again.', 'info');
+      }
+    }
+  }, [client, sound, setQuestion, pushFeed]);
 
   // Controls
   useEffect(() => {
@@ -169,7 +191,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
       if (q) {
         const n = Number(e.key);
         if (n >= 1 && n <= 6) { e.preventDefault(); void answer(n - 1); }
-        if (k === 'escape' && q.picked === null && seatRef.current) { net.current?.send('cancel', { id: seatRef.current.playerId, k: seatRef.current.token }); setQuestion(null); }
+        if (k === 'escape' && !q.emergency && q.picked === null && seatRef.current) { net.current?.send('cancel', { id: seatRef.current.playerId, k: seatRef.current.token }); setQuestion(null); }
         return;
       }
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'shift'].includes(k)) e.preventDefault();
@@ -180,7 +202,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
     const blur = () => keys.current.clear();
     window.addEventListener('keydown', down); window.addEventListener('keyup', up); window.addEventListener('blur', blur);
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', blur); };
-  }, [seat, answer, openQuestion]);
+  }, [seat, answer, openQuestion, setQuestion]);
 
   // Game loop: predict own movement, send controls, render interpolated world.
   useEffect(() => {
@@ -224,7 +246,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
           const my = (k.has('s') || k.has('arrowdown') ? 1 : 0) - (k.has('w') || k.has('arrowup') ? 1 : 0);
           const len = Math.hypot(mx, my) || 1;
           const sprint = k.has('shift') && host.energy > 0 && (mx || my);
-          if (!stale && host.alive && !host.answering && !questionRef.current) {
+          if (!stale && host.alive && host.energy > 0 && !host.answering && !questionRef.current) {
             const sp = (sprint ? SPRINT_SPEED : SPEED) * dt;
             moveCircle(l, (mx / len) * sp, (my / len) * sp, PLAYER_R);
           }
@@ -251,18 +273,30 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
           setHud({ t: world.t, score: world.score, energy: host.energy, streak: host.streak, alive: host.alive, respawnIn: Math.max(0, host.respawnAt - world.t),
             near: term && !host.answering ? (terminalLocked(world, host, term.id) ? 'locked' : 'ready') : null,
             lockIn: term ? Math.max(0, (host.locks[term.id] ?? 0) - world.t) : 0, boss: world.boss ? world.boss.hp : null });
-          // The host didn't accept the terminal (too far / tagged): close the question.
           const q = questionRef.current;
-          if (!stale && q && q.picked === null && !host.answering && now - q.opened > 1500) { setQuestion(null); pushFeed(host.alive ? 'Too far from the terminal' : 'Tagged while answering', 'info'); }
+          if (q && (!host.alive || q.life !== host.respawnAt || world.ended)) {
+            setQuestion(null);
+          } else if (q?.closeAt && now >= q.closeAt) {
+            // Keep a successful emergency answer on screen until the projector applies its receipt.
+            if (!q.emergency || q.correctIndex !== q.picked || host.answering !== EMERGENCY) setQuestion(null);
+          } else if (!stale && q && q.picked === null) {
+            if (q.emergency && host.answering !== EMERGENCY) setQuestion(null);
+            if (!q.emergency && (!host.answering || host.answering === EMERGENCY) && now - q.opened > 1500) {
+              setQuestion(null);
+              pushFeed('Too far from the terminal', 'info');
+            }
+          } else if (!stale && !q && host.answering === EMERGENCY) {
+            void openQuestion();
+          }
         }
       }
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
     return () => { cancelAnimationFrame(raf); canvas.removeEventListener('mousemove', move); canvas.removeEventListener('mousedown', md); window.removeEventListener('mouseup', mu); };
-  }, [seat, live, pushFeed]);
+  }, [seat, live, pushFeed, openQuestion, setQuestion]);
 
-  const leave = () => { writeTab(SEAT_KEY, null); setSeat(null); setMe(null); setWaiting(false); setLive(false); setEnded(false); snaps.current = new SnapshotBuffer(); local.current.init = false; };
+  const leave = () => { setQuestion(null); retryAt.current = 0; writeTab(SEAT_KEY, null); setSeat(null); setMe(null); setWaiting(false); setLive(false); setEnded(false); snaps.current = new SnapshotBuffer(); local.current.init = false; };
 
   // ---- Screens ---------------------------------------------------------------
   if (session === 'checking') return <div className={s.stage}><p className={s.center}>Loading…</p></div>;
@@ -309,7 +343,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
           <div><kbd>Mouse</kbd> aim · <kbd>Click</kbd> / <kbd>Space</kbd> fire</div>
           <div><kbd>E</kbd> at a terminal to answer for energy · <kbd>1</kbd>–<kbd>4</kbd> to pick</div>
         </div>
-        <p className={s.small}>Capture reactors, tag the other team, and keep your energy up by answering questions.</p>
+        <p className={s.small}>Walking, sprinting and firing spend energy. At zero, answer a question where you stand. Terminals give a larger refuel.</p>
         <button className={s.link} onClick={leave}>Leave</button>
       </div></div>
     );
@@ -332,13 +366,14 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
             <div className={s.energy}>
               <span className={s.energyLabel}>Energy</span>
               <span className={s.track}><span className={hud.energy < 16 ? s.low : ''} style={{ width: `${(hud.energy / MAX_ENERGY) * 100}%` }} /></span>
-              <b>{Math.floor(hud.energy)}</b>
+              <b>{Math.ceil(hud.energy)}</b>
               {hud.streak >= 2 && <span className={s.streak}>Streak {hud.streak}</span>}
             </div>
             {!hud.alive && <p className={s.prompt}>Tagged! Back in {hud.respawnIn.toFixed(1)}s</p>}
             {hud.alive && hud.near === 'ready' && !question && <p className={`${s.prompt} ${s.promptGo}`}>Press <kbd>E</kbd> to answer for energy</p>}
             {hud.alive && hud.near === 'locked' && <p className={s.prompt}>Terminal locked for you · {hud.lockIn.toFixed(1)}s</p>}
-            {hud.alive && hud.energy < 8 && !hud.near && <p className={s.prompt}>Out of energy. Find a terminal</p>}
+            {hud.alive && hud.energy === 0 && !question && <p className={s.prompt} role="status">Out of energy · Loading question…</p>}
+            {hud.alive && hud.energy > 0 && hud.energy < 8 && !hud.near && <p className={s.prompt}>Low energy. Find a terminal</p>}
           </div>
           <ul className={s.feed}>{feed.map(f => <li key={f.id} className={f.tone === 'info' ? s.feedInfo : f.tone === 'blue' ? s.feedBlue : s.feedOrange}>{f.text}</li>)}</ul>
           <button className={s.sound} onClick={sound.toggle}>{sound.on ? 'Sound on' : 'Sound off'}</button>
@@ -346,8 +381,8 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
       )}
       {question && (
         <div className={s.qWrap}>
-          <div className={s.qCard} role="dialog" aria-label="Answer for energy">
-            <p className={s.qKicker}>Answer for energy · you&apos;re frozen until you answer (Esc to leave)</p>
+          <div className={s.qCard} role="dialog" aria-label={question.emergency ? 'Out of energy' : 'Answer for energy'}>
+            <p className={s.qKicker}>{question.emergency ? `Out of energy · Answer correctly for +${EMERGENCY_REWARD} energy` : 'Answer for energy · Esc to leave'}</p>
             <p className={s.qStem}>{question.stem}</p>
             <div className={s.tiles}>
               {question.options.map((o, i) => {
@@ -355,6 +390,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
                 return <button key={i} className={`${s.tile} ${st}`} disabled={question.picked !== null} onClick={() => void answer(i)}><kbd>{i + 1}</kbd>{o}</button>;
               })}
             </div>
+            {question.emergency && question.correctIndex !== null && <p role="status">{question.picked === question.correctIndex ? 'Correct. Refuelling…' : 'Another question is coming.'}</p>}
             {question.correctIndex !== null && question.picked !== question.correctIndex && question.explanation && <p className={s.explain}>{question.explanation}</p>}
           </div>
         </div>

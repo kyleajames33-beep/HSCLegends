@@ -16,6 +16,7 @@ export const BOSS_AT = 60; // boss arrives with this many seconds left
 export const PLAYER_R = 16;
 export const SPEED = 190;
 export const SPRINT_SPEED = 300;
+export const WALK_COST = 3; // energy per second at walking speed
 export const SPRINT_COST = 12; // energy per second
 export const SHOT_COST = 8;
 export const SHOT_COOLDOWN = 0.35;
@@ -24,6 +25,8 @@ export const SHOT_TTL = 0.8;
 export const MAX_ENERGY = 100;
 export const START_ENERGY = 30;
 export const RESPAWN_SECONDS = 4;
+export const EMERGENCY = 'emergency';
+export const EMERGENCY_REWARD = 15;
 export const ANSWER_REWARD = 25;
 export const STREAK_BONUS = 5; // per streak step, capped
 export const STREAK_CAP = 4;
@@ -170,33 +173,36 @@ export function terminalLocked(state: ClashState, p: Player, terminalId: string)
 /** Start answering at a terminal. The player stands still (and is exposed) until answered. */
 export function beginAnswer(state: ClashState, playerId: string, terminalId: string): boolean {
   const p = state.players[playerId], term = state.terminals.find(x => x.id === terminalId);
-  if (!p || !term || state.ended || !p.alive || p.answering || dist(p, term) > TERMINAL_RANGE || terminalLocked(state, p, terminalId)) return false;
+  if (!p || !term || state.ended || !p.alive || p.energy <= 0 || p.answering || dist(p, term) > TERMINAL_RANGE || terminalLocked(state, p, terminalId)) return false;
   p.answering = terminalId;
   return true;
 }
-/** Resolve an answer. Correct: energy (+streak bonus). Wrong: streak reset, terminal locked briefly. */
+/** A verified answer refuels a terminal user or an exhausted player. Only terminals build streaks. */
 export function answerResult(state: ClashState, playerId: string, correct: boolean, events: ClashEvent[] = []): number {
   const p = state.players[playerId];
-  if (!p || !p.answering) return 0;
-  const term = p.answering;
+  if (!p || !p.alive || state.ended) return 0;
+  const term = p.answering ?? (p.energy === 0 ? EMERGENCY : null);
+  if (!term || (term === EMERGENCY && p.energy !== 0)) return 0;
+  const emergency = term === EMERGENCY;
   p.answering = null;
   p.stats.answered++;
   let gained = 0;
   if (correct) {
-    gained = ANSWER_REWARD + STREAK_BONUS * Math.min(p.streak, STREAK_CAP);
-    p.streak++;
+    gained = emergency ? EMERGENCY_REWARD : ANSWER_REWARD + STREAK_BONUS * Math.min(p.streak, STREAK_CAP);
+    if (!emergency) p.streak++;
     p.stats.correct++;
     p.energy = Math.min(MAX_ENERGY, p.energy + gained);
   } else {
     p.streak = 0;
-    p.locks[term] = state.t + WRONG_LOCK_SECONDS;
+    if (emergency) p.answering = EMERGENCY;
+    else p.locks[term] = state.t + WRONG_LOCK_SECONDS;
   }
   events.push({ type: 'answer', player: p.id, correct, energy: gained });
   return gained;
 }
 export function cancelAnswer(state: ClashState, playerId: string) {
   const p = state.players[playerId];
-  if (p) p.answering = null;
+  if (p && p.answering !== EMERGENCY) p.answering = null;
 }
 
 // ---- Step ------------------------------------------------------------------
@@ -209,27 +215,43 @@ function fireIfAsked(state: ClashState, p: Player, inp: Input) {
     vx: Math.cos(p.aim) * SHOT_SPEED, vy: Math.sin(p.aim) * SHOT_SPEED, ttl: SHOT_TTL });
 }
 
+// Charge distance actually travelled. A blocked move or stationary heartbeat is free.
+function moveWithEnergy(p: Player, dx: number, dy: number, sprint: boolean) {
+  const distance = Math.hypot(dx, dy);
+  if (!distance || p.energy <= 0) return;
+  const costPerPixel = sprint ? SPRINT_COST / SPRINT_SPEED : WALK_COST / SPEED;
+  const scale = Math.min(1, p.energy / (distance * costPerPixel));
+  const parts = Math.ceil(distance * scale / PLAYER_R);
+  let travelled = 0;
+  for (let i = 0; i < parts; i++) {
+    const x = p.x, y = p.y;
+    moveCircle(p, dx * scale / parts, dy * scale / parts, PLAYER_R);
+    travelled += Math.hypot(p.x - x, p.y - y);
+  }
+  p.energy = Math.max(0, p.energy - travelled * costPerPixel);
+  if (p.energy < 1e-8) p.energy = 0; // Exact exhaustion despite floating-point distances.
+}
+
 /**
  * Multiplayer: a student's browser moves its own character and reports the
  * position. Accept it only as far as is plausible: no faster than sprinting,
  * no passing through walls, and fast movement costs sprint energy.
  */
-export function applyRemotePosition(state: ClashState, id: string, x: number, y: number, elapsed: number) {
+export function applyRemotePosition(state: ClashState, id: string, x: number, y: number, elapsed: number, sprint = false) {
   const p = state.players[id];
-  if (!p || !p.alive || p.answering || state.ended || !Number.isFinite(x) || !Number.isFinite(y)) return;
+  if (!p || !p.alive || p.energy <= 0 || p.answering || state.ended || !Number.isFinite(x) || !Number.isFinite(y)) return;
   let dx = x - p.x, dy = y - p.y;
-  const d = Math.hypot(dx, dy);
-  if (d < 0.01) return;
+  // Snapshots and student reports use whole pixels. An idle echo of a fractional
+  // stopping position must not move the operative or spend the next refuel.
+  if (Math.abs(dx) <= 0.500001 && Math.abs(dy) <= 0.500001) return;
   // A disconnected player cannot bank an unlimited move. Heartbeats normally arrive every 400ms.
   const dt = Math.min(elapsed, 1.5);
   if (!(dt > 0)) return;
+  const d = Math.hypot(dx, dy);
   const walkMax = SPEED * dt * 1.25 + 2;
-  const allowed = p.energy > 0 ? SPRINT_SPEED * dt * 1.25 + 2 : walkMax;
+  const allowed = SPRINT_SPEED * dt * 1.25 + 2;
   if (d > allowed) { dx *= allowed / d; dy *= allowed / d; }
-  if (Math.hypot(dx, dy) > walkMax) p.energy = Math.max(0, p.energy - SPRINT_COST * dt);
-  // A late report can span an entire wall. Sweep in increments smaller than the player's radius.
-  const parts = Math.ceil(Math.hypot(dx, dy) / PLAYER_R);
-  for (let i = 0; i < parts; i++) moveCircle(p, dx / parts, dy / parts, PLAYER_R);
+  moveWithEnergy(p, dx, dy, sprint || d > walkMax);
 }
 function knockOut(state: ClashState, victim: Player) {
   victim.alive = false;
@@ -254,21 +276,22 @@ export function step(state: ClashState, dt: number, inputs: Record<string, Input
       if (state.t >= p.respawnAt) {
         const at = spawnPoint(p.team, Math.floor(rand(state) * 4));
         p.x = at.x; p.y = at.y; p.alive = true;
+        if (p.energy === 0) p.answering = EMERGENCY;
       }
       continue;
     }
     const inp = inputs[p.id] ?? IDLE;
     p.aim = Number.isFinite(inp.aim) ? inp.aim : p.aim;
     if (p.answering) continue; // locked in place while answering
-    if (p.remote) { fireIfAsked(state, p, inp); continue; } // position comes from applyRemotePosition
-    let mx = clamp(inp.mx, -1, 1), my = clamp(inp.my, -1, 1);
-    const len = Math.hypot(mx, my);
-    if (len > 1) { mx /= len; my /= len; }
-    const sprinting = inp.sprint && len > 0 && p.energy > 0;
-    if (sprinting) p.energy = Math.max(0, p.energy - SPRINT_COST * dt);
-    const speed = sprinting ? SPRINT_SPEED : SPEED;
-    moveCircle(p, mx * speed * dt, my * speed * dt, PLAYER_R);
+    if (!p.remote) {
+      let mx = clamp(inp.mx, -1, 1), my = clamp(inp.my, -1, 1);
+      const len = Math.hypot(mx, my);
+      if (len > 1) { mx /= len; my /= len; }
+      const speed = inp.sprint ? SPRINT_SPEED : SPEED;
+      moveWithEnergy(p, mx * speed * dt, my * speed * dt, inp.sprint);
+    }
     fireIfAsked(state, p, inp);
+    if (p.energy === 0) { p.answering = EMERGENCY; continue; }
     // Energy orbs
     for (const o of state.orbs) if (o.id > 0 && dist(p, o) < PLAYER_R + 12) {
       p.energy = Math.min(MAX_ENERGY, p.energy + ORB_ENERGY); o.id = -1; events.push({ type: 'pickup', player: p.id });

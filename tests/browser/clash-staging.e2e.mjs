@@ -4,6 +4,7 @@
 // file for an account in classroom_v2_private.hosts:
 //   HSC_PLAYWRIGHT_MODULE=<playwright/index.mjs> HSC_HOST_SESSION=<file> node tests/browser/clash-staging.e2e.mjs
 import fs from 'node:fs';
+import { answerEmergency } from './clash-emergency.mjs';
 
 const { chromium } = await import(process.env.HSC_PLAYWRIGHT_MODULE ?? 'playwright');
 const BASE = process.env.HSC_BASE_URL ?? 'http://localhost:3000';
@@ -189,6 +190,39 @@ try {
   await shot(ada, 'student');
   await shot(host, 'projector');
 
+
+  // Drain Ben by walking away from terminals. Watch real question issues and host receipts.
+  await ben.bringToFront();
+  const issues = new Set();
+  ben.on('response', async response => {
+    if (response.url().endsWith('/rpc/clash_question') && response.ok()) issues.add((await response.json()).issue_id);
+  });
+  await host.evaluate(() => {
+    const g = window.__clashHost, p = Object.values(g.players).find(p => p.name === 'Ben');
+    if (g.terminals.some(t => Math.hypot(t.x - p.x, t.y - p.y) <= 56)) throw Error('Expected Ben to be away from terminals');
+    p.energy = 0.15;
+  });
+  const base = await hostPlayer('Ben');
+  await ben.keyboard.down('w');
+  const emergency = ben.getByRole('dialog', { name: 'Out of energy' });
+  await emergency.waitFor({ timeout: 10000 });
+  const empty = await hostPlayer('Ben');
+  await ben.keyboard.press('Escape');
+  await ben.waitForTimeout(450);
+  await ben.keyboard.up('w');
+  ok(empty.energy === 0 && empty.answering === 'emergency' && (await hostPlayer('Ben')).y === empty.y && await emergency.isVisible(),
+    'walking to zero away from terminals freezes the student and opens a compulsory question');
+  await answerEmergency(ben, false);
+  ok(await until(async () => (await hostPlayer('Ben')).answered === base.answered + 1), 'projector received the recorded wrong emergency answer');
+  ok((await hostPlayer('Ben')).energy === 0, 'wrong answer leaves Ben out of energy');
+  await answerEmergency(ben, true);
+  await emergency.waitFor({ state: 'detached', timeout: 12000 });
+  const fuel = await hostPlayer('Ben');
+  ok(fuel.energy === 15 && fuel.answered === base.answered + 2 && issues.size === 2 && fuel.y === empty.y,
+    `fresh emergency refuel: ${fuel.energy} energy, ${fuel.answered - base.answered} answers, ${issues.size} issues, ${(fuel.y - empty.y).toFixed(2)}px drift`);
+  await ben.keyboard.down('s'); await ben.waitForTimeout(400); await ben.keyboard.up('s');
+  ok(await until(async () => { const p = await hostPlayer('Ben'); return p.y > empty.y + 10 && p.energy < 15; }), 'walking resumes and spends the refuel');
+  await host.bringToFront();
 
   // End the match early from the projector side and check both screens.
   await host.evaluate(() => { const g = window.__clashHost; g.t = g.duration - 0.5; });

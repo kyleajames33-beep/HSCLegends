@@ -72,11 +72,15 @@ export function botInputs(state: ClashState, brain: BotBrain, events: ClashEvent
   for (const p of players) {
     if (!p.bot) continue;
     const mem = (brain[p.id] ??= { answerAt: 0, skill: 0.6 + rng() * 0.25, wander: null, path: [], goalKey: '', planAt: 0 });
-    if (!p.alive) { out[p.id] = IDLE; continue; }
+    if (!p.alive) { mem.answerAt = 0; out[p.id] = IDLE; continue; }
 
     // Answering at a terminal: wait a human-ish time, then resolve.
     if (p.answering) {
-      if (state.t >= mem.answerAt) answerResult(state, p.id, rng() < mem.skill, events);
+      if (!mem.answerAt) mem.answerAt = state.t + 2 + rng() * 3;
+      if (state.t >= mem.answerAt) {
+        answerResult(state, p.id, rng() < mem.skill, events);
+        mem.answerAt = 0;
+      }
       out[p.id] = IDLE;
       continue;
     }

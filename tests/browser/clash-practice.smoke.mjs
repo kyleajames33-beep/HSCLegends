@@ -1,6 +1,8 @@
 // Reactor Clash solo practice smoke test (no backend needed).
 // Plays briefly: walks, answers at a terminal, fires, fast-forwards to the boss.
 //   HSC_PLAYWRIGHT_MODULE=<playwright/index.mjs> [HSC_SCREENSHOT_DIR=dir] node tests/browser/clash-practice.smoke.mjs
+import { answerEmergency } from './clash-emergency.mjs';
+
 const { chromium } = await import(process.env.HSC_PLAYWRIGHT_MODULE ?? 'playwright');
 const BASE = process.env.HSC_BASE_URL ?? 'http://localhost:3000';
 const SHOTS = process.env.HSC_SCREENSHOT_DIR;
@@ -23,6 +25,21 @@ try {
   await page.keyboard.up('d');
   ok((await me()).x - a.x > 40, 'walks with the keyboard');
 
+  await page.evaluate(() => { window.__clash.players.me.energy = 0.15; });
+  await page.keyboard.down('s');
+  const emergency = page.getByRole('dialog', { name: 'Out of energy' });
+  await emergency.waitFor();
+  const empty = await me();
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(250);
+  await page.keyboard.up('s');
+  ok(await emergency.isVisible() && empty.energy === 0 && (await me()).y === empty.y, 'walking to zero opens the emergency in place and stops movement');
+  await answerEmergency(page, false);
+  await answerEmergency(page, true);
+  await emergency.waitFor({ state: 'detached' });
+  const refuelled = await me();
+  ok(refuelled.energy === 15 && refuelled.answered === 2 && refuelled.y === empty.y, 'a wrong emergency retries, a correct answer refuels in place');
+
   await page.evaluate(() => { const g = window.__clash, p = g.players.me, t = g.terminals[4]; p.x = t.x + 20; p.y = t.y; });
   await page.waitForTimeout(300);
   await page.keyboard.press('e');
@@ -31,7 +48,7 @@ try {
   await shot(page, 'answering');
   await page.keyboard.press('2');
   await page.getByRole('dialog').waitFor({ state: 'detached', timeout: 5000 });
-  ok((await me()).answered === 1, 'answer counted');
+  ok((await me()).answered === refuelled.answered + 1, 'terminal answer counted');
 
   await page.evaluate(() => { window.__clash.players.me.energy = 50; });
   await page.mouse.move(900, 300); await page.mouse.down(); await page.waitForTimeout(500); await page.mouse.up();

@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   addPlayer, answerResult, beginAnswer, cancelAnswer, createClash, step, terminalLocked, terminalNear,
-  BOSS_HP, MATCH_SECONDS, MAX_ENERGY,
+  BOSS_HP, EMERGENCY, EMERGENCY_REWARD, MATCH_SECONDS, MAX_ENERGY,
   type ClashEvent, type ClashState, type Input, type Team,
 } from '@/lib/clash/sim';
 import { draw, followCam, loadSprites, CLASH_SUBJECTS, TEAM_COLOR, type Cam, type ClashSubject, type Fx } from './render';
@@ -20,6 +20,7 @@ type Q = { stem: string; options: string[]; answer: number; explanation?: string
 const BANK: Q[] = PRACTICE_BANK.map(q => ({ stem: q.stem, options: q.options, answer: q.correct_index, explanation: q.teacher_draft?.explanation }));
 const ME = 'me';
 
+type PracticeQuestion = { q: Q; picked: number | null; emergency: boolean };
 type Hud = { t: number; score: Record<Team, number>; energy: number; streak: number; alive: boolean; respawnIn: number; near: 'ready' | 'locked' | null; lockIn: number; bossHp: number | null };
 type Feed = { id: number; text: string; tone: Team | 'info' };
 
@@ -37,14 +38,17 @@ export default function ClashGame() {
   const images = useRef<Record<string, HTMLImageElement>>({});
   const [phase, setPhase] = useState<'intro' | 'play' | 'end'>('intro');
   const [hud, setHud] = useState<Hud | null>(null);
-  const [question, setQuestion] = useState<{ q: Q; picked: number | null } | null>(null);
+  const [question, renderQuestion] = useState<PracticeQuestion | null>(null);
   const [feed, setFeed] = useState<Feed[]>([]);
   const [result, setResult] = useState<{ winner: Team | null; score: Record<Team, number>; me: ClashState['players'][string]['stats'] } | null>(null);
   const sound = useSound('clash', true);
   const [subject, setSubject] = useState<ClashSubject>('chemistry');
   const bossName = BOSSES[subject].name;
   const questionRef = useRef(question);
-  useEffect(() => { questionRef.current = question; }, [question]);
+  const setQuestion = useCallback((next: PracticeQuestion | null) => {
+    questionRef.current = next;
+    renderQuestion(next);
+  }, []);
 
   // Preload sprites (bosses / emblems are decorative; shapes are used until art loads).
   useEffect(() => {
@@ -67,25 +71,30 @@ export default function ClashGame() {
     if (process.env.NODE_ENV !== 'production') (window as unknown as { __clash?: ClashState }).__clash = g;
     setQuestion(null); setFeed([]); setResult(null); setPhase('play');
     sound.cue('start');
-  }, [sound]);
+  }, [sound, setQuestion]);
 
   const openQuestion = useCallback(() => {
     const g = game.current, me = g?.players[ME];
-    if (!g || !me || questionRef.current) return;
-    const term = terminalNear(g, me);
-    if (!term || !beginAnswer(g, ME, term.id)) return;
+    if (!g || g.ended || !me?.alive || questionRef.current) return;
+    const emergency = me.answering === EMERGENCY;
+    if (!emergency) {
+      const term = terminalNear(g, me);
+      if (!term || !beginAnswer(g, ME, term.id)) return;
+    }
     if (!bag.current.length) bag.current = shuffle(BANK);
-    setQuestion({ q: bag.current.pop()!, picked: null });
+    setQuestion({ q: bag.current.pop()!, picked: null, emergency });
     sound.cue('lock');
-  }, [sound]);
+  }, [sound, setQuestion]);
 
   const answer = useCallback((i: number) => {
     const g = game.current, cur = questionRef.current;
-    if (!g || !cur || cur.picked !== null) return;
+    if (!g || !cur || cur.picked !== null || i >= cur.q.options.length) return;
     const correct = i === cur.q.answer;
-    setQuestion({ ...cur, picked: i });
+    const picked = { ...cur, picked: i };
+    setQuestion(picked);
     sound.cue(correct ? 'correct' : 'wrong');
     setTimeout(() => {
+      if (game.current !== g || g.ended || questionRef.current !== picked) return;
       const events: ClashEvent[] = [];
       answerResult(g, ME, correct, events);
       const gained = events.find(e => e.type === 'answer');
@@ -95,7 +104,7 @@ export default function ClashGame() {
       }
       setQuestion(null);
     }, correct ? 650 : 1500);
-  }, [sound]);
+  }, [sound, setQuestion]);
 
   // Keyboard + mouse
   useEffect(() => {
@@ -105,7 +114,7 @@ export default function ClashGame() {
       if (questionRef.current) {
         const n = Number(e.key);
         if (n >= 1 && n <= 6) { e.preventDefault(); answer(n - 1); }
-        if (k === 'escape' && questionRef.current.picked === null && game.current) { cancelAnswer(game.current, ME); setQuestion(null); }
+        if (k === 'escape' && !questionRef.current.emergency && questionRef.current.picked === null && game.current) { cancelAnswer(game.current, ME); setQuestion(null); }
         return;
       }
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'shift'].includes(k)) e.preventDefault();
@@ -118,7 +127,7 @@ export default function ClashGame() {
     window.addEventListener('keyup', up);
     window.addEventListener('blur', blur);
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', blur); };
-  }, [phase, answer, openQuestion]);
+  }, [phase, answer, openQuestion, setQuestion]);
 
   // Main loop
   useEffect(() => {
@@ -176,6 +185,8 @@ export default function ClashGame() {
         }
       }
 
+      if ((!me.alive || g.ended) && questionRef.current) setQuestion(null);
+      if (me.answering === EMERGENCY && !questionRef.current) openQuestion();
       followCam(cam, canvas, me);
       draw(ctx, canvas, g, cam, fx.current, images.current, dt, now, ME);
 
@@ -200,7 +211,7 @@ export default function ClashGame() {
       canvas.removeEventListener('mousedown', md);
       window.removeEventListener('mouseup', mu);
     };
-  }, [phase, pushFeed, sound, bossName]);
+  }, [phase, pushFeed, sound, bossName, openQuestion, setQuestion]);
 
   if (phase === 'intro') {
     return (
@@ -208,7 +219,7 @@ export default function ClashGame() {
         <div className={s.panel}>
           <p className={s.kicker}>Practice · You + 3 bots vs 4 bots</p>
           <h1 className={s.title}>Reactor Clash</h1>
-          <p className={s.lead}>Capture and hold reactors. Tag the other team. Everything costs <b>energy</b>, and the only way to get energy is answering questions at terminals.</p>
+          <p className={s.lead}>Capture and hold reactors. Tag the other team. Walking, sprinting and firing spend <b>energy</b>. At zero, answer a question where you stand to move again.</p>
           <div className={s.controls}>
             <div><kbd>W A S D</kbd> move</div>
             <div><kbd>Mouse</kbd> aim · <kbd>Click</kbd> / <kbd>Space</kbd> fire (8 energy)</div>
@@ -251,13 +262,13 @@ export default function ClashGame() {
             <div className={s.energy}>
               <span className={s.energyLabel}>Energy</span>
               <span className={s.track}><span className={hud.energy < 16 ? s.low : ''} style={{ width: `${(hud.energy / MAX_ENERGY) * 100}%` }} /></span>
-              <b>{Math.floor(hud.energy)}</b>
+              <b>{Math.ceil(hud.energy)}</b>
               {hud.streak >= 2 && <span className={s.streak}>Streak {hud.streak}</span>}
             </div>
             {!hud.alive && <p className={s.prompt}>Tagged! Back in {hud.respawnIn.toFixed(1)}s</p>}
             {hud.alive && hud.near === 'ready' && !question && <p className={`${s.prompt} ${s.promptGo}`}>Press <kbd>E</kbd> to answer for energy</p>}
             {hud.alive && hud.near === 'locked' && <p className={s.prompt}>Terminal locked for you · {hud.lockIn.toFixed(1)}s</p>}
-            {hud.alive && hud.energy < 8 && !hud.near && <p className={s.prompt}>Out of energy. Find a terminal</p>}
+            {hud.alive && hud.energy > 0 && hud.energy < 8 && !hud.near && <p className={s.prompt}>Low energy. Find a terminal</p>}
           </div>
           <ul className={s.feed}>{feed.map(f => <li key={f.id} className={f.tone === 'info' ? s.feedInfo : f.tone === 'blue' ? s.feedBlue : s.feedOrange}>{f.text}</li>)}</ul>
           <button className={s.sound} onClick={sound.toggle}>{sound.on ? 'Sound on' : 'Sound off'}</button>
@@ -266,8 +277,8 @@ export default function ClashGame() {
 
       {question && (
         <div className={s.qWrap}>
-          <div className={s.qCard} role="dialog" aria-label="Answer for energy">
-            <p className={s.qKicker}>Answer for energy · you&apos;re frozen until you answer (Esc to leave)</p>
+          <div className={s.qCard} role="dialog" aria-label={question.emergency ? 'Out of energy' : 'Answer for energy'}>
+            <p className={s.qKicker}>{question.emergency ? `Out of energy · Answer correctly for +${EMERGENCY_REWARD} energy` : 'Answer for energy · Esc to leave'}</p>
             <p className={s.qStem}>{question.q.stem}</p>
             <div className={s.tiles}>
               {question.q.options.map((o, i) => {
@@ -275,6 +286,7 @@ export default function ClashGame() {
                 return <button key={i} className={`${s.tile} ${state}`} disabled={question.picked !== null} onClick={() => answer(i)}><kbd>{i + 1}</kbd>{o}</button>;
               })}
             </div>
+            {question.emergency && question.picked !== null && <p role="status">{question.picked === question.q.answer ? 'Correct. Refuelling…' : 'Another question is coming.'}</p>}
             {question.picked !== null && question.picked !== question.q.answer && question.q.explanation && <p className={s.explain}>{question.q.explanation}</p>}
           </div>
         </div>

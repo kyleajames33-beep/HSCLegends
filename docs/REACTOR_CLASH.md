@@ -1,6 +1,6 @@
 # Reactor Clash
 
-A real-time, top-down team game where **questions are energy**. Students move with WASD, aim with the mouse, and fire, sprint and capture reactors. Every action costs energy, and the only way to get energy is answering a question at a terminal. While answering, a student is frozen and exposed.
+A real-time, top-down team game where **questions are energy**. Students move with WASD, aim with the mouse, and fire, sprint and capture reactors. Walking, sprinting and shooting spend energy. At zero, an emergency question opens wherever the player is. Terminals give a larger refuel. While answering, a student is frozen and exposed.
 
 ## Routes
 
@@ -16,15 +16,16 @@ The multiplayer routes need the `CLASSROOM_STAGING_*` settings (see `docs/LIVE_G
 
 - **Capture:** stand on a reactor to capture it (contested if both teams are on it). Each one held scores 1 point a second.
 - **Tags:** tagging an enemy scores 2. They respawn at base after 4 seconds and lose 25% of their energy.
-- **Costs:** shots cost 8 energy and sprinting costs 12 per second. A correct answer gives +25, plus a streak bonus. A wrong answer locks that terminal for 6 seconds.
+- **Energy.** Walking costs 3 energy per second at full walking speed, sprinting costs 12, and shots cost 8 each. Movement costs scale with distance travelled. At zero, the player stops in place and gets an emergency question. A correct answer restores 15 energy. A wrong answer gives another question after a short pause.
+- **Terminals.** A correct terminal answer gives 25 energy plus a streak bonus. A wrong answer locks that terminal for 6 seconds. Emergency answers earn the flat refuel and do not build a terminal streak.
 - **Minions:** they drain reactors. Shooting one drops an energy orb.
 - **Boss:** Reactor Prime arrives for the final minute. The team that deals the most damage gets +60.
-- **Bot balance (bot-only matches):** about 7 questions per player per minute, roughly 28 per 4-minute match.
+- **Bot matches.** Three seeded four-minute matches with eight bots averaged 37–42 answers per bot, counting terminal and emergency questions.
 
 ## Architecture
 
 - **Simulation:** `lib/clash/sim.ts` holds the game rules as a pure, engine-free module. `lib/clash/bots.ts` has bots with grid pathfinding. `components/clash/render.ts` is a Canvas 2D renderer using `public/art/arena`.
-- **Host-authoritative:** the projector runs the simulation and sends compact snapshots (about 10 a second, under 4 KB each; `lib/clash/protocol.ts`). Students move their own character locally and report positions, which the host clamps to sprint speed, blocks at walls, and charges sprint energy for. Shots, tags, captures and energy are all decided by the host.
+- **Host-authoritative:** the projector runs the simulation and sends compact snapshots (about 10 a second, under 4 KB each; `lib/clash/protocol.ts`). Students move their own character locally and report positions, which the host clamps to sprint speed, blocks at walls, and charges movement energy for. Shots, tags, captures and energy are all decided by the host.
 - **Clock and movement.** A dedicated worker wakes the projector, which catches up in 1/30-second simulation steps. Each new student position is applied at most once, using the elapsed time since the previous accepted report. Snapshots acknowledge the report so newer local movement survives correction. The camera and operative ease into corrected positions, and respawns place the student directly at base. After 1.5 seconds without snapshots the student sees “Waiting for the projector…” and prediction pauses until updates resume.
 - **Remote movement.** Students keep five snapshots and render other players 150 ms behind the estimated host timeline. During a delivery gap, moving operatives can continue for up to 65 ms before holding position. Shots interpolate between confirmed positions of the same projectile. The projector targets 10 snapshots per second to stay within the existing transport budget for small matches.
 - **Server-owned:** `prototypes/classroom-v2/staging-clash.sql` covers rooms, team-balanced joins, and a per-player secret token that the host checks on every student message. Questions are issued by the server (no answer key sent, no re-rolling), answers are recorded once, and the host only grants energy for answers it reads back from the database (`clash_receipts`).
