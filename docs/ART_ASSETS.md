@@ -1,5 +1,11 @@
 # Art asset provenance
 
+## Reactor Clash arena readability · 18 November 2026
+
+The floor panels, spawn pads and local-player pointer are drawn in Canvas 2D. Their source is `components/clash/render.ts`. The renderer uses the existing wall art and cel-shaded idle, walking and answering sprites in `public/art/arena/`. All operative poses draw at 78 world pixels. The teacher's overview identifies players by name and team colour.
+
+The [before-and-after practice view](../art/review/arena/readability-comparison.webp) shows the same positions and camera at a 1366 × 768 laptop viewport.
+
 ## Game arena
 
 - Delivered asset: `public/art/arena-hero.webp` (1440 × 810, 131,404 bytes).

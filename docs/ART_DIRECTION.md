@@ -85,6 +85,12 @@ Subject accent colours (one accent per subject; keep art mostly dark or neutral)
 
 Check that text contrast meets WCAG AA (4.5:1) when the tokens are implemented.
 
+### Reactor Clash arena
+
+At projector scale, walkable ground should be the quietest part of the map. Use cool slate (`#93A7B2`) with fine seams (`#859BA7`) on broad panels. Give solid cover a charcoal footprint (`#30394D`). Each spawn gets one muted blue (`#7698B8`) or orange (`#B69B87`) pad with a saturated team stripe.
+
+Keep the cel-shaded navy operatives and their team accents. Use a dark-edged team ring under each character and reserve the white, ink-outlined **YOU** pointer for the player's own screen.
+
 ## Asset list, in priority order
 
 1. **Six subject bosses**, one per subject, as embodiments of that subject's forces: for example, a living plasma reactor for Chemistry, a mutating organism for Biology, an electromagnetic titan for Physics, a geometric or fractal construct for Maths. Poses: `idle`, `attack`, `hurt`, `defeated`. These replace the duplicated and low-resolution sprites in `public/bosses/*`.

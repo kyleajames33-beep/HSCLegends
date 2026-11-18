@@ -1,18 +1,19 @@
 // Canvas 2D renderer for Reactor Clash, shared by practice, student and projector views.
 // Uses the locked-style top-down art in /public/art/arena (all sprites face north),
 // falling back to simple shapes while images load.
-import { terminalLocked, BASES, BOSS_HP, COLS, MAX_ENERGY, PLAYER_R, REACTOR_R, ROWS, TILE, WALLS, WORLD_H, WORLD_W, type ClashState, type Team } from '@/lib/clash/sim';
+import { terminalLocked, BASES, BOSS_HP, MAX_ENERGY, PLAYER_R, REACTOR_R, TILE, WALLS, WORLD_H, WORLD_W, type ClashState, type Player, type Team } from '@/lib/clash/sim';
 
 export const TEAM_COLOR: Record<Team, string> = { blue: '#2f7bea', orange: '#ff6a2b' };
 export type Fx = { x: number; y: number; r: number; life: number; color: string; kind?: 'ring' | 'spark' | 'pulse' };
 export type Cam = { x: number; y: number; scale: number };
-type Sprites = Record<string, HTMLImageElement> & { __static?: unknown };
+type Sprites = Record<string, HTMLImageElement>;
+const staticLayers = new WeakMap<Sprites, { layer: HTMLCanvasElement; wallArtReady: boolean }>();
+const INK = '#0e1020';
+const OPERATIVE_SIZE = 78;
 
 const A = '/art/arena';
 const SPRITES: Record<string, string> = {
-  floor: `${A}/tiles/floor-plain.webp`, vent: `${A}/tiles/floor-vent.webp`, conduit: `${A}/tiles/floor-conduit.webp`,
   wall: `${A}/tiles/wall-straight.webp`, corner: `${A}/tiles/wall-corner.webp`,
-  baseBlue: `${A}/tiles/team-base-blue.webp`, baseOrange: `${A}/tiles/team-base-orange.webp`,
   termIdle: `${A}/objects/question-terminal-idle.webp`, termActive: `${A}/objects/question-terminal-active.webp`,
   reactorNeutral: `${A}/objects/reactor-neutral.webp`, reactorBlue: `${A}/objects/reactor-blue.webp`, reactorOrange: `${A}/objects/reactor-orange.webp`,
   orb: `${A}/objects/energy-pickup.webp`,
@@ -71,22 +72,46 @@ function drawRotated(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: nu
 }
 
 /** Floor, bases and walls never change: render them once into an offscreen layer. */
-function staticLayer(img: Sprites): HTMLCanvasElement | null {
-  const needed = ['floor', 'vent', 'conduit', 'wall', 'corner', 'baseBlue', 'baseOrange'];
-  if (!needed.every(k => ready(img[k]))) return null;
-  if (img.__static instanceof HTMLCanvasElement) return img.__static;
+function staticLayer(img: Sprites): HTMLCanvasElement {
+  const wallArtReady = ready(img.wall) && ready(img.corner);
+  const cached = staticLayers.get(img);
+  if (cached && cached.wallArtReady === wallArtReady) return cached.layer;
   const layer = document.createElement('canvas');
   layer.width = WORLD_W; layer.height = WORLD_H;
   const c = layer.getContext('2d')!;
-  for (let r = 0; r < ROWS; r++) for (let col = 0; col < COLS; col++) {
-    const h = (col * 73 + r * 151) % 23;
-    c.drawImage(h === 0 ? img.vent : h === 7 ? img.conduit : img.floor, col * TILE, r * TILE, TILE, TILE);
+  c.fillStyle = '#93a7b2';
+  c.fillRect(0, 0, WORLD_W, WORLD_H);
+  // Wide staggered plates leave a quiet field behind moving pieces.
+  const width = 4 * TILE, height = 2 * TILE;
+  c.strokeStyle = '#859ba7';
+  c.lineWidth = 1;
+  c.beginPath();
+  for (let y = 0, row = 0; y < WORLD_H; y += height, row++) {
+    c.moveTo(0, y); c.lineTo(WORLD_W, y);
+    for (let x = (row % 2) * width / 2; x < WORLD_W; x += width) {
+      c.moveTo(x, y); c.lineTo(x, y + height);
+    }
   }
-  for (const team of ['blue', 'orange'] as Team[]) {
+  c.stroke();
+  // One team-coloured launch pad per spawn, facing into the arena.
+  for (const team of ['blue', 'orange'] as const) {
     const b = BASES[team];
-    for (let y = b.y; y < b.y + b.h; y += TILE) for (let x = b.x; x < b.x + b.w; x += TILE) c.drawImage(team === 'blue' ? img.baseBlue : img.baseOrange, x, y, TILE, TILE);
+    const blue = team === 'blue';
+    c.save();
+    c.translate(blue ? b.x : b.x + b.w, b.y);
+    c.scale(blue ? 1 : -1, 1);
+    c.fillStyle = blue ? '#7698b8' : '#b69b87';
+    c.beginPath(); c.moveTo(0, 0); c.lineTo(b.w - 18, 0); c.lineTo(b.w, 18);
+    c.lineTo(b.w, b.h - 18); c.lineTo(b.w - 18, b.h); c.lineTo(0, b.h); c.closePath(); c.fill();
+    c.fillStyle = TEAM_COLOR[team]; c.fillRect(0, 0, 7, b.h);
+    c.strokeStyle = blue ? '#527697' : '#916f58'; c.lineWidth = 5;
+    c.beginPath(); c.moveTo(b.w - 28, b.h / 2 - 12); c.lineTo(b.w - 16, b.h / 2);
+    c.lineTo(b.w - 28, b.h / 2 + 12); c.stroke();
+    c.restore();
   }
   for (const w of WALLS) {
+    c.fillStyle = '#30394d'; c.fillRect(w.x, w.y, w.w, w.h);
+    if (!wallArtReady) continue;
     const horizontal = w.w > w.h;
     for (let y = w.y; y < w.y + w.h; y += TILE) for (let x = w.x; x < w.x + w.w; x += TILE) {
       const corner = (x === 0 || x === WORLD_W - TILE) && (y === 0 || y === WORLD_H - TILE);
@@ -98,7 +123,7 @@ function staticLayer(img: Sprites): HTMLCanvasElement | null {
       } else c.drawImage(img.wall, x, y, TILE, TILE);
     }
   }
-  img.__static = layer;
+  staticLayers.set(img, { layer, wallArtReady });
   return layer;
 }
 
@@ -111,19 +136,13 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, g
   ctx.imageSmoothingEnabled = true;
 
   // Floor, bases, walls
-  const layer = staticLayer(img as Sprites);
-  if (layer) ctx.drawImage(layer, 0, 0);
-  else {
-    ctx.fillStyle = '#12142b'; ctx.fillRect(0, 0, WORLD_W, WORLD_H);
-    for (const team of ['blue', 'orange'] as Team[]) { const b = BASES[team]; ctx.fillStyle = team === 'blue' ? 'rgba(47,123,234,.16)' : 'rgba(255,106,43,.16)'; ctx.fillRect(b.x, b.y, b.w, b.h); }
-    ctx.fillStyle = '#22264a'; for (const w of WALLS) ctx.fillRect(w.x, w.y, w.w, w.h);
-  }
+  ctx.drawImage(staticLayer(img), 0, 0);
 
   // Reactors: sprite by owner + capture progress ring
   for (const r of g.reactors) {
     ctx.fillStyle = r.owner ? (r.owner === 'blue' ? 'rgba(47,123,234,.14)' : 'rgba(255,106,43,.14)') : 'rgba(154,156,192,.06)';
     ctx.beginPath(); ctx.arc(r.x, r.y, REACTOR_R, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = 'rgba(154,156,192,.3)'; ctx.lineWidth = 2; ctx.setLineDash([6, 6]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(31,49,69,.55)'; ctx.lineWidth = 2; ctx.setLineDash([6, 6]); ctx.stroke(); ctx.setLineDash([]);
     if (r.control !== 0) {
       ctx.strokeStyle = r.control < 0 ? TEAM_COLOR.blue : TEAM_COLOR.orange;
       ctx.lineWidth = 6;
@@ -133,8 +152,9 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, g
     const pulse = r.owner ? 1 + 0.04 * Math.sin(now / 250) : 1;
     if (ready(sprite)) { const sz = 96 * pulse; ctx.drawImage(sprite, r.x - sz / 2, r.y - sz / 2, sz, sz); }
     else { ctx.fillStyle = r.owner ? TEAM_COLOR[r.owner] : '#9a9cc0'; ctx.beginPath(); ctx.arc(r.x, r.y, 20, 0, Math.PI * 2); ctx.fill(); }
-    ctx.fillStyle = '#f2f2fa'; ctx.font = '800 12px system-ui'; ctx.textAlign = 'center';
-    ctx.fillText(r.id.toUpperCase(), r.x, r.y + REACTOR_R + 16);
+    ctx.fillStyle = INK; ctx.font = '800 13px system-ui'; ctx.textAlign = 'center';
+    const labelY = r.y + REACTOR_R + 16;
+    ctx.fillText(r.id.toUpperCase(), r.x, labelY > WORLD_H - TILE ? r.y - REACTOR_R - 5 : labelY);
   }
 
   // Terminals
@@ -149,7 +169,7 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, g
     if (ready(sprite)) ctx.drawImage(sprite, term.x - 36, term.y - 36, 72, 72);
     else { ctx.fillStyle = locked ? '#3a3d5c' : '#6e5bff'; ctx.fillRect(term.x - 17, term.y - 17, 34, 34); }
     ctx.restore();
-    if (near) { ctx.fillStyle = '#ffffff'; ctx.font = '900 13px system-ui'; ctx.textAlign = 'center'; ctx.fillText('E', term.x, term.y - 30); }
+    if (near) { ctx.fillStyle = '#ffffff'; ctx.font = '900 13px system-ui'; ctx.textAlign = 'center'; ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.strokeText('E', term.x, term.y - 30); ctx.fillText('E', term.x, term.y - 30); }
   }
 
   // Energy orbs
@@ -193,32 +213,6 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, g
     ctx.restore();
   }
 
-  // Players
-  for (const p of Object.values(g.players)) {
-    if (!p.alive) continue;
-    const mine = p.id === meId;
-    // team ring under the operative (white for you)
-    ctx.strokeStyle = mine ? '#ffffff' : TEAM_COLOR[p.team]; ctx.lineWidth = mine ? 3 : 2;
-    ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R + 6, 0, Math.PI * 2); ctx.stroke();
-    // energy arc
-    ctx.strokeStyle = '#f2b530'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R + 10, -Math.PI / 2, -Math.PI / 2 + (p.energy / MAX_ENERGY) * Math.PI * 2); ctx.stroke();
-    const m = track(p.id, p.x, p.y, dt);
-    const term = p.answering ? g.terminals.find(t => t.id === p.answering) : undefined;
-    let sprite = img[p.team], facing = p.aim + Math.PI / 2;
-    if (term) { sprite = img[`${p.team}Answer`] ?? sprite; facing = Math.atan2(term.y - p.y, term.x - p.x) + Math.PI / 2; }
-    else if (m.moving > 0) { const frame = 1 + (Math.floor(m.stride / 14) % 4); sprite = img[`${p.team}Walk${frame}`] ?? sprite; }
-    if (!ready(sprite)) sprite = img[p.team];
-    if (ready(sprite)) drawRotated(ctx, sprite, p.x, p.y, 54, facing);
-    else { ctx.fillStyle = TEAM_COLOR[p.team]; ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R, 0, Math.PI * 2); ctx.fill(); }
-    ctx.fillStyle = mine ? '#ffffff' : '#c9cbe6'; ctx.font = `${mine ? 800 : 600} 12px system-ui`; ctx.textAlign = 'center';
-    ctx.fillText(p.answering ? `${p.name} · answering` : p.name, p.x, p.y - PLAYER_R - 16);
-    if (p.answering) {
-      ctx.strokeStyle = '#6e5bff'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
-      ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R + 15, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
-    }
-  }
-
   // Effects
   for (const e of effects) {
     e.life -= dt * 1.6; e.r += dt * 120;
@@ -228,5 +222,53 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, g
     else { ctx.strokeStyle = e.color; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.stroke(); }
   }
   ctx.globalAlpha = 1;
+
+  function drawPlayer(p: Player, mine: boolean) {
+    if (!p.alive) return;
+    const ring = PLAYER_R + 10;
+    ctx.beginPath(); ctx.arc(p.x, p.y, ring, 0, Math.PI * 2);
+    ctx.strokeStyle = INK; ctx.lineWidth = 6; ctx.stroke();
+    ctx.strokeStyle = TEAM_COLOR[p.team]; ctx.lineWidth = 3; ctx.stroke();
+    if (p.energy > 0) {
+      ctx.beginPath(); ctx.arc(p.x, p.y, ring + 5, -Math.PI / 2, -Math.PI / 2 + (p.energy / MAX_ENERGY) * Math.PI * 2);
+      ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.stroke();
+      ctx.strokeStyle = '#f2b530'; ctx.lineWidth = 2; ctx.stroke();
+    }
+    const m = track(p.id, p.x, p.y, dt);
+    const term = p.answering ? g.terminals.find(t => t.id === p.answering) : undefined;
+    let sprite = img[p.team], facing = p.aim + Math.PI / 2;
+    if (p.answering) {
+      sprite = img[`${p.team}Answer`] ?? sprite;
+      if (term) facing = Math.atan2(term.y - p.y, term.x - p.x) + Math.PI / 2;
+    } else if (m.moving > 0) { const frame = 1 + (Math.floor(m.stride / 14) % 4); sprite = img[`${p.team}Walk${frame}`] ?? sprite; }
+    if (!ready(sprite)) sprite = img[p.team];
+    if (ready(sprite)) drawRotated(ctx, sprite, p.x, p.y, OPERATIVE_SIZE, facing);
+    else { ctx.fillStyle = TEAM_COLOR[p.team]; ctx.beginPath(); ctx.arc(p.x, p.y, PLAYER_R, 0, Math.PI * 2); ctx.fill(); }
+    if (p.answering) {
+      ctx.strokeStyle = '#6e5bff'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.arc(p.x, p.y, ring + 9, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    ctx.textAlign = 'center';
+    if (mine) {
+      const label = p.answering ? 'YOU · ANSWERING' : 'YOU';
+      ctx.font = '900 13px system-ui';
+      const half = Math.ceil(ctx.measureText(label).width / 2) + 8;
+      // At the north edge, put the pointer below the player, clear of the scoreboard.
+      const side = p.y < 3 * TILE ? 1 : -1;
+      const edge = p.y + side * (ring + 16), back = edge + side * 17;
+      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = INK; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(p.x - half, back); ctx.lineTo(p.x + half, back);
+      ctx.lineTo(p.x + half, edge); ctx.lineTo(p.x + 6, edge); ctx.lineTo(p.x, edge - side * 8);
+      ctx.lineTo(p.x - 6, edge); ctx.lineTo(p.x - half, edge); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = INK; ctx.fillText(label, p.x, Math.max(edge, back) - 4);
+    } else {
+      const name = p.answering ? `${p.name} · answering` : p.name;
+      ctx.font = '700 15px system-ui'; ctx.lineJoin = 'round';
+      ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.strokeText(name, p.x, p.y - ring - 12);
+      ctx.fillStyle = '#ffffff'; ctx.fillText(name, p.x, p.y - ring - 12);
+    }
+  }
+  for (const p of Object.values(g.players)) if (p.id !== meId) drawPlayer(p, false);
+  if (me) drawPlayer(me, true);
   for (let i = effects.length - 1; i >= 0; i--) if (effects[i].life <= 0) effects.splice(i, 1);
 }
