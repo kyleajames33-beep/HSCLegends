@@ -39,3 +39,23 @@ PLAYWRIGHT_BROWSERS_PATH=/tmp/hsc-browser-cache HSC_PLAYWRIGHT_MODULE=/tmp/hsc-b
 ```
 
 This test installs the worker, disables network access, visits an account route and verifies that only the public offline landing appears. It then opens the cached standalone Lab Rush and answers a question. It does not claim offline account or classroom support. The `/arena` smoke exercises simulated solo rivals, not real multiplayer.
+
+## Reactor Clash multiplayer smoke
+
+Run the Next.js dev server against a loopback fixture configuration. The test intercepts Supabase requests and Realtime messages in Chromium, so no backend or credentials are required.
+
+```sh
+CLASSROOM_STAGING_ENABLED=true \
+CLASSROOM_STAGING_PROJECT_REF=local \
+CLASSROOM_STAGING_URL=http://127.0.0.1:54321 \
+CLASSROOM_STAGING_PUBLIC_KEY=sb_publishable_ClashSmokeFixture \
+npm run dev -- --hostname 127.0.0.1
+```
+
+Run the smoke in a second terminal using Playwright 1.48.2 or newer and its matching Chromium. For Playwright 1.48.2, install Chromium without `--only-shell`.
+
+```sh
+PLAYWRIGHT_BROWSERS_PATH=/tmp/hsc-browser-cache HSC_PLAYWRIGHT_MODULE=/tmp/hsc-browser/node_modules/playwright/index.mjs node tests/browser/clash-multiplayer.smoke.mjs
+```
+
+The smoke covers a projector and two students, theme and sound changes, a late lobby response after start, keyboard movement, and recovery after dropped snapshots. Hosted Realtime delivery and background-tab throttling are covered separately by `clash-staging.e2e.mjs`.

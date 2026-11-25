@@ -4,7 +4,7 @@
 // reported to the host; everything else is drawn from host snapshots.
 // Questions come from the database, which records every answer.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, liveClient, readTab, rpc, useSession, writeTab } from '@/lib/live-game';
 import { moveCircle, terminalLocked, terminalNear, BOSS_HP, EMERGENCY, EMERGENCY_REWARD, MAX_ENERGY, PLAYER_R, SPEED, SPRINT_SPEED, type Team } from '@/lib/clash/sim';
@@ -27,6 +27,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   const client = useMemo(() => liveClient(config, 'player'), [config]);
   const session = useSession(client);
   const sound = useSound('clash-player', true);
+  const { cue } = sound;
   const [seat, setSeat] = useState<Seat | null>(null);
   const [code, setCode] = useState('');
   const [alias, setAlias] = useState('');
@@ -74,6 +75,11 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
     setFeed(f => [{ id, text, tone }, ...f].slice(0, 5));
     setTimeout(() => setFeed(f => f.filter(x => x.id !== id)), 4000);
   }, []);
+
+  const announceBoss = useEffectEvent(() => {
+    pushFeed(`${bossName} has arrived! Most damage wins +60`, 'info');
+    cue('fanfare');
+  });
 
   async function join() {
     setBusy(true); setError('');
@@ -123,17 +129,17 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
           if (e.type === 'tag') {
             const v = g.players[e.victim], by = g.players[e.by];
             if (v) fx.current.push({ x: v.x, y: v.y, r: 8, life: 1, color: TEAM_COLOR[by?.team ?? 'blue'], kind: 'spark' });
-            if (e.by === mine) { pushFeed(`You tagged ${v?.name ?? 'someone'}`, by?.team ?? 'info'); sound.cue('correct'); }
-            else if (e.victim === mine) { pushFeed(`${by?.name ?? 'Someone'} tagged you`, by?.team ?? 'info'); sound.cue('wrong'); }
+            if (e.by === mine) { pushFeed(`You tagged ${v?.name ?? 'someone'}`, by?.team ?? 'info'); cue('correct'); }
+            else if (e.victim === mine) { pushFeed(`${by?.name ?? 'Someone'} tagged you`, by?.team ?? 'info'); cue('wrong'); }
           } else if (e.type === 'capture') { const rc = g.reactors.find(x => x.id === e.reactor); if (rc) fx.current.push({ x: rc.x, y: rc.y, r: 30, life: 1, color: TEAM_COLOR[e.team], kind: 'pulse' }); pushFeed(`${e.team === 'blue' ? 'Blue' : 'Orange'} captured the ${e.reactor} reactor`, e.team); }
-          else if (e.type === 'boss-spawn') { pushFeed(`${bossName} has arrived! Most damage wins +60`, 'info'); sound.cue('fanfare'); }
-          else if (e.type === 'end') sound.cue('fanfare');
+          else if (e.type === 'boss-spawn') announceBoss();
+          else if (e.type === 'end') cue('fanfare');
         }
       }
     });
     net.current = n;
     return () => { n.close(); net.current = null; };
-  }, [client, seat, session, pushFeed, sound, bossName]);
+  }, [client, seat, session, pushFeed, cue]);
 
   const openQuestion = useCallback(async () => {
     const st = seatRef.current, snapshot = snaps.current.latest;
@@ -154,14 +160,14 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
       const world = snaps.current.latest?.g, player = world?.players[st.playerId];
       if (seatRef.current !== st || world?.ended || !player?.alive || player.respawnAt !== mine.respawnAt) return;
       if (emergency && player.answering !== EMERGENCY) return;
-      sound.cue('lock');
+      cue('lock');
       setQuestion({ issueId: q.issue_id, stem: q.stem, options: q.options, picked: null, correctIndex: null, explanation: null,
         opened: performance.now(), closeAt: 0, emergency, life: mine.respawnAt });
     } catch {
       retryAt.current = performance.now() + 1500;
       if (seatRef.current === st && !emergency) net.current?.send('cancel', { id: st.playerId, k: st.token });
     } finally { opening.current = false; }
-  }, [client, sound, setQuestion]);
+  }, [client, cue, setQuestion]);
 
   const answer = useCallback(async (i: number) => {
     const st = seatRef.current, q = questionRef.current;
@@ -171,7 +177,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
     try {
       const r = await rpc<{ correct: boolean; correct_index: number; choice: number; explanation: string | null }>(client, 'clash_answer', { p_room: st.roomId, p_player: st.playerId, p_issue: q.issueId, p_choice: i });
       if (questionRef.current !== picked || seatRef.current !== st) return;
-      sound.cue(r.correct ? 'correct' : 'wrong');
+      cue(r.correct ? 'correct' : 'wrong');
       setQuestion({ ...picked, picked: r.choice, correctIndex: r.correct_index, explanation: r.explanation, closeAt: performance.now() + (r.correct ? 700 : 1800) });
     } catch {
       if (questionRef.current === picked) {
@@ -179,7 +185,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
         pushFeed('Answer could not be confirmed. Try again.', 'info');
       }
     }
-  }, [client, sound, setQuestion, pushFeed]);
+  }, [client, cue, setQuestion, pushFeed]);
 
   // Controls
   useEffect(() => {

@@ -21,6 +21,7 @@ import s from './clash.module.css';
 const ROOM_KEY = 'hsc-clash-host-room';
 type HostPlayer = { id: string; alias: string; team: Team; token: string };
 type HostView = { room_id: string; short_code: string; state: 'lobby' | 'active' | 'complete'; seconds: number; pool_size: number; results: Results | null; players: HostPlayer[] };
+const PHASE_ORDER = { lobby: 0, active: 1, complete: 2 };
 type SetSummary = { id: string; name: string; count: number; subject: string | null };
 const SUBJECT_KEY = 'hsc-clash-host-subject';
 type Results = { score: Record<Team, number>; winner: Team | null; players: { name: string; team: Team; bot: boolean; tags: number; captures: number; correct: number; answered: number; bossDamage: number }[] };
@@ -42,6 +43,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   const client = useMemo(() => liveClient(config, 'host'), [config]);
   const session = useSession(client);
   const sound = useSound('clash-host', true);
+  const { cue } = sound;
   const [roomId, setRoomId] = useState<string | null>(null);
   const [view, setView] = useState<HostView | null>(null);
   const [error, setError] = useState('');
@@ -91,16 +93,23 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   useEffect(() => {
     if (session === 'signed-out' || !roomId) return;
     let alive = true;
+    let requested = 0, applied = 0;
     const load = async () => {
+      const request = ++requested;
       try {
         const v = await rpc<HostView>(client, 'clash_host_view', { p_room: roomId });
-        if (!alive) return;
-        setView(v);
+        if (!alive || request < applied) return;
+        applied = request;
+        // A lobby read can finish after the start RPC has confirmed an active match.
+        setView(current => current?.room_id === v.room_id && PHASE_ORDER[current.state] > PHASE_ORDER[v.state] ? current : v);
         for (const p of v.players) tokens.current.set(p.id, p.token);
         const g = sim.current;
         if (g && !g.ended) for (const p of v.players) if (!g.players[p.id]) { addPlayer(g, p.id, p.alias, p.team).remote = true; pushFeed(`${p.alias} joined ${p.team === 'blue' ? 'Blue' : 'Orange'}`, p.team); }
       } catch (e) {
-        if (alive && e instanceof LiveError && (e.code === 'FORBIDDEN' || e.code === 'ROOM_UNAVAILABLE')) { writeTab(ROOM_KEY, null); setRoomId(null); setView(null); }
+        if (alive && request >= applied && e instanceof LiveError && (e.code === 'FORBIDDEN' || e.code === 'ROOM_UNAVAILABLE')) {
+          applied = request;
+          writeTab(ROOM_KEY, null); setRoomId(null); setView(null);
+        }
       }
     };
     void load();
@@ -148,9 +157,9 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
       players: Object.values(g.players).map(p => ({ name: p.name, team: p.team, bot: p.bot, ...p.stats })),
     };
     setResults(res);
-    sound.cue('fanfare');
+    cue('fanfare');
     if (roomId) await rpc(client, 'clash_finish', { p_room: roomId, p_results: res }).catch(() => setError('The results could not be saved, but the game is over.'));
-  }, [client, roomId, sound]);
+  }, [client, roomId, cue]);
 
   // Run the match once the room is active.
   useEffect(() => {
@@ -221,8 +230,8 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
       pending.current.push(...events);
       for (const e of events) {
         if (e.type === 'tag') { const v = g.players[e.victim], by = g.players[e.by]; fx.current.push({ x: v.x, y: v.y, r: 8, life: 1, color: TEAM_COLOR[by?.team ?? 'blue'], kind: 'spark' }); pushFeed(`${by?.name ?? '?'} tagged ${v?.name ?? '?'}`, by?.team ?? 'info'); }
-        else if (e.type === 'capture') { const rc = g.reactors.find(x => x.id === e.reactor); if (rc) fx.current.push({ x: rc.x, y: rc.y, r: 30, life: 1, color: TEAM_COLOR[e.team], kind: 'pulse' }); pushFeed(`${e.team === 'blue' ? 'Blue' : 'Orange'} captured the ${e.reactor} reactor`, e.team); sound.cue('start'); }
-        else if (e.type === 'boss-spawn') { pushFeed(`${bossName} has arrived! Most damage wins +60`, 'info'); sound.cue('fanfare'); }
+        else if (e.type === 'capture') { const rc = g.reactors.find(x => x.id === e.reactor); if (rc) fx.current.push({ x: rc.x, y: rc.y, r: 30, life: 1, color: TEAM_COLOR[e.team], kind: 'pulse' }); pushFeed(`${e.team === 'blue' ? 'Blue' : 'Orange'} captured the ${e.reactor} reactor`, e.team); cue('start'); }
+        else if (e.type === 'boss-spawn') { pushFeed(`${bossName} has arrived! Most damage wins +60`, 'info'); cue('fanfare'); }
         else if (e.type === 'boss-down') pushFeed(e.team ? `${e.team === 'blue' ? 'Blue' : 'Orange'} wins the boss bonus` : 'Boss bonus tied', e.team ?? 'info');
       }
       if ((now >= nextSnapshotAt && now - steppedAt < stepMs) || g.ended) {
@@ -280,7 +289,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
       document.removeEventListener('visibilitychange', checkClock);
       cancelAnimationFrame(raf);
     };
-  }, [view?.state, roomId, client, fillBots, finish, pushFeed, sound, bossName, subject]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [view?.state, roomId, client, fillBots, finish, pushFeed, cue, bossName, subject]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function signIn() {
     setBusy(true); setError('');
@@ -308,8 +317,12 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   async function startMatch() {
     if (!roomId) return;
     setBusy(true);
-    try { await rpc(client, 'clash_start', { p_room: roomId }); setView(v => (v ? { ...v, state: 'active' } : v)); sound.cue('start'); }
-    catch { setError('Could not start. Try again.'); }
+    try {
+      if (await rpc<boolean>(client, 'clash_start', { p_room: roomId })) {
+        setView(v => v?.room_id === roomId && v.state === 'lobby' ? { ...v, state: 'active' } : v);
+        cue('start');
+      }
+    } catch { setError('Could not start. Try again.'); }
     setBusy(false);
   }
 
