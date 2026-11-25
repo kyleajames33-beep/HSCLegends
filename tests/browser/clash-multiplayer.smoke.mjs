@@ -175,6 +175,84 @@ async function startRelayFixture() {
   return fixture;
 }
 
+async function exerciseFullClass(host, studentPage) {
+  const expiresAt = Date.now() + 3600_000;
+  const students = Array.from({ length: 28 }, (_, i) => {
+    const id = `load-student-${i}`;
+    const accessToken = `fixture.${encode({ sub: id })}.signature`;
+    fixtureTokens.set(accessToken, { name: id, role: 'player', expiresAt });
+    roster.push({ id, alias: `Load student ${i + 1}`, token: id, team: i % 2 ? 'blue' : 'orange' });
+    return { id, accessToken };
+  });
+  await host.waitForFunction(() => Object.keys(window.__clashHost.players).length === 30);
+  await studentPage.bringToFront();
+  const previous = await host.evaluate(() => window.__clashHost.t);
+  const wallStart = performance.now();
+  const result = await studentPage.evaluate(async ({ relayUrl, room, students }) => {
+    const peers = students.map(({ id, accessToken }) => {
+      const socket = new WebSocket(relayUrl);
+      const ready = Promise.withResolvers();
+      const peer = { socket, ready: ready.promise, state: null, snaps: 0, controlsReceived: 0, controlsSent: 0 };
+      socket.addEventListener('open', () => socket.send(JSON.stringify({ type: 'join', roomId: room, playerId: id, accessToken })));
+      socket.addEventListener('error', () => ready.reject(new Error('Load connection failed')));
+      socket.addEventListener('message', message => {
+        const { event, payload } = JSON.parse(message.data);
+        if (event === 'in') peer.controlsReceived++;
+        if (event !== 'snap') return;
+        peer.state = payload.p.find(player => player[0] === id);
+        if (!peer.state) return;
+        peer.snaps++;
+        ready.resolve();
+      });
+      return peer;
+    });
+
+    try {
+      let readyTimeout;
+      try {
+        await Promise.race([
+          Promise.all(peers.map(peer => peer.ready)),
+          new Promise((_, reject) => { readyTimeout = setTimeout(() => reject(new Error('Load clients did not receive snapshots')), 8000); }),
+        ]);
+      } finally {
+        clearTimeout(readyTimeout);
+      }
+      const started = performance.now();
+      const snapshotCounts = peers.map(peer => peer.snaps);
+      const interval = setInterval(() => {
+        for (const peer of peers) {
+          const [id, x, y, , , , , , , life] = peer.state;
+          const seq = ++peer.controlsSent;
+          peer.socket.send(JSON.stringify({ type: 'event', event: 'in', payload: { id, x, y: y + (seq % 2 ? 5 : -5), seq, life } }));
+        }
+      }, 84);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 6000));
+      } finally {
+        clearInterval(interval);
+      }
+      return {
+        seconds: (performance.now() - started) / 1000,
+        minSnapshots: Math.min(...peers.map((peer, i) => peer.snaps - snapshotCounts[i])),
+        controlsSent: peers.reduce((n, peer) => n + peer.controlsSent, 0),
+        controlsReceived: peers.reduce((n, peer) => n + peer.controlsReceived, 0),
+      };
+    } finally {
+      for (const peer of peers) peer.socket.close();
+    }
+  }, { relayUrl: relayUrl.href, room, students });
+  const projector = await host.evaluate(() => ({
+    time: window.__clashHost.t,
+    senders: Object.values(window.__clashHost.players).filter(player => player.id.startsWith('load-student-') && player.reportSeq > 0).length,
+  }));
+  assert.equal(projector.senders, 28, 'The projector accepted reports from every added student');
+  const elapsed = (performance.now() - wallStart) / 1000;
+  assert.ok(Math.abs(projector.time - previous - elapsed) <= 0.5, 'The projector clock kept pace with the load');
+  assert.ok(result.minSnapshots >= 50 && result.controlsSent >= 28 * 60, 'The clients sustained game traffic');
+  assert.equal(result.controlsReceived, 0, 'Student sockets received no controls');
+  console.log(`30-player browser match: ${result.controlsSent} simulated controls and at least ${result.minSnapshots} snapshots per load client in ${result.seconds.toFixed(1)}s`);
+}
+
 try {
   if (relayUrl) relayFixture = await startRelayFixture();
   const host = await openPage('Teacher', 'host', '/clash/host');
@@ -263,10 +341,10 @@ try {
 
   const terminal = await host.evaluate(() => {
     const g = window.__clashHost, terminal = g.terminals[0];
-    Object.assign(g.players.Ada, { x: terminal.x + 14, y: terminal.y + 14, energy: 35 });
+    // Give the fixture a new life so the client resets its position from the projector.
+    Object.assign(g.players.Ada, { x: terminal.x + 14, y: terminal.y + 14, energy: 35, respawnAt: g.t });
     return terminal;
   });
-  await ada.evaluate(terminal => Object.assign(window.__clashLocal, { x: terminal.x + 14, y: terminal.y + 14 }), terminal);
   await ada.getByText('Press E to answer for energy').waitFor();
 
   dropTerminalBegin = true;
@@ -308,6 +386,7 @@ try {
   await emergency.waitFor({ state: 'detached' });
   assert.equal(await host.evaluate(() => window.__clashHost.players.Ben.stats.answered), 2);
   assert.equal(await host.evaluate(() => window.__clashHost.players.Ben.energy), 15);
+  if (relayFixture) await exerciseFullClass(host, ben);
   assert.deepEqual(pageErrors, []);
   console.log(`Reactor Clash multiplayer smoke passed using ${relayUrl ? 'the WebSocket relay' : 'Realtime broadcast'}.`);
 } finally {

@@ -24,7 +24,7 @@ npm --prefix prototypes/clash-relay test
 
 The test suite opens actual loopback WebSockets. It checks seat ownership and expiry against an HTTP fixture, room separation, seat replacement and message routing. The class-size case uses 30 students at 12 controls per second and a projector sending 10 snapshots per second. It checks every delivery to the intended recipient.
 
-The [Clash browser smoke](../../tests/browser/README.md#reactor-clash-multiplayer-smoke) also runs the Next.js host and two students through the actual relay, with simulated Supabase responses and an interrupted socket.
+The [Clash browser smoke](../../tests/browser/README.md#reactor-clash-multiplayer-smoke) also runs the Next.js host and two students through the actual relay, with simulated Supabase responses and an interrupted socket. It then adds 28 WebSocket clients to that match and verifies the running projector receives controls from all students while continuing to send snapshots.
 
 ## Hosted staging
 
