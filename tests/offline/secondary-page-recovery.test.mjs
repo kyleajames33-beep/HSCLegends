@@ -22,6 +22,7 @@ function setup(route, functions = {}) {
     'next/link': { default: 'a' }, '@/lib/supabase/client': { createClient: () => sb }, '@/lib/use-user': { useUser: () => auth }, '@/lib/questions': { SUBJECTS: [{ id: 'biology', label: 'Biology' }] },
     '@/lib/learning': learning, '@/lib/events': events, '@/lib/duel': duel, '@/lib/confetti': { celebrate: () => { calls.celebrate++; } },
     '@/components/mastery-ring': { default: 'MasteryRing' }, '@/components/answer-tile': { default: 'AnswerTile' }, '@/components/count-up': { default: ({ to }) => to }, '@/components/math-text': { default: ({ text }) => text }, '@/components/avatar': { default: 'Avatar' },
+    '@/components/lesson-video-link': { default: 'LessonVideoLink' },
   }).default;
   async function render() { let tree; for (let pass = 0; pass < 12; pass++) { cursor = 0; dirty = false; tree = Page(); const work = effects; effects = []; for (const f of work) f(); for (let tick = 0; tick < 8; tick++) await Promise.resolve(); if (!dirty) return tree; } throw Error('Page did not settle'); }
   function button(tree, name) { const b = elements(tree).find(e => e.type === 'button' && textContent(e).includes(name)); assert.ok(b, `Missing button ${name}`); return b; }

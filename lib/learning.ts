@@ -9,6 +9,7 @@ export type TopicMastery = { topic: string; level: number; points: number };
 
 export type ReviewQuestion = {
   id: string;
+  lesson_id: string | null;
   subject: Subject;
   topic: string;
   stem: string;

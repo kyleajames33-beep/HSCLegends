@@ -7,6 +7,7 @@ import { SUBJECTS, type Subject } from '@/lib/questions';
 import { useCountdown } from '@/lib/use-countdown';
 import AnswerTile from '@/components/answer-tile';
 import MathText from '@/components/math-text';
+import LessonVideoLink from '@/components/lesson-video-link';
 import ExamTimer from '@/components/exam-timer';
 
 // Section I simulation: 20 MC questions, one big timer (~60s/question).
@@ -15,6 +16,7 @@ const EXAM_SECONDS = EXAM_COUNT * 60; // 20 minutes
 
 type ExamQ = {
   id: string;
+  lesson_id: string | null;
   stem: string;
   options: string[];
   correct_index: number;
@@ -251,6 +253,7 @@ export default function ExamMode() {
                           <MathText text={q.explanation} />
                         </p>
                       )}
+                      <LessonVideoLink q={q} />
                     </div>
                   </div>
                 </div>
