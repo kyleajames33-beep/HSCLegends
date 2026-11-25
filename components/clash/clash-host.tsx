@@ -6,12 +6,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
+import type { ClashConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, liveClient, readTab, rpc, useSession, writeTab } from '@/lib/live-game';
 import { addPlayer, answerResult, applyRemotePosition, beginAnswer, cancelAnswer, createClash, EMERGENCY, step, type ClashEvent, type ClashState, type Input, type Team } from '@/lib/clash/sim';
 import { botInputs, type BotBrain } from '@/lib/clash/bots';
 import { encodeRoster, encodeSnapshot, inputFromMsg, PROJECTOR_TIMEOUT_MS, type InputMsg, type TerminalMsg } from '@/lib/clash/protocol';
-import { openClashChannel, type ClashNet } from '@/lib/clash/net';
+import { openClashChannel, type ClashNet, type RelayStatus } from '@/lib/clash/net';
 import { PRACTICE_BANK } from '@/lib/clash/questions';
 import { useSound } from '@/lib/live-sound';
 import { draw, followCam, loadSprites, isClashSubject, CLASH_SUBJECTS, TEAM_COLOR, type Cam, type ClashSubject, type Fx } from './render';
@@ -39,7 +39,7 @@ function JoinQr({ url }: { url: string }) {
   return svg ? <div className={s.qr} role="img" aria-label="QR code to join" dangerouslySetInnerHTML={{ __html: svg }} /> : null;
 }
 
-export default function ClashHost({ config }: { config: StagingConfig }) {
+export default function ClashHost({ config }: { config: ClashConfig }) {
   const client = useMemo(() => liveClient(config, 'host'), [config]);
   const session = useSession(client);
   const sound = useSound('clash-host', true);
@@ -59,6 +59,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   const [origin, setOrigin] = useState('');
   const [hud, setHud] = useState<{ t: number; score: Record<Team, number>; answering: number; exhausted: number; boss: number | null } | null>(null);
   const [paused, setPaused] = useState(false);
+  const [relayStatus, setRelayStatus] = useState<RelayStatus>('connecting');
   const [feed, setFeed] = useState<Feed[]>([]);
   const [results, setResults] = useState<Results | null>(null);
 
@@ -119,7 +120,7 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
 
   // Realtime channel: student controls in, snapshots out.
   useEffect(() => {
-    if (session === 'signed-out' || !roomId) return;
+    if ((session !== 'guest' && session !== 'teacher') || !roomId) return;
     const valid = (m: unknown): m is { id: string; k: string } => {
       if (!m || typeof m !== 'object' || !('id' in m) || !('k' in m)) return false;
       return typeof m.id === 'string' && typeof m.k === 'string' && tokens.current.get(m.id) === m.k;
@@ -136,10 +137,10 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
       }
       else if (g && event === 'begin') beginAnswer(g, payload.id, String((payload as TerminalMsg).term ?? ''));
       else if (g && event === 'cancel') cancelAnswer(g, payload.id);
-    });
+    }, config.relayUrl ? { url: config.relayUrl, onStatus: setRelayStatus } : undefined);
     net.current = n;
     return () => { n.close(); net.current = null; };
-  }, [client, session, roomId]);
+  }, [client, session, roomId, config.relayUrl]);
 
   // Lobby roster broadcast so students can see who's on their team.
   useEffect(() => {
@@ -346,6 +347,9 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   }
 
   const leave = () => { writeTab(ROOM_KEY, null); setRoomId(null); setView(null); sim.current = null; setResults(null); };
+  const relayNotice = config.relayUrl && relayStatus !== 'connected'
+    ? relayStatus === 'unavailable' ? 'The match relay rejected this connection. Reopen the match to try again.' : 'Connecting to the match relay…'
+    : null;
 
   // ---- Screens ---------------------------------------------------------------
   if (session === 'checking') return <div className={s.stage}><p className={s.center}>Loading…</p></div>;
@@ -410,9 +414,10 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
           ))}
         </div>
         <div className={s.row}>
-          <button className={s.btn} disabled={busy || view.players.length === 0} onClick={() => void startMatch()}>Start match</button>
+          <button className={s.btn} disabled={busy || view.players.length === 0 || !!relayNotice} onClick={() => void startMatch()}>Start match</button>
           <button className={s.link} onClick={leave}>Cancel</button>
         </div>
+        {relayNotice && <p role="status">{relayNotice}</p>}
         <p className={s.small}>Click a name to move them to the other team.{fillBots ? ' Bots fill each side up to 3.' : ''}</p>
       </div></div>
     );
@@ -421,7 +426,9 @@ export default function ClashHost({ config }: { config: StagingConfig }) {
   return (
     <div className={s.stage}>
       <canvas ref={canvasRef} className={s.canvas} />
-      {paused && !results && view.state === 'active' && <p className={s.connection} role="status">Projector paused. Keep this tab in front.</p>}
+      {(relayNotice || paused) && !results && view.state === 'active' && (
+        <p className={s.connection} role="status">{relayNotice || 'Projector paused. Keep this tab in front.'}</p>
+      )}
       {hud && !results && (
         <>
           <div className={s.top}>

@@ -1,0 +1,12 @@
+{
+  "name": "hsc-legends-clash-relay",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node run.mjs",
+    "test": "node --test relay.test.mjs"
+  },
+  "dependencies": {
+    "ws": "8.23.0"
+  }
+}
