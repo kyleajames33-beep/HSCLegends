@@ -1,15 +1,24 @@
 // Actual Next.js screens and Realtime client, with a loopback-only Supabase double.
 import assert from 'node:assert/strict';
+import { once } from 'node:events';
 
 const base = new URL(process.env.HSC_BASE_URL ?? 'http://127.0.0.1:3000');
 assert.ok(base.protocol === 'http:' && base.hostname === '127.0.0.1', 'Use a local Next.js dev server');
 const backend = 'http://127.0.0.1:54321';
 const room = 'test-clash-room';
+const relayUrl = process.env.HSC_CLASH_RELAY_URL && new URL(process.env.HSC_CLASH_RELAY_URL);
+if (relayUrl) {
+  assert.ok(relayUrl.protocol === 'ws:' && relayUrl.hostname === '127.0.0.1' && relayUrl.pathname === '/clash' && relayUrl.port);
+}
 const roster = [];
 const sockets = new Map();
 const disconnects = [];
 const pageErrors = [];
 const receipts = [];
+const fixtureTokens = new Map();
+const relayJoins = new Map();
+let relayFixture;
+let adaRelaySocket;
 let roomState = 'lobby';
 let dropAdaSnapshots = false;
 let holdLobbyView;
@@ -60,6 +69,7 @@ async function openPage(name, role, path) {
   const exp = Math.floor(Date.now() / 1000) + 3600;
   const token = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: name, role: user.role, exp })}.test`;
   const session = { access_token: token, refresh_token: 'mock', expires_at: exp, user };
+  fixtureTokens.set(token, { name, role, expiresAt: exp * 1000 });
   await context.addInitScript(({ name, role, session }) => {
     sessionStorage.setItem(`hsc-live-local-${role}`, JSON.stringify(session));
     localStorage.setItem(`hsc-live-sound-clash-${role}`, '0');
@@ -119,6 +129,22 @@ async function openPage(name, role, path) {
   await context.routeWebSocket('**/*', ws => {
     const url = new URL(ws.url());
     if (url.origin === base.origin.replace('http:', 'ws:')) { ws.connectToServer(); return; }
+    if (relayUrl && url.href === relayUrl.href) {
+      const server = ws.connectToServer();
+      if (name === 'Ada') adaRelaySocket = ws;
+      ws.onMessage(raw => {
+        const packet = JSON.parse(raw);
+        if (packet.event === 'begin') {
+          terminalBegins++;
+          if (dropTerminalBegin) return;
+        }
+        server.send(raw);
+      });
+      server.onMessage(raw => {
+        if (name !== 'Ada' || !dropAdaSnapshots || JSON.parse(raw).event !== 'snap') ws.send(raw);
+      });
+      return;
+    }
     if (url.origin !== 'ws://127.0.0.1:54321') return ws.close();
     const socket = { name, ws, topic: null };
     sockets.set(ws, socket);
@@ -131,7 +157,26 @@ async function openPage(name, role, path) {
   return page;
 }
 
+async function startRelayFixture() {
+  const { createClashRelay } = await import('../../prototypes/clash-relay/relay.mjs');
+  const fixture = createClashRelay({
+    origin: base.origin,
+    authorizeSeat({ roomId, playerId, accessToken }) {
+      const actor = fixtureTokens.get(accessToken);
+      if (roomId !== room || !actor) return null;
+      const player = roster.find(entry => entry.id === playerId && entry.id === actor.name);
+      if (playerId ? !player || actor.role !== 'player' : actor.role !== 'host') return null;
+      relayJoins.set(actor.name, (relayJoins.get(actor.name) ?? 0) + 1);
+      return { expiresAt: actor.expiresAt, playerToken: player?.token };
+    },
+  });
+  fixture.server.listen(Number(relayUrl.port), '127.0.0.1');
+  await once(fixture.server, 'listening');
+  return fixture;
+}
+
 try {
+  if (relayUrl) relayFixture = await startRelayFixture();
   const host = await openPage('Teacher', 'host', '/clash/host');
   await host.getByLabel(/Boss for the final minute/).selectOption('physics');
   await host.getByRole('checkbox').uncheck();
@@ -181,8 +226,14 @@ try {
   await host.waitForFunction(y => window.__clashHost.players.Ada.y > y + 45, y);
   await ada.keyboard.up('s');
   dropAdaSnapshots = true;
+  if (relayUrl) {
+    const reconnecting = ada.getByRole('status').filter({ hasText: 'Connecting to the match relay' }).waitFor();
+    await adaRelaySocket.close({ code: 1012, reason: 'Test network interruption' });
+    await reconnecting;
+  }
   const waiting = ada.getByRole('status').filter({ hasText: 'Waiting for the projector' });
   await waiting.waitFor();
+  if (relayUrl) assert.equal(relayJoins.get('Ada'), 2, 'Student reverified the same seat after reconnecting');
   const stopped = await ada.evaluate(() => window.__clashLocal.y);
   await ada.keyboard.down('s');
   await ada.waitForTimeout(250);
@@ -195,6 +246,20 @@ try {
   await ada.keyboard.down('s');
   await host.waitForFunction(y => window.__clashHost.players.Ada.y > y + 45, afterGap);
   await ada.keyboard.up('s');
+
+  if (relayFixture) {
+    const connectionNotice = /Connecting to the match relay/;
+    const notices = [host, ada, ben].map(page => page.getByRole('status').filter({ hasText: connectionNotice }));
+    const interrupted = notices.map(notice => notice.waitFor());
+    const beforeRestart = await host.evaluate(() => window.__clashHost.t);
+    await relayFixture.close();
+    await Promise.all(interrupted);
+    relayFixture = await startRelayFixture();
+    await Promise.all(notices.map(notice => notice.waitFor({ state: 'hidden' })));
+    await host.waitForFunction(t => window.__clashHost.t > t + 0.3, beforeRestart);
+    assert.equal(await host.evaluate(() => window.clashWorkersStarted), 1, 'Restarting the relay preserves the projector simulation');
+    assert.deepEqual(Object.fromEntries(relayJoins), { Teacher: 2, Ada: 3, Ben: 2 });
+  }
 
   const terminal = await host.evaluate(() => {
     const g = window.__clashHost, terminal = g.terminals[0];
@@ -244,8 +309,9 @@ try {
   assert.equal(await host.evaluate(() => window.__clashHost.players.Ben.stats.answered), 2);
   assert.equal(await host.evaluate(() => window.__clashHost.players.Ben.energy), 15);
   assert.deepEqual(pageErrors, []);
-  console.log('Reactor Clash multiplayer smoke passed: stable clock and subscriptions, snapshot recovery, terminal receipts, and emergency retry.');
+  console.log(`Reactor Clash multiplayer smoke passed using ${relayUrl ? 'the WebSocket relay' : 'Realtime broadcast'}.`);
 } finally {
   holdLobbyView?.release.resolve();
   await browser.close();
+  await relayFixture?.close();
 }

@@ -59,3 +59,5 @@ PLAYWRIGHT_BROWSERS_PATH=/tmp/hsc-browser-cache HSC_PLAYWRIGHT_MODULE=/tmp/hsc-b
 ```
 
 The smoke covers a projector and two students, theme and sound changes, a late lobby response after start, keyboard movement, recovery after dropped snapshots, dropped terminal requests, delayed answer receipts and emergency retries. Hosted Realtime delivery and background-tab throttling are covered separately by `clash-staging.e2e.mjs`.
+
+To run the same smoke over the WebSocket relay, install the prototype dependencies with `npm --prefix prototypes/clash-relay ci`. Start Next.js with the same loopback fixture settings and `CLASSROOM_STAGING_RELAY_URL=ws://127.0.0.1:3042/clash`. Set `HSC_CLASH_RELAY_URL=ws://127.0.0.1:3042/clash` when running the smoke. The smoke starts the relay itself. It checks that a student reconnects to the same seat after the socket closes, then restarts the relay and checks that the projector and students can resume the same match.

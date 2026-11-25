@@ -29,7 +29,7 @@ The multiplayer routes need the `CLASSROOM_STAGING_*` settings (see `docs/LIVE_G
 - **Clock and movement.** A dedicated worker wakes the projector, which catches up in 1/30-second simulation steps. Each new student position is applied at most once, using the elapsed time since the previous accepted report. Snapshots acknowledge the report so newer local movement survives correction. The camera and operative ease into corrected positions, and respawns place the student directly at base. After 1.5 seconds without snapshots the student sees “Waiting for the projector…” and prediction pauses until updates resume.
 - **Remote movement.** Students keep five snapshots and render other players 150 ms behind the estimated host timeline. During a delivery gap, moving operatives can continue for up to 65 ms before holding position. Shots interpolate between confirmed positions of the same projectile. The projector targets 10 snapshots per second to stay within the existing transport budget for small matches.
 - **Server-owned:** `prototypes/classroom-v2/staging-clash.sql` covers rooms, team-balanced joins, and a per-player secret token that the host checks on every student message. Questions are issued by the server (no answer key sent, no re-rolling), answers are recorded once, and the host only grants energy for answers it reads back from the database (`clash_receipts`).
-- **Transport:** `lib/clash/net.ts` uses Supabase Realtime broadcast and is swappable.
+- **Transport:** `lib/clash/net.ts` defaults to Supabase Realtime. Staging can opt into the [WebSocket relay](../prototypes/clash-relay/README.md), which sends student controls only to the projector and sends projector updates to the room. The seat and answer RPCs are the same in either mode.
 
 ## Scaling limit
 
@@ -37,7 +37,7 @@ The projector and all students share one broadcast channel. For 30 students, the
 
 A six-second loopback test with one projector, two student browsers and 28 synthetic input senders produced 61 snapshots while the simulation clock kept pace. At that input rate, fanning every broadcast out to a 30-student room would generate about 10,400 deliveries per second. The test estimates delivery volume and does not measure hosted service throughput.
 
-Supabase publishes limits of [100 events per second on Free and 500 on capped Pro](https://supabase.com/docs/guides/realtime/limits), and counts [each send and each recipient](https://supabase.com/docs/guides/realtime/settings). Before a 30-student pilot, use a transport that routes student controls only to the projector and validate the resulting traffic in staging.
+Supabase publishes limits of [100 events per second on Free and 500 on capped Pro](https://supabase.com/docs/guides/realtime/limits), and counts [each send and each recipient](https://supabase.com/docs/guides/realtime/settings). The opt-in relay delivered all 2,160 controls and 1,800 snapshot updates in a separate six-second test with 30 real WebSocket clients. That's about 660 deliveries per second versus 11,100 with everyone receiving the same traffic. The relay still needs a hosted staging test before a classroom pilot.
 
 ## Tests
 

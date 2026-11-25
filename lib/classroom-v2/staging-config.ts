@@ -1,5 +1,6 @@
 /** Server-side fail-closed configuration for the isolated classroom lab. */
 export type StagingConfig = { url: string; publicKey: string; projectRef: string };
+export type ClashConfig = StagingConfig & { relayUrl?: string };
 type Env = Record<string, string | undefined>;
 const SHARED_PROJECT = 'rerfrskojieacxthfavb';
 
@@ -26,4 +27,15 @@ export function stagingConfig(env: Env): StagingConfig | null {
     try { if (new URL(env.NEXT_PUBLIC_SUPABASE_URL).hostname.replace(/\.$/, '') === url.hostname) return null; } catch { return null; }
   }
   return { url: url.origin, publicKey: key, projectRef: ref };
+}
+
+export function clashConfig(env: Env): ClashConfig | null {
+  const config = stagingConfig(env);
+  if (!config || env.CLASSROOM_STAGING_RELAY_URL === undefined) return config;
+  let relay: URL;
+  try { relay = new URL(env.CLASSROOM_STAGING_RELAY_URL); } catch { return null; }
+  const local = relay.protocol === 'ws:' && ['127.0.0.1', '[::1]'].includes(relay.hostname);
+  if ((!local && relay.protocol !== 'wss:') || relay.username || relay.password
+      || relay.pathname !== '/clash' || relay.search || relay.hash) return null;
+  return { ...config, relayUrl: relay.href };
 }

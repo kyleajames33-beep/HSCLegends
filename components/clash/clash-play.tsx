@@ -5,12 +5,12 @@
 // Questions come from the database, which records every answer.
 
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
-import type { StagingConfig } from '@/lib/classroom-v2/staging-config';
+import type { ClashConfig } from '@/lib/classroom-v2/staging-config';
 import { LiveError, liveClient, readTab, rpc, useSession, writeTab } from '@/lib/live-game';
 import { moveCircle, terminalLocked, terminalNear, BOSS_HP, EMERGENCY, EMERGENCY_REWARD, MAX_ENERGY, PLAYER_R, SPEED, SPRINT_SPEED, type Team } from '@/lib/clash/sim';
 import { decodeSnapshot, SnapshotBuffer, PROJECTOR_TIMEOUT_MS, type Roster, type Snapshot } from '@/lib/clash/protocol';
 import { PositionCorrection } from '@/lib/clash/prediction';
-import { openClashChannel, type ClashNet } from '@/lib/clash/net';
+import { openClashChannel, type ClashNet, type RelayStatus } from '@/lib/clash/net';
 import { useSound } from '@/lib/live-sound';
 import { draw, followCam, loadSprites, isClashSubject, TEAM_COLOR, type Cam, type ClashSubject, type Fx } from './render';
 import { BOSSES } from '../live/boss';
@@ -23,7 +23,7 @@ type Question = { issueId: string; stem: string; options: string[]; picked: numb
 type Feed = { id: number; text: string; tone: Team | 'info' };
 const mmss = (sec: number) => `${Math.floor(Math.max(0, sec) / 60)}:${String(Math.max(0, Math.floor(sec % 60))).padStart(2, '0')}`;
 
-export default function ClashPlay({ config }: { config: StagingConfig }) {
+export default function ClashPlay({ config }: { config: ClashConfig }) {
   const client = useMemo(() => liveClient(config, 'player'), [config]);
   const session = useSession(client);
   const sound = useSound('clash-player', true);
@@ -40,6 +40,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   const [feed, setFeed] = useState<Feed[]>([]);
   const [live, setLive] = useState(false);
   const [waiting, setWaiting] = useState(false);
+  const [relayStatus, setRelayStatus] = useState<RelayStatus>('connecting');
   const [ended, setEnded] = useState(false);
   const [subject, setSubject] = useState<ClashSubject>('chemistry');
   const bossName = BOSSES[subject].name;
@@ -136,10 +137,10 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
           else if (e.type === 'end') cue('fanfare');
         }
       }
-    });
+    }, config.relayUrl ? { url: config.relayUrl, playerId: seat.playerId, onStatus: setRelayStatus } : undefined);
     net.current = n;
     return () => { n.close(); net.current = null; };
-  }, [client, seat, session, pushFeed, cue]);
+  }, [client, seat, session, pushFeed, cue, config.relayUrl]);
 
   const openQuestion = useCallback(async () => {
     const st = seatRef.current, snapshot = snaps.current.latest;
@@ -304,6 +305,9 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   }, [seat, live, openQuestion, setQuestion]);
 
   const leave = () => { setQuestion(null); retryAt.current = 0; writeTab(SEAT_KEY, null); setSeat(null); setMe(null); setWaiting(false); setLive(false); setEnded(false); snaps.current = new SnapshotBuffer(); local.current.init = false; };
+  const relayNotice = config.relayUrl && relayStatus !== 'connected'
+    ? relayStatus === 'unavailable' ? 'The match relay rejected this connection. Reload this tab to reconnect.' : 'Connecting to the match relay…'
+    : null;
 
   // ---- Screens ---------------------------------------------------------------
   if (session === 'checking') return <div className={s.stage}><p className={s.center}>Loading…</p></div>;
@@ -344,6 +348,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
       <div className={s.stage}><div className={s.panel}>
         <p className={s.kicker}>{me?.state === 'active' ? 'Waiting for the projector…' : "You’re in · waiting for the teacher to start"}</p>
         <h1 className={s.title} style={{ color: TEAM_COLOR[myTeam] }}>{seat.alias}, you&apos;re on {myTeam === 'blue' ? 'Blue' : 'Orange'}</h1>
+        {relayNotice && <p role="status">{relayNotice}</p>}
         {mates.length > 0 && <p className={s.lead}>Team: {mates.join(', ')}</p>}
         <div className={s.controls}>
           <div><kbd>W A S D</kbd> move · <kbd>Shift</kbd> sprint</div>
@@ -361,7 +366,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   return (
     <div className={s.stage}>
       <canvas ref={canvasRef} className={s.canvas} />
-      {waiting && <p className={s.connection} role="status">Waiting for the projector…</p>}
+      {(relayNotice || waiting) && <p className={s.connection} role="status">{relayNotice || 'Waiting for the projector…'}</p>}
       {hud && (
         <>
           <div className={s.top}>
