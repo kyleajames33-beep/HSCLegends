@@ -58,4 +58,4 @@ Run the smoke in a second terminal using Playwright 1.48.2 or newer and its matc
 PLAYWRIGHT_BROWSERS_PATH=/tmp/hsc-browser-cache HSC_PLAYWRIGHT_MODULE=/tmp/hsc-browser/node_modules/playwright/index.mjs node tests/browser/clash-multiplayer.smoke.mjs
 ```
 
-The smoke covers a projector and two students, theme and sound changes, a late lobby response after start, keyboard movement, and recovery after dropped snapshots. Hosted Realtime delivery and background-tab throttling are covered separately by `clash-staging.e2e.mjs`.
+The smoke covers a projector and two students, theme and sound changes, a late lobby response after start, keyboard movement, recovery after dropped snapshots, dropped terminal requests, delayed answer receipts and emergency retries. Hosted Realtime delivery and background-tab throttling are covered separately by `clash-staging.e2e.mjs`.

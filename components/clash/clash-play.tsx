@@ -19,7 +19,7 @@ import s from './clash.module.css';
 const SEAT_KEY = 'hsc-clash-seat';
 type Seat = { roomId: string; playerId: string; token: string; team: Team; alias: string };
 type Me = { state: 'lobby' | 'active' | 'complete'; alias: string; team: Team; token: string; seconds: number; answered: number; correct: number; results: { score: Record<Team, number>; winner: Team | null } | null };
-type Question = { issueId: string; stem: string; options: string[]; picked: number | null; correctIndex: number | null; explanation: string | null; opened: number; closeAt: number; emergency: boolean; life: number };
+type Question = { issueId: string; stem: string; options: string[]; picked: number | null; correctIndex: number | null; explanation: string | null; closeAt: number; lock: string; life: number };
 type Feed = { id: number; text: string; tone: Team | 'info' };
 const mmss = (sec: number) => `${Math.floor(Math.max(0, sec) / 60)}:${String(Math.max(0, Math.floor(sec % 60))).padStart(2, '0')}`;
 
@@ -148,24 +148,24 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
     const latest = snapshot.g;
     const mine = latest.players[st.playerId];
     if (!mine?.alive || latest.ended) return;
-    const emergency = mine.answering === EMERGENCY;
-    if (!emergency) {
+    const lock = mine.answering;
+    if (!lock) {
       const term = terminalNear(latest, { ...mine, x: local.current.x, y: local.current.y });
-      if (!term || (mine.answering && mine.answering !== term.id) || terminalLocked(latest, mine, term.id)) return;
+      if (!term || terminalLocked(latest, mine, term.id)) return;
       net.current?.send('begin', { id: st.playerId, k: st.token, term: term.id });
+      return;
     }
     opening.current = true;
     try {
       const q = await rpc<{ issue_id: string; stem: string; options: string[] }>(client, 'clash_question', { p_room: st.roomId, p_player: st.playerId });
       const world = snaps.current.latest?.g, player = world?.players[st.playerId];
-      if (seatRef.current !== st || world?.ended || !player?.alive || player.respawnAt !== mine.respawnAt) return;
-      if (emergency && player.answering !== EMERGENCY) return;
+      if (seatRef.current !== st || world?.ended || !player?.alive || player.respawnAt !== mine.respawnAt || player.answering !== lock) return;
       cue('lock');
       setQuestion({ issueId: q.issue_id, stem: q.stem, options: q.options, picked: null, correctIndex: null, explanation: null,
-        opened: performance.now(), closeAt: 0, emergency, life: mine.respawnAt });
+        closeAt: 0, lock, life: mine.respawnAt });
     } catch {
       retryAt.current = performance.now() + 1500;
-      if (seatRef.current === st && !emergency) net.current?.send('cancel', { id: st.playerId, k: st.token });
+      if (seatRef.current === st && lock !== EMERGENCY) net.current?.send('cancel', { id: st.playerId, k: st.token });
     } finally { opening.current = false; }
   }, [client, cue, setQuestion]);
 
@@ -197,7 +197,11 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
       if (q) {
         const n = Number(e.key);
         if (n >= 1 && n <= 6) { e.preventDefault(); void answer(n - 1); }
-        if (k === 'escape' && !q.emergency && q.picked === null && seatRef.current) { net.current?.send('cancel', { id: seatRef.current.playerId, k: seatRef.current.token }); setQuestion(null); }
+        if (k === 'escape' && q.lock !== EMERGENCY && q.picked === null && seatRef.current) {
+          net.current?.send('cancel', { id: seatRef.current.playerId, k: seatRef.current.token });
+          retryAt.current = performance.now() + PROJECTOR_TIMEOUT_MS;
+          setQuestion(null);
+        }
         return;
       }
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'shift'].includes(k)) e.preventDefault();
@@ -283,15 +287,12 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
           if (q && (!host.alive || q.life !== host.respawnAt || world.ended)) {
             setQuestion(null);
           } else if (q?.closeAt && now >= q.closeAt) {
-            // Keep a successful emergency answer on screen until the projector applies its receipt.
-            if (!q.emergency || q.correctIndex !== q.picked || host.answering !== EMERGENCY) setQuestion(null);
-          } else if (!stale && q && q.picked === null) {
-            if (q.emergency && host.answering !== EMERGENCY) setQuestion(null);
-            if (!q.emergency && (!host.answering || host.answering === EMERGENCY) && now - q.opened > 1500) {
-              setQuestion(null);
-              pushFeed('Too far from the terminal', 'info');
-            }
-          } else if (!stale && !q && host.answering === EMERGENCY) {
+            // Wait for the projector to apply the receipt before offering another question.
+            // A wrong emergency answer keeps the same lock and requires a new question.
+            if (host.answering !== q.lock || (q.lock === EMERGENCY && q.correctIndex !== q.picked)) setQuestion(null);
+          } else if (!stale && q?.picked === null && host.answering !== q.lock) {
+            setQuestion(null);
+          } else if (!stale && !q && host.answering) {
             void openQuestion();
           }
         }
@@ -300,7 +301,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
     };
     raf = requestAnimationFrame(frame);
     return () => { cancelAnimationFrame(raf); canvas.removeEventListener('mousemove', move); canvas.removeEventListener('mousedown', md); window.removeEventListener('mouseup', mu); };
-  }, [seat, live, pushFeed, openQuestion, setQuestion]);
+  }, [seat, live, openQuestion, setQuestion]);
 
   const leave = () => { setQuestion(null); retryAt.current = 0; writeTab(SEAT_KEY, null); setSeat(null); setMe(null); setWaiting(false); setLive(false); setEnded(false); snaps.current = new SnapshotBuffer(); local.current.init = false; };
 
@@ -356,6 +357,7 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
   }
 
   const seconds = me?.seconds ?? 240;
+  const emergencyQuestion = question?.lock === EMERGENCY;
   return (
     <div className={s.stage}>
       <canvas ref={canvasRef} className={s.canvas} />
@@ -387,8 +389,8 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
       )}
       {question && (
         <div className={s.qWrap}>
-          <div className={s.qCard} role="dialog" aria-label={question.emergency ? 'Out of energy' : 'Answer for energy'}>
-            <p className={s.qKicker}>{question.emergency ? `Out of energy · Answer correctly for +${EMERGENCY_REWARD} energy` : 'Answer for energy · Esc to leave'}</p>
+          <div className={s.qCard} role="dialog" aria-label={emergencyQuestion ? 'Out of energy' : 'Answer for energy'}>
+            <p className={s.qKicker}>{emergencyQuestion ? `Out of energy · Answer correctly for +${EMERGENCY_REWARD} energy` : 'Answer for energy · Esc to leave'}</p>
             <p className={s.qStem}>{question.stem}</p>
             <div className={s.tiles}>
               {question.options.map((o, i) => {
@@ -396,7 +398,8 @@ export default function ClashPlay({ config }: { config: StagingConfig }) {
                 return <button key={i} className={`${s.tile} ${st}`} disabled={question.picked !== null} onClick={() => void answer(i)}><kbd>{i + 1}</kbd>{o}</button>;
               })}
             </div>
-            {question.emergency && question.correctIndex !== null && <p role="status">{question.picked === question.correctIndex ? 'Correct. Refuelling…' : 'Another question is coming.'}</p>}
+            {question.correctIndex !== null && question.picked === question.correctIndex && <p role="status">Correct. Refuelling…</p>}
+            {emergencyQuestion && question.correctIndex !== null && question.picked !== question.correctIndex && <p role="status">Another question is coming.</p>}
             {question.correctIndex !== null && question.picked !== question.correctIndex && question.explanation && <p className={s.explain}>{question.explanation}</p>}
           </div>
         </div>

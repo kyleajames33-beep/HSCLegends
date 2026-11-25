@@ -33,7 +33,11 @@ The multiplayer routes need the `CLASSROOM_STAGING_*` settings (see `docs/LIVE_G
 
 ## Scaling limit
 
-The Supabase free plan allows about **100 Realtime messages per second** per project, counting each delivery. A full class sends several hundred a second. That's fine for testing with a few tabs, but a real class needs either a dedicated game server (for example Cloudflare Durable Objects) or Supabase Pro (500/s). It's a hosting and cost decision. Only `lib/clash/net.ts` changes.
+The projector and all students share one broadcast channel. For 30 students, the projector's 10 snapshots per second account for about 310 events per second, including one send and 30 deliveries per snapshot. Student inputs also fan out to the entire channel, even though only the projector uses them.
+
+A six-second loopback test with one projector, two student browsers and 28 synthetic input senders produced 61 snapshots while the simulation clock kept pace. At that input rate, fanning every broadcast out to a 30-student room would generate about 10,400 deliveries per second. The test estimates delivery volume and does not measure hosted service throughput.
+
+Supabase publishes limits of [100 events per second on Free and 500 on capped Pro](https://supabase.com/docs/guides/realtime/limits), and counts [each send and each recipient](https://supabase.com/docs/guides/realtime/settings). Before a 30-student pilot, use a transport that routes student controls only to the projector and validate the resulting traffic in staging.
 
 ## Tests
 

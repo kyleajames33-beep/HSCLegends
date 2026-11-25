@@ -9,9 +9,14 @@ const roster = [];
 const sockets = new Map();
 const disconnects = [];
 const pageErrors = [];
+const receipts = [];
 let roomState = 'lobby';
 let dropAdaSnapshots = false;
 let holdLobbyView;
+let dropTerminalBegin = false;
+let terminalBegins = 0;
+let issuedQuestions = 0;
+let releaseReceipts = false;
 
 const { chromium } = await import(process.env.HSC_PLAYWRIGHT_MODULE ?? 'playwright');
 const browser = await chromium.launch();
@@ -38,6 +43,10 @@ function relay(socket, raw) {
   const topic = raw.toString('utf8', topicStart, eventStart);
   const event = raw.toString('utf8', eventStart, metaStart);
   const payload = JSON.parse(raw.toString('utf8', metaStart + metaSize));
+  if (event === 'begin') {
+    terminalBegins++;
+    if (dropTerminalBegin) return;
+  }
   const packet = JSON.stringify([null, null, topic, 'broadcast', { type: 'broadcast', event, payload }]);
   for (const peer of sockets.values()) {
     if (peer === socket || peer.topic !== topic || (dropAdaSnapshots && peer.name === 'Ada' && event === 'snap')) continue;
@@ -72,7 +81,8 @@ async function openPage(name, role, path) {
     const args = route.request().postDataJSON();
     let result;
     switch (rpc) {
-      case 'classroom_v2_set_list': case 'clash_receipts': result = []; break;
+      case 'classroom_v2_set_list': result = []; break;
+      case 'clash_receipts': result = releaseReceipts ? receipts.filter(r => r.seq > args.p_since) : []; break;
       case 'clash_create': result = [{ room_id: room, short_code: 'T6HXHV' }]; break;
       case 'clash_host_view': {
         result = { room_id: room, short_code: 'T6HXHV', state: roomState, seconds: 180, players: roster };
@@ -93,6 +103,15 @@ async function openPage(name, role, path) {
         break;
       }
       case 'clash_me': result = { state: roomState, seconds: 180, alias: name, team: roster.find(p => p.id === name)?.team, answered: 0, correct: 0 }; break;
+      case 'clash_question':
+        result = { issue_id: `test-issue-${++issuedQuestions}`, stem: 'Which option is correct?', options: ['First', 'Second'] };
+        break;
+      case 'clash_answer': {
+        const correct = args.p_choice === 0;
+        receipts.push({ seq: receipts.length + 1, player_id: args.p_player, correct });
+        result = { correct, choice: args.p_choice, correct_index: 0, explanation: null };
+        break;
+      }
       default: throw Error(`Unexpected test endpoint ${url.pathname}`);
     }
     await route.fulfill({ json: result });
@@ -176,8 +195,56 @@ try {
   await ada.keyboard.down('s');
   await host.waitForFunction(y => window.__clashHost.players.Ada.y > y + 45, afterGap);
   await ada.keyboard.up('s');
+
+  const terminal = await host.evaluate(() => {
+    const g = window.__clashHost, terminal = g.terminals[0];
+    Object.assign(g.players.Ada, { x: terminal.x + 14, y: terminal.y + 14, energy: 35 });
+    return terminal;
+  });
+  await ada.evaluate(terminal => Object.assign(window.__clashLocal, { x: terminal.x + 14, y: terminal.y + 14 }), terminal);
+  await ada.getByText('Press E to answer for energy').waitFor();
+
+  dropTerminalBegin = true;
+  await ada.keyboard.press('e');
+  await ada.waitForTimeout(350);
+  assert.equal(terminalBegins, 1, 'Student attempted to start a terminal question');
+  assert.equal(issuedQuestions, 0, 'A dropped terminal request must not issue a question');
+
+  dropTerminalBegin = false;
+  await ada.keyboard.press('e');
+  const question = ada.getByRole('dialog', { name: 'Answer for energy' });
+  await question.waitFor();
+  assert.equal(await host.evaluate(() => window.__clashHost.players.Ada.answering), terminal.id);
+  const lockedEnergy = await host.evaluate(() => window.__clashHost.players.Ada.energy);
+  await question.getByRole('button', { name: '1 First' }).click();
+  await ada.waitForTimeout(950);
+  assert.ok(await question.isVisible(), 'Feedback must remain visible until the projector processes the receipt');
+  assert.equal(issuedQuestions, 1, 'An in-flight receipt must not trigger another question');
+  assert.equal(await host.evaluate(() => window.__clashHost.players.Ada.energy), lockedEnergy);
+  releaseReceipts = true;
+  await question.waitFor({ state: 'detached' });
+  assert.equal(await host.evaluate(() => window.__clashHost.players.Ada.stats.answered), 1);
+  const refuelledEnergy = await host.evaluate(() => window.__clashHost.players.Ada.energy);
+  assert.ok(refuelledEnergy - lockedEnergy >= 25 - 0.01, 'The confirmed answer refuelled the student');
+
+  await ada.getByText('Press E to answer for energy').waitFor();
+  await ada.keyboard.press('e');
+  await question.waitFor();
+  await ada.keyboard.press('Escape');
+  await question.waitFor({ state: 'detached' });
+  await ada.getByText('Press E to answer for energy').waitFor();
+  assert.equal(issuedQuestions, 2, 'Closing a terminal question must not immediately reopen it');
+
+  await host.evaluate(() => { window.__clashHost.players.Ben.energy = 0; });
+  const emergency = ben.getByRole('dialog', { name: 'Out of energy' });
+  await emergency.getByRole('button', { name: '2 Second' }).click();
+  await emergency.getByRole('status').filter({ hasText: 'Another question is coming' }).waitFor();
+  await emergency.getByRole('button', { name: '1 First' }).click();
+  await emergency.waitFor({ state: 'detached' });
+  assert.equal(await host.evaluate(() => window.__clashHost.players.Ben.stats.answered), 2);
+  assert.equal(await host.evaluate(() => window.__clashHost.players.Ben.energy), 15);
   assert.deepEqual(pageErrors, []);
-  console.log('Reactor Clash multiplayer smoke passed: two students, theme and sound changes, delayed lobby response, movement and snapshot recovery.');
+  console.log('Reactor Clash multiplayer smoke passed: stable clock and subscriptions, snapshot recovery, terminal receipts, and emergency retry.');
 } finally {
   holdLobbyView?.release.resolve();
   await browser.close();
